@@ -14,7 +14,7 @@ Debug menu in application to invoke xray (by blacksheep), tracing (by Jason MacZ
 
 Video:
 
-coming soon
+https://youtu.be/pesmDPSNIvw
 
 Installation:
 
