@@ -28,7 +28,7 @@ Installation:
 
 5. Deliver repository changes.
 
-6. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from xapuk.com)
+6. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
 
 7. Copy code from postload.js to the vanilla postload.js for a quick demo. 
 
