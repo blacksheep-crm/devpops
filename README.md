@@ -33,3 +33,11 @@ Installation:
 7. Copy code from postload.js to the vanilla postload.js for a quick demo. 
 
 8. Validate the functionality and move code to custom file(s).
+
+Pre-requisites:
+
+Siebel Inbound REST API enabled for anonymous authentication or Basic Authentication
+
+Ability to load 3rd-Party code via internet (CDN)
+
+
