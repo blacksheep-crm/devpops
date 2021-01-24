@@ -428,6 +428,11 @@ BCRMCreateWSMenu = function (data) {
 
 //Create Debugger Menu
 BCRMCreateDebugMenu = function () {
+    var togglecss = "label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
+    var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
+    if ($("style[bcrm-style]").length == 0) {
+        $("head").append(st);
+    }
     var items = {
         "ShowBCFields": {
             "label": "Show BC Fields",
@@ -439,8 +444,9 @@ BCRMCreateDebugMenu = function () {
                     ut.ShowBCFields(a);
                 }
                 sessionStorage.BCRMToggleCycle = "ShowBCFields";
-                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-            }
+                //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+            },
+            "showtoggle": true
         },
         "ShowTableColumns": {
             "label": "Show Tables/Columns",
@@ -453,7 +459,8 @@ BCRMCreateDebugMenu = function () {
                 }
                 sessionStorage.BCRMToggleCycle = "ShowTableColumns";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-            }
+            },
+            "showtoggle": true
         },
         "Reset": {
             "label": "Reset Labels",
@@ -553,13 +560,13 @@ BCRMCreateDebugMenu = function () {
                     "https://www.siebelhub.com/main/2021/01/learn-siebel-crm-21-with-the-siebel-hub.html"
                 ];
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-                window.open(hub[Math.floor((Math.random()*hub.length))]);
+                window.open(hub[Math.floor((Math.random() * hub.length))]);
             }
         }
     };
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
     for (i in items) {
-        var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
+        var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
         var dv = $("<div title='" + items[i].title + "'>" + items[i].label + "</div>");
         if (sessionStorage.BCRMToggleCycle == i || sessionStorage.BCRMTracingCycle == i) {
             dv.addClass("ui-state-disabled");
@@ -572,6 +579,36 @@ BCRMCreateDebugMenu = function () {
         }
         else {
             dv.on("click", items[i].onclick);
+        }
+        if (items[i].showtoggle) {
+            var tog = $('<span style="float: right; margin-right: 6px;" title="Set/unset this toggle cycle as default"><input class="bcrm-toggle" style="height: 0;width: 0;visibility: hidden;" type="checkbox" id="toggle_' + i + '"><label class="bcrm-toggle-label" for="toggle_' + i + '" style="cursor: pointer;text-indent: -9999px;width: 35px;height: 15px;background: grey;display: inline-block;border-radius: 100px;position: relative;top: 12px;">Toggle</label></span>');
+            $(tog).find("label").on("click", function (e, ui) {
+                e.stopImmediatePropagation();
+                var ip = $(this).attr("for");
+                $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
+                var checked = $("input#" + ip).prop("checked");
+                if (checked) {
+                    sessionStorage.BCRM_TOGGLE_DEFAULT = ip.split("_")[1];
+                    $("input.bcrm-toggle").each(function (x) {
+                        if ($(this).attr("id") != ip && $(this).prop("checked")) {
+                            $(this).prop("checked", false);
+                        }
+                    });
+                    $("#bcrm_debug_msg").text("X-Ray default set to: " + ip.split("_")[1]);
+                }
+                else {
+                    sessionStorage.BCRM_TOGGLE_DEFAULT = "";
+                    $("#bcrm_debug_msg").text("");
+                }
+                return false;
+            });
+            dv.append(tog);
+            if (sessionStorage.BCRM_TOGGLE_DEFAULT == i) {
+                tog.find("input").attr("bcrm-checked", "true");
+                setTimeout(function () {
+                    $("input[bcrm-checked='true']").prop("checked", true);
+                }, 50)
+            }
         }
         li.append(dv);
         li.appendTo(ul_main);
@@ -790,6 +827,19 @@ BCRMClearCaches = function () {
     alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
 };
 
+BCRMApplyDefaultXray = function () {
+    var ut = new SiebelAppFacade.BCRMUtils();
+    var t = sessionStorage.BCRM_TOGGLE_DEFAULT;
+    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    if (typeof (t) !== "undefined") {
+        if (t != "") {
+            for (a in am) {
+                ut.ToggleLabels(t, a);
+            }
+            $("#bcrm_debug_msg").text("X-Ray default set to: " + t);
+        }
+    }
+};
 
 //called on postload
 BCRMWSHelper = function () {
@@ -837,6 +887,9 @@ BCRMWSHelper = function () {
             for (a in am) {
                 ut.AddXrayHandler(a);
             }
+
+            //default xray toggle
+            BCRMApplyDefaultXray();
         }
 
     }
