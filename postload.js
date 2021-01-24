@@ -535,6 +535,26 @@ BCRMCreateDebugMenu = function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 BCRMExprEditor();
             }
+        },
+        "SiebelHub": {
+            "label": "Siebel Hub",
+            "title": "Get your Siebel kicks on da hub with a random page (might require login).",
+            "onclick": function () {
+                var hub = [
+                    "https://www.siebelhub.com/main/siebel-crm-training/siebel-20-21-workshop",
+                    "https://www.siebelhub.com/main/siebel-crm-training",
+                    "https://www.siebelhub.com/main/bsl",
+                    "https://www.siebelhub.com/main/books-media/siebel-crm-timeline",
+                    "https://www.siebelhub.com/main/product-category/siebel_20_21_workshop/overview/update-summaries",
+                    "https://www.siebelhub.com/main/product/siebel-crm-20-21-blue-book",
+                    "https://www.youtube.com/playlist?list=PL8ytufPqZPFHWvrqqZVRmRELuqOJoyKKY",
+                    "https://www.youtube.com/playlist?list=PL8ytufPqZPFEyhv4Nj5ZghltdfxvV5esI",
+                    "https://www.siebelhub.com/main/blog",
+                    "https://www.siebelhub.com/main/2021/01/learn-siebel-crm-21-with-the-siebel-hub.html"
+                ];
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                window.open(hub[Math.floor((Math.random()*hub.length))]);
+            }
         }
     };
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
@@ -1786,7 +1806,7 @@ BCRMGetCode = function (bFull) {
         }
     }
     return sRes;
-}  
+}
 
 /* 
 @desc UI allowing to evaluate expressions (EvalExpr) on active BCs
@@ -1798,36 +1818,36 @@ BCRMGetCode = function (bFull) {
 var BCRMExprfunc = "SiebelEvalExpr";
 var bBeauty = false;
 
-BCRMExprEditor = function(){
-    
-    require(["3rdParty/SiebelQueryLang"], function(e){
+BCRMExprEditor = function () {
+
+    require(["3rdParty/SiebelQueryLang"], function (e) {
         console.log("Beautifier loaded!");
     });
     $("#" + BCRMExprfunc).parent().remove();
     var a = BCRMLoadBCs();
-    if (a.length === 0){
+    if (a.length === 0) {
         alert("No BusComps/Records available!");
-    }else{
+    } else {
 
         var s = '<div title="Runtime calculations">' +
-        '<label for="' + BCRMExprfunc + 'List">Business Component:</label>' +
-        '<select id = "' + BCRMExprfunc + 'List" style="display:block"></select>' +
-        '<label for="' + BCRMExprfunc + '">Expression:</label>' +
-        '<textarea id = "' + BCRMExprfunc + '" rows="5" nowrap></textarea>' +
-        '<label for="' + BCRMExprfunc + 'Out">Results:</label>' +
-        '<textarea id = "' + BCRMExprfunc + 'Out" disabled rows="2"></textarea>' +
-        '<style type="text/css">.ui-dialog textarea, .ui-dialog select {height:auto; width:100%; margin-bottom:10px} .ui-dialog label{margin-top:20px!}</style>'
+            '<label for="' + BCRMExprfunc + 'List">Business Component:</label>' +
+            '<select id = "' + BCRMExprfunc + 'List" style="display:block"></select>' +
+            '<label for="' + BCRMExprfunc + '">Expression:</label>' +
+            '<textarea id = "' + BCRMExprfunc + '" rows="5" nowrap></textarea>' +
+            '<label for="' + BCRMExprfunc + 'Out">Results:</label>' +
+            '<textarea id = "' + BCRMExprfunc + 'Out" disabled rows="2"></textarea>' +
+            '<style type="text/css">.ui-dialog textarea, .ui-dialog select {height:auto; width:100%; margin-bottom:10px} .ui-dialog label{margin-top:20px!}</style>'
         '</div>';
 
         var d = $(s).dialog({
             modal: true,
             width: 1024,
             heigth: 640,
-            open: function(){
-                $('#'+BCRMExprfunc).focus();
+            open: function () {
+                $('#' + BCRMExprfunc).focus();
 
                 // key bindings
-                $("#"+BCRMExprfunc+"Out").parent().keydown(function(event) {
+                $("#" + BCRMExprfunc + "Out").parent().keydown(function (event) {
                     if (event.ctrlKey && event.keyCode === 13) { // ctrl + Enter
                         BCRMEvalExpr();
                     }
@@ -1841,126 +1861,126 @@ BCRMExprEditor = function(){
                 $("#" + BCRMExprfunc).val(JSON.parse(window.localStorage[BCRMExprfunc]));
 
             },
-            close: function(){
+            close: function () {
                 $(this).dialog('destroy').remove();
             },
             buttons: [
                 {
-                    text:'Format/Linarise',
+                    text: 'Format/Linarise',
                     click: BCRMBeauty,
                     id: 'BeautyBtn'
-                },{
-                    text:'Run (Ctrl+Enter)',
+                }, {
+                    text: 'Run (Ctrl+Enter)',
                     click: BCRMEvalExpr
-                },{
-                   text:'Close (Esc)',
-                   click: function() {
-                    $(this).dialog('destroy').remove();
-                   }
+                }, {
+                    text: 'Close (Esc)',
+                    click: function () {
+                        $(this).dialog('destroy').remove();
+                    }
                 }
             ]
         });
 
         // bind and trigger auto-adjust
-        $(d).find("#" + BCRMExprfunc).keyup(function(){
+        $(d).find("#" + BCRMExprfunc).keyup(function () {
             BCRMTextAdjust(this, 5);
         }).keyup();
 
         // bind a beautifier
         $(".ui-dialog #BeautyBtn").hide();
-        require(["3rdParty/SiebelQueryLang"], function(e){
+        require(["3rdParty/SiebelQueryLang"], function (e) {
             console.log("Beautifier loaded!");
             $(".ui-dialog #BeautyBtn").show();
         });
     }
 }
 
-BCRMBeauty= function(){
-    var s = $('#'+BCRMExprfunc).val();
-    if (s){
-        if (bBeauty){
+BCRMBeauty = function () {
+    var s = $('#' + BCRMExprfunc).val();
+    if (s) {
+        if (bBeauty) {
             // linarise
-            s = s.replace(/\n(\t|\s)*/gm,"");
-            $('#'+BCRMExprfunc).val(s).attr("wrap", "on");
+            s = s.replace(/\n(\t|\s)*/gm, "");
+            $('#' + BCRMExprfunc).val(s).attr("wrap", "on");
             bBeauty = false;
-            
+
         } else {
             // beautify
             try {
                 var o = SiebelQueryLang.parse(s);
                 s = BCRMtrav(o.expression, "");
-                $('#'+BCRMExprfunc).val(s).attr("wrap", "off");
+                $('#' + BCRMExprfunc).val(s).attr("wrap", "off");
                 bBeauty = true;
-            } catch(e) {
+            } catch (e) {
                 // silence the error
                 console.log(e);
             }
         }
-        BCRMTextAdjust($('#'+BCRMExprfunc)[0]);
+        BCRMTextAdjust($('#' + BCRMExprfunc)[0]);
     }
 }
 
 BCRMtrav = function (o, t, f) {
-	var r = "";
-	if ("object" === typeof o) {
-		var p = o.par;
-		var n = o.not;
+    var r = "";
+    if ("object" === typeof o) {
+        var p = o.par;
+        var n = o.not;
 
-		if (o.type === "bin") {
-			r =  BCRMtrav(o.left, t) + " " + o.operator + " " + BCRMtrav(o.right, t);
-		} else if (o.type === "log") {
-			if(p) { // format logical operators eclosed in brackets
-				tt = t + "\t";
-				r = "(\n";
-				r += tt + BCRMtrav(o.left, tt, true);
-				r += "\n" + tt + o.operator + " " + BCRMtrav(o.right, tt, true);
-				r += "\n" + t + ")";
-				p = false;
-			} else {
-				if(f) {
-					r = BCRMtrav(o.left, t, true);
-					r += "\n" + t + o.operator + " " + BCRMtrav(o.right, t, true);
-				} else {
-					r = BCRMtrav(o.left, t) + " " + o.operator + " " + BCRMtrav(o.right, t);
-				}
-			}
-		} else if (o.type === "func") {
-			var l = o.arguments.length;
-			var f = l > 2; // split params when more then 2
-			var s = (f ? "\n" + t : "");
-			var st = (f ? s + "\t" : "");
-			r = o.name + "(";
-			o.arguments.forEach(function(a, i) {
-				r += st + BCRMtrav(a, t + "\t") + (i < l - 1 ? ", " : "");
-			});
-			r += s + ")";
-		} else if (o.type === "field") {
-			r = "[" + o.field + "]";
-		} else if (o.type === "param") {
-			r =  "[&" + o.param + "]";
-		} else if (o.type === "num") {
-			r =  o.value;
-		} else if (o.type === "str") {
-			r = '"' + o.value +'"';
-		}
+        if (o.type === "bin") {
+            r = BCRMtrav(o.left, t) + " " + o.operator + " " + BCRMtrav(o.right, t);
+        } else if (o.type === "log") {
+            if (p) { // format logical operators eclosed in brackets
+                tt = t + "\t";
+                r = "(\n";
+                r += tt + BCRMtrav(o.left, tt, true);
+                r += "\n" + tt + o.operator + " " + BCRMtrav(o.right, tt, true);
+                r += "\n" + t + ")";
+                p = false;
+            } else {
+                if (f) {
+                    r = BCRMtrav(o.left, t, true);
+                    r += "\n" + t + o.operator + " " + BCRMtrav(o.right, t, true);
+                } else {
+                    r = BCRMtrav(o.left, t) + " " + o.operator + " " + BCRMtrav(o.right, t);
+                }
+            }
+        } else if (o.type === "func") {
+            var l = o.arguments.length;
+            var f = l > 2; // split params when more then 2
+            var s = (f ? "\n" + t : "");
+            var st = (f ? s + "\t" : "");
+            r = o.name + "(";
+            o.arguments.forEach(function (a, i) {
+                r += st + BCRMtrav(a, t + "\t") + (i < l - 1 ? ", " : "");
+            });
+            r += s + ")";
+        } else if (o.type === "field") {
+            r = "[" + o.field + "]";
+        } else if (o.type === "param") {
+            r = "[&" + o.param + "]";
+        } else if (o.type === "num") {
+            r = o.value;
+        } else if (o.type === "str") {
+            r = '"' + o.value + '"';
+        }
 
-		if (p) {
-			r = "(" + r + ")";
-		}
-		if (n) {
-			r = "NOT " + r;
-		}
+        if (p) {
+            r = "(" + r + ")";
+        }
+        if (n) {
+            r = "NOT " + r;
+        }
 
-	} else {
-		r = o;
-	}
+    } else {
+        r = o;
+    }
     return r;
 }
 
 
-BCRMEvalExpr = function(){
+BCRMEvalExpr = function () {
 
-    var sExpr = $('#'+BCRMExprfunc).val();
+    var sExpr = $('#' + BCRMExprfunc).val();
     var sRes = "";
 
     // save last query
@@ -1968,9 +1988,9 @@ BCRMEvalExpr = function(){
 
     // if there is a selection
     var ele = document.getElementById(BCRMExprfunc);
-    if(ele.selectionStart !== undefined && ele.selectionStart != ele.selectionEnd){// Normal browsers
+    if (ele.selectionStart !== undefined && ele.selectionStart != ele.selectionEnd) {// Normal browsers
         sExpr = ele.value.substring(ele.selectionStart, ele.selectionEnd);
-    }else if(document.selection !== undefined){// IE
+    } else if (document.selection !== undefined) {// IE
         ele.focus();
         var sel = document.selection.createRange();
         sExpr = sel.text;
@@ -1982,29 +2002,29 @@ BCRMEvalExpr = function(){
     ps.SetProperty("Expr", sExpr);
     ps.SetProperty("BC", $("#" + BCRMExprfunc + "List").val());
     var outputSet = service.InvokeMethod("EvalExpr", ps);
-    if (outputSet.GetProperty("Status") == "Error"){
+    if (outputSet.GetProperty("Status") == "Error") {
         sRes = outputSet.GetChildByType("Errors").GetChild(0).GetProperty("ErrMsg");
-    }else{
+    } else {
         sRes = outputSet.GetChildByType("ResultSet").GetProperty("Result");
         console.log(outputSet);
     }
-    BCRMTextAdjust($('#'+BCRMExprfunc + "Out").show().text(sRes)[0]);
+    BCRMTextAdjust($('#' + BCRMExprfunc + "Out").show().text(sRes)[0]);
 }
 
 // auto-ajust textarea height
-BCRMTextAdjust = function(scope, minrows, maxrows) {
+BCRMTextAdjust = function (scope, minrows, maxrows) {
 
-    maxrows = maxrows>0?maxrows:30;
-    minrows = minrows>0?minrows:5;
+    maxrows = maxrows > 0 ? maxrows : 30;
+    minrows = minrows > 0 ? minrows : 5;
     var txt = scope.value;
     var cols = scope.cols;
 
     var arraytxt = txt.split('\n');
-    var rows = arraytxt.length; 
+    var rows = arraytxt.length;
 
     if (rows > maxrows) {
         scope.rows = maxrows;
-    } else if (rows < minrows) { 
+    } else if (rows < minrows) {
         scope.rows = minrows;
     } else {
         scope.rows = rows;
@@ -2012,11 +2032,11 @@ BCRMTextAdjust = function(scope, minrows, maxrows) {
 }
 
 // put active BC in the list with active applet's bc as selected
-BCRMLoadBCs = function(){
+BCRMLoadBCs = function () {
     var a = [];
-    for(var i in SiebelApp.S_App.GetActiveBusObj().GetBCMap()){
+    for (var i in SiebelApp.S_App.GetActiveBusObj().GetBCMap()) {
         var bc = SiebelApp.S_App.GetActiveBusObj().GetBCMap()[i];
-        if (a.indexOf(bc.GetName()) == -1 && bc.GetNumRows() > 0){
+        if (a.indexOf(bc.GetName()) == -1 && bc.GetNumRows() > 0) {
             a.push(bc.GetName());
         }
     }
