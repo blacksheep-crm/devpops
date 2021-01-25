@@ -483,6 +483,28 @@ BCRMCreateDebugMenu = function () {
                 sessionStorage.BCRMTracingCycle = "StartTracing";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 $("#bcrm_debug_msg").text("SQL tracing in progress.");
+            },
+            "showoptions": true,
+            "options":{
+                "FilePath":{
+                    "label":"File Path",
+                    "default":"C:\\Siebel\\ses\\siebsrvr\\temp",
+                    "tip":"Enter a valid server path (without file name)",
+                    "type":"input"
+                },
+                "RetainFile":{
+                    "label":"Retain File",
+                    "default":"false",
+                    "tip":"Retain (true) or delete (false) trace file after retrival",
+                    "type":"checkbox"
+                },
+                "TraceType":{
+                    "label":"Trace Type",
+                    "default":"SQL",
+                    "tip":"Trace Type: SQL or Allocation",
+                    "type":"select",
+                    "lov":["SQL","Allocation"]
+                }
             }
         },
         "ViewTracing": {
@@ -610,6 +632,48 @@ BCRMCreateDebugMenu = function () {
                 }, 50)
             }
         }
+        if (items[i].showoptions) {
+            var opt = $('<span style="float: right; margin-right: 6px;" title="Options"><span class="miniBtnUIC"><button type="button" id="options_' + i + '" style="background: transparent;border: 0;" class="siebui-appletmenu-btn"><span>Options</span></button></span></span>');
+            $(opt).find("button").on("click", function (e, ui) {
+                var id = $(this).attr("id").split("_")[1];
+                var dlg = $("<div id='bcrm_options_dlg'>");
+                for (o in items[id].options){
+                    var sn = "BCRM_OPT_" + id + "_" + o;
+                    var opt = items[id].options[o];
+                    var oc = $("<div id='oc_" + o + "'>");
+                    var lc = $("<div id='lc_" + o + "'>");
+                    var ic = $("<input class='bcrm-option' id='" + sn + "'>");
+                    if (localStorage.getItem(sn) !== null){
+                        ic.val(localStorage.getItem(sn));
+                    }
+                    else{
+                        ic.val(opt.default);
+                    }
+                    lc.text(opt.label);
+                    ic.attr("title",opt.tip);
+                    oc.append(lc);
+                    oc.append(ic);
+                    dlg.append(oc);
+                }
+                dlg.dialog({
+                    title: items[id].label + " Options",
+                    buttons: {
+                        Save: function () {
+                            $("#bcrm_options_dlg").find(".bcrm-option").each(function(x){
+                                var sn = $(this).attr("id");
+                                localStorage.setItem(sn,$(this).val());
+                            });
+                            $(this).dialog("destroy");
+                        },
+                        Close: function (e, ui) {
+                            $(this).dialog("destroy");
+                        }
+                    }
+                });
+                return false;
+            });
+            dv.append(opt);
+        }
         li.append(dv);
         li.appendTo(ul_main);
     }
@@ -685,12 +749,25 @@ BCRMWSIconEnhancer = function () {
 
 //courtesy of Jason MacZura: view trace file in browser
 BCRMViewLog = function () {
+    var fp,rf;
+    if (typeof(localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined"){
+        fp = localStorage.BCRM_OPT_StartTracing_FilePath;
+    }
+    else{
+        fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
+    }
+    if (typeof(localStorage.BCRM_OPT_StartTracing_RetainFile) !== "undefined"){
+        rf = localStorage.BCRM_OPT_StartTracing_RetainFile;
+    }
+    else{
+        rf = "false";
+    }
     var jm_myOutput = "";
     var jm_service = SiebelApp.S_App.GetService("FWK Runtime");
     var jm_ps = SiebelApp.S_App.NewPropertySet();
     jm_ps.SetProperty("Operation", "ViewLog");
-    jm_ps.SetProperty("RetainFile", "false");
-    jm_ps.SetProperty("FilePath", "C:\\Siebel\\ses\\siebsrvr\\temp");
+    jm_ps.SetProperty("RetainFile", rf);
+    jm_ps.SetProperty("FilePath", fp);
     var jm_outps = jm_service.InvokeMethod("ProcessLogRequest", jm_ps);
 
     if (jm_outps.GetChildByType("ResultSet") != null && jm_outps.GetChildByType("ResultSet") != "undefined") {
@@ -747,8 +824,23 @@ BCRMViewLog = function () {
 BCRMStartLogging = function () {
     var jm_service = SiebelApp.S_App.GetService("FWK Runtime");
     var jm_ps = SiebelApp.S_App.NewPropertySet();
-    jm_ps.SetProperty("FilePath", "C:\\Siebel\\ses\\siebsrvr\\temp");
+    //get saved/defaults
+    var fp, tt;
+    if (typeof(localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined"){
+        fp = localStorage.BCRM_OPT_StartTracing_FilePath;
+    }
+    else{
+        fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
+    }
+    if (typeof(localStorage.BCRM_OPT_StartTracing_TraceType) !== "undefined"){
+        tt = localStorage.BCRM_OPT_StartTracing_TraceType;
+    }
+    else{
+        tt = "SQL";
+    }
+    jm_ps.SetProperty("FilePath", fp);
     jm_ps.SetProperty("Operation", "StartLogging");
+    jm_ps.SetProperty("TraceType",tt);
     var jm_outps = jm_service.InvokeMethod("ProcessLogRequest", jm_ps);
     var jm_myOutput = "";
 
@@ -1047,20 +1139,25 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     }
                 }
                 if (tp == "list" && typeof (c) !== "undefined") {
-                    gh = ae.find("table.ui-jqgrid-htable");
-                    ph = pm.Get("GetPlaceholder");
-                    ch = pr.GetColumnHelper();
-                    cm = ch.GetColMap();
-                    fn = c.GetName();
-                    for (col in cm) {
-                        if (cm[col] == fn) {
-                            cn = col;
+                    try {
+                        gh = ae.find("table.ui-jqgrid-htable");
+                        ph = pm.Get("GetPlaceholder");
+                        ch = pr.GetColumnHelper();
+                        cm = ch.GetColMap();
+                        fn = c.GetName();
+                        for (col in cm) {
+                            if (cm[col] == fn) {
+                                cn = col;
+                            }
+                        }
+                        li = "div#jqgh_" + ph + "_" + cn;
+                        thelabel = gh.find(li);
+                        if (thelabel.length == 1) {
+                            retval = thelabel;
                         }
                     }
-                    li = "div#jqgh_" + ph + "_" + cn;
-                    thelabel = gh.find(li);
-                    if (thelabel.length == 1) {
-                        retval = thelabel;
+                    catch(e){
+                        console.log("Error in GetLabelElem for applet: " + pm.GetObjName() + " : " + e.toString());
                     }
                 }
                 return retval;
