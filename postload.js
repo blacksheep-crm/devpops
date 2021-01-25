@@ -1,3 +1,4 @@
+//vanilla postload content
 if (typeof (SiebelAppFacade.Postload) == "undefined") {
     Namespace('SiebelAppFacade.Postload');
 
@@ -13,9 +14,15 @@ if (typeof (SiebelAppFacade.Postload) == "undefined") {
         }
     }());
 }
+//end of vanilla postload content
 
+//blacksheep devpops
 //EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
-//copy below code to vanilla postload.js
+//copy below code to vanilla postload.js for a quick demo and validation
+//MOVE TO CUSTOM FILES BEFORE DEPLOYING
+
+
+//START workspace-helper*******************************************************************
 
 //globals
 var bcrm_meta = {};
@@ -23,6 +30,7 @@ var defs = [];
 var dt = [];
 
 //get data from custom BO for Web Tools display of who else is editing an object definition
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWSGetModData = function (cell) {
     bcrm_meta = {};
     bcrm_meta.wot = $(cell).attr("wot");
@@ -54,6 +62,55 @@ BCRMWSGetModData = function (cell) {
     });
 }
 
+//workspace-helper
+//DRAFT and unsupported: Enhance tools list applet
+//add click handler to "Writable" column
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMWebToolsHighlight = function (pm) {
+    if (typeof (pm) === "undefined") {
+        pm = this;
+    }
+    if (pm && pm.Get) {
+        //get Object Type from Object Explorer
+        var ot = $(".siebui-wt-objexp-tree").find(".fancytree-active").text();
+
+        var rown, row, fid, ph, rs, ae, cell, od;
+        rown = 0;
+        fid = pm.Get("GetFullId");
+        ph = pm.Get("GetPlaceholder");
+        ae = $("#s_" + fid + "_div");
+        rs = pm.Get("GetRawRecordSet");
+        for (r in rs) {
+            od = {};
+            rown = parseInt(r) + 1;
+            od.wot = ot;
+            od.wrn = rs[r]["Name"];
+            row = ae.find("tr[id='" + rown + "']");
+            cell = row.find("td[id='" + rown + "_" + ph + "_Writable']");
+            cell.off("click");
+            cell.attr(od);
+            row.on("click", function () {
+                var rown = $(this).attr("id");
+                var ph = $(this).parent().parent().attr("id");
+                var cell = $(this).find("td[id='" + rown + "_" + ph + "_Writable']");
+                BCRMWSGetModData(cell);
+            });
+            cell.css("cursor", "pointer");
+        }
+    }
+};
+
+//workspace-helper
+//DRAFT and unsupported: Enhance tools list applet
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMWebToolsEnhancer = function () {
+    //DRAFT: grab the main list applet
+    var pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
+    pm.AttachPMBinding("ShowSelection", BCRMWebToolsHighlight, { scope: pm, sequence: true });
+    BCRMWebToolsHighlight(pm);
+};
+
+//workspace-helper
 //get list of workspaces via REST
 BCRMGetWorkspaceList = function () {
     var pagesize = 100;
@@ -93,6 +150,7 @@ BCRMGetWorkspaceList = function () {
     return ws;
 }
 
+//workspace-helper
 //create Workspace banner
 BCRMWSGenerateWSBanner = function (ws, ver, status, type) {
     if (typeof (type) === "undefined") {
@@ -141,6 +199,7 @@ BCRMWSGenerateWSBanner = function (ws, ver, status, type) {
     return c;
 };
 
+//workspace-helper
 //Re-enact workspace banner in application until there's a better way
 BCRMWSUpdateWSBanner = function (ws, ver, status) {
     $("div.applicationMenu").parent().find("#bcrm_wsui_name").remove();
@@ -148,6 +207,7 @@ BCRMWSUpdateWSBanner = function (ws, ver, status) {
     $("div.applicationMenu").after(c);
 };
 
+//workspace-helper
 //Open and inspect workspace
 BCRMWSFastInspectHandler = function (cell) {
     bcrm_meta = {};
@@ -157,6 +217,7 @@ BCRMWSFastInspectHandler = function (cell) {
     BCRMWSFastInspect(bcrm_meta.wsn, bcrm_meta.wsv, bcrm_meta.wss);
 };
 
+//workspace-helper
 //fast inspect main function (calls server side BS)
 BCRMWSFastInspect = function (ws, ver, status) {
     var vn = SiebelApp.S_App.GetActiveView().GetName();
@@ -193,6 +254,7 @@ BCRMWSFastInspect = function (ws, ver, status) {
     }, 300);
 };
 
+//workspace-helper
 //read workspace data for modified object list applet
 BCRMWSGetObjectDef = function (cell) {
     bcrm_meta = {};
@@ -212,6 +274,7 @@ BCRMWSGetObjectDef = function (cell) {
         },
     };
 
+    $("#maskoverlay").show();
     $.ajax(settings).done(function (response) {
         //repair response links
         //expansion example
@@ -223,7 +286,9 @@ BCRMWSGetObjectDef = function (cell) {
                 temp.Link[i].href = href;
 
                 //DRAFT: expansion example for applet controls and bs server scripts
-                if ((bcrm_meta.wot == "Applet" && temp.Link[i].name == "Control") || (bcrm_meta.wot == "Business Service" && temp.Link[i].name == "Business Service Server Script")) {
+                if ((bcrm_meta.wot == "Applet" && temp.Link[i].name == "Control") ||
+                    (bcrm_meta.wot == "Business Service" && temp.Link[i].name == "Business Service Server Script")
+                ) {
                     var cd = $.ajax({
                         dataType: "json",
                         url: href,
@@ -247,6 +312,8 @@ BCRMWSGetObjectDef = function (cell) {
         dlg.append(dtitle);
         dlg.append(cm);
 
+        $("#maskoverlay").hide();
+
         dlg.dialog({
             title: "Object Metadata",
             width: 800,
@@ -269,6 +336,7 @@ BCRMWSGetObjectDef = function (cell) {
     });
 };
 
+//workspace-helper
 //in this DRAFT(!!) we simply compare the last two defs that have been clicked
 //requires mergely
 BCRMCompare = function (right, left) {
@@ -301,6 +369,7 @@ BCRMCompare = function (right, left) {
     });
 };
 
+//workspace-helper
 //enhance modified objects list applet with clickable object name and WS/Version column
 BCRMWSEnhancer = function (pm) {
     if (typeof (pm) === "undefined") {
@@ -350,49 +419,7 @@ BCRMWSEnhancer = function (pm) {
     }
 };
 
-//add click handler to "Writable" column
-BCRMWebToolsHighlight = function (pm) {
-    if (typeof (pm) === "undefined") {
-        pm = this;
-    }
-    if (pm && pm.Get) {
-        //get Object Type from Object Explorer
-        var ot = $(".siebui-wt-objexp-tree").find(".fancytree-active").text();
-
-        var rown, row, fid, ph, rs, ae, cell, od;
-        rown = 0;
-        fid = pm.Get("GetFullId");
-        ph = pm.Get("GetPlaceholder");
-        ae = $("#s_" + fid + "_div");
-        rs = pm.Get("GetRawRecordSet");
-        for (r in rs) {
-            od = {};
-            rown = parseInt(r) + 1;
-            od.wot = ot;
-            od.wrn = rs[r]["Name"];
-            row = ae.find("tr[id='" + rown + "']");
-            cell = row.find("td[id='" + rown + "_" + ph + "_Writable']");
-            cell.off("click");
-            cell.attr(od);
-            row.on("click", function () {
-                var rown = $(this).attr("id");
-                var ph = $(this).parent().parent().attr("id");
-                var cell = $(this).find("td[id='" + rown + "_" + ph + "_Writable']");
-                BCRMWSGetModData(cell);
-            });
-            cell.css("cursor", "pointer");
-        }
-    }
-};
-
-//DRAFT and unsupported: Enhance tools list applet
-BCRMWebToolsEnhancer = function () {
-    //DRAFT: grab the main list applet
-    var pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
-    pm.AttachPMBinding("ShowSelection", BCRMWebToolsHighlight, { scope: pm, sequence: true });
-    BCRMWebToolsHighlight(pm);
-};
-
+//workspace-helper
 //Create Workspace Menu
 BCRMCreateWSMenu = function (data) {
     var key, val, wsn, wss, wsl, ver;
@@ -426,7 +453,43 @@ BCRMCreateWSMenu = function (data) {
     return ul_main;
 };
 
-//Create Debugger Menu
+//workspace-helper
+//Right-click on Dashboard icon (cube)
+BCRMWSIconEnhancer = function () {
+    if ($("#SiebComposerConfig").length == 1) {
+        $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;");
+        $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;background-color: mediumseagreen;");
+        setTimeout(function () {
+            $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;");
+        }, 5000);
+        if ($("#SiebComposerConfig").attr("bcrm-enhanced") != "true") {
+            $("#SiebComposerConfig").attr("bcrm-enhanced", "true");
+
+            $("#SiebComposerConfig").attr("title", "Right-click to see menu of recent workspaces and versions for fast inspection");
+            $("#SiebComposerConfig").on("contextmenu", function (e) {
+                var ws = BCRMGetWorkspaceList();
+                if ($("#bcrm_ws_menu").length == 0) {
+                    var mc = $("<div id='bcrm_ws_menu'></div>");
+                    var menu = BCRMCreateWSMenu(ws);
+                    mc.append(menu);
+                    //$("#_sweclient").append(mc);
+                    $($("#SiebComposerConfig").find("div")[0]).after(mc);
+                    $("#bcrm_ws_menu").find("ul.depth-0").menu({
+                        position: { my: "left top", at: "right-5 top+5" }
+                    });
+                }
+                else {
+                    $("#bcrm_ws_menu").remove();
+                }
+                return false;
+            });
+        }
+    }
+};
+//END workspace-helper****************************************************
+
+//START devpops Menu******************************************************
+//devpops MenuCreate Debugger Menu
 BCRMCreateDebugMenu = function () {
     var togglecss = "label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
     var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
@@ -709,7 +772,7 @@ BCRMCreateDebugMenu = function () {
     return ul_main;
 };
 
-//Add debug button
+//devpops Add debug button
 BCRMAddDebugButton = function () {
     if ($("#bcrm_debug").length == 0) {
         var btn = $('<div id="bcrm_debug" class="siebui-banner-btn siebui-toolbar-toggle-script-debugger"><ul class="siebui-toolbar"><li class="siebui-toolbar-enable" role="menuitem" title="Debug Options"><span class="siebui-icon-tb-toggle_script_debugger ToolbarButtonOn"><span class="siebui-toolbar-text">BCRM Debugger</span></span></li></ul></div>');
@@ -742,40 +805,9 @@ BCRMAddDebugButton = function () {
         }, 5000);
     }
 };
+//END devpops Menu******************************************************
 
-//Right-click on Dashboard icon (cube)
-BCRMWSIconEnhancer = function () {
-    if ($("#SiebComposerConfig").length == 1) {
-        $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;");
-        $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;background-color: mediumseagreen;");
-        setTimeout(function () {
-            $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;");
-        }, 5000);
-        if ($("#SiebComposerConfig").attr("bcrm-enhanced") != "true") {
-            $("#SiebComposerConfig").attr("bcrm-enhanced", "true");
-
-            $("#SiebComposerConfig").attr("title", "Right-click to see menu of recent workspaces and versions for fast inspection");
-            $("#SiebComposerConfig").on("contextmenu", function (e) {
-                var ws = BCRMGetWorkspaceList();
-                if ($("#bcrm_ws_menu").length == 0) {
-                    var mc = $("<div id='bcrm_ws_menu'></div>");
-                    var menu = BCRMCreateWSMenu(ws);
-                    mc.append(menu);
-                    //$("#_sweclient").append(mc);
-                    $($("#SiebComposerConfig").find("div")[0]).after(mc);
-                    $("#bcrm_ws_menu").find("ul.depth-0").menu({
-                        position: { my: "left top", at: "right-5 top+5" }
-                    });
-                }
-                else {
-                    $("#bcrm_ws_menu").remove();
-                }
-                return false;
-            });
-        }
-    }
-};
-
+//START TRACE FILE VIEWER by Jason MacZura******************************
 //courtesy of Jason MacZura: view trace file in browser
 BCRMViewLog = function () {
     var fp, rf;
@@ -938,16 +970,11 @@ BCRMStopLogging = function () {
         */
     });
 };
+//END TRACE FILE VIEWER by Jason MacZura******************************
 
-//Kudos to Slava (xapuk.com)
-BCRMClearCaches = function () {
-    var a = SiebelApp.S_App.GetActiveView().GetActiveApplet();
-    a.InvokeMethod("ClearCTEventCache");
-    a.InvokeMethod("ClearLOVCache");
-    a.InvokeMethod("ClearResponsibilityCache");
-    alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
-};
 
+
+//xray postload helper to apply default settings
 BCRMApplyDefaultXray = function () {
     var ut = new SiebelAppFacade.BCRMUtils();
     var t = sessionStorage.BCRM_TOGGLE_DEFAULT;
@@ -962,7 +989,7 @@ BCRMApplyDefaultXray = function () {
     }
 };
 
-//called on postload
+//main postload function
 BCRMWSHelper = function () {
     try {
         var vn = SiebelApp.S_App.GetActiveView().GetName();
@@ -1021,6 +1048,7 @@ BCRMWSHelper = function () {
 
 SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
 
+//START XRAY21*******************************************************
 //everything below this line should go into a separate utility file
 //Util collection for XRAY 21
 if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
@@ -1505,6 +1533,18 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         return BCRMUtils;
     }());
 }
+//END XRAY21*******************************************************
+
+
+//START xapuk.com utilities by Slava**********************************
+//Kudos to Slava (xapuk.com)
+BCRMClearCaches = function () {
+    var a = SiebelApp.S_App.GetActiveView().GetActiveApplet();
+    a.InvokeMethod("ClearCTEventCache");
+    a.InvokeMethod("ClearLOVCache");
+    a.InvokeMethod("ClearResponsibilityCache");
+    alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
+};
 
 /* 
 @desc advanced AboutView plugin
@@ -2220,4 +2260,5 @@ BCRMLoadBCs = function () {
         }
     }
     return a;
-} 
+}
+//END xapuk.com utilities by Slava**********************************
