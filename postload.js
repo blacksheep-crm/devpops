@@ -485,25 +485,26 @@ BCRMCreateDebugMenu = function () {
                 $("#bcrm_debug_msg").text("SQL tracing in progress.");
             },
             "showoptions": true,
-            "options":{
-                "FilePath":{
-                    "label":"File Path",
-                    "default":"C:\\Siebel\\ses\\siebsrvr\\temp",
-                    "tip":"Enter a valid server path (without file name)",
-                    "type":"input"
+            "options": {
+                "FilePath": {
+                    "label": "File Path",
+                    "default": "C:\\Siebel\\ses\\siebsrvr\\temp",
+                    "tip": "Enter a valid server path (without file name)",
+                    "type": "input"
                 },
-                "RetainFile":{
-                    "label":"Retain File",
-                    "default":"false",
-                    "tip":"Retain (true) or delete (false) trace file after retrival",
-                    "type":"checkbox"
+                "RetainFile": {
+                    "label": "Retain File",
+                    "default": "false",
+                    "tip": "Retain (true) or delete (false) trace file after retrival",
+                    "type": "select",
+                    "lov": ["true", "false"]
                 },
-                "TraceType":{
-                    "label":"Trace Type",
-                    "default":"SQL",
-                    "tip":"Trace Type: SQL or Allocation",
-                    "type":"select",
-                    "lov":["SQL","Allocation"]
+                "TraceType": {
+                    "label": "Trace Type",
+                    "default": "SQL",
+                    "tip": "Trace Type: SQL or Allocation",
+                    "type": "select",
+                    "lov": ["SQL", "Allocation"]
                 }
             }
         },
@@ -584,6 +585,14 @@ BCRMCreateDebugMenu = function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open(hub[Math.floor((Math.random() * hub.length))]);
             }
+        },
+        "devpops": {
+            "label": "devpops 21.1.XXV",
+            "title": "Learn more about blacksheep-crm devpops and contribute on github.",
+            "onclick": function () {
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                window.open("https://github.com/blacksheep-crm/devpops");
+            }
         }
     };
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
@@ -637,20 +646,29 @@ BCRMCreateDebugMenu = function () {
             $(opt).find("button").on("click", function (e, ui) {
                 var id = $(this).attr("id").split("_")[1];
                 var dlg = $("<div id='bcrm_options_dlg'>");
-                for (o in items[id].options){
+                for (o in items[id].options) {
                     var sn = "BCRM_OPT_" + id + "_" + o;
                     var opt = items[id].options[o];
                     var oc = $("<div id='oc_" + o + "'>");
                     var lc = $("<div id='lc_" + o + "'>");
-                    var ic = $("<input class='bcrm-option' id='" + sn + "'>");
-                    if (localStorage.getItem(sn) !== null){
+                    var ic;
+                    if (opt.type == "input") {
+                        ic = $("<input style='width: 220px;height: 20px;margin-bottom: 4px;font-size:14px;' class='bcrm-option' id='" + sn + "'>");
+                    }
+                    if (opt.type == "select") {
+                        ic = $("<select style='width: 220px;height: 20px;margin-bottom: 4px;font-size:14px' class='bcrm-option' id='" + sn + "' selected='" + opt.default + "'>");
+                        for (var i = 0; i < opt.lov.length; i++) {
+                            ic.append($("<option value='" + opt.lov[i] + "'>" + opt.lov[i] + "</option>"));
+                        }
+                    }
+                    if (localStorage.getItem(sn) !== null) {
                         ic.val(localStorage.getItem(sn));
                     }
-                    else{
+                    else {
                         ic.val(opt.default);
                     }
                     lc.text(opt.label);
-                    ic.attr("title",opt.tip);
+                    ic.attr("title", opt.tip);
                     oc.append(lc);
                     oc.append(ic);
                     dlg.append(oc);
@@ -658,14 +676,25 @@ BCRMCreateDebugMenu = function () {
                 dlg.dialog({
                     title: items[id].label + " Options",
                     buttons: {
-                        Save: function () {
-                            $("#bcrm_options_dlg").find(".bcrm-option").each(function(x){
+                        "Save & Start": function () {
+                            $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
                                 var sn = $(this).attr("id");
-                                localStorage.setItem(sn,$(this).val());
+                                localStorage.setItem(sn, $(this).val());
+                            });
+                            BCRMStartLogging();
+                            sessionStorage.BCRMTracingCycle = "StartTracing";
+                            $(this).dialog("destroy");
+                            $("#bcrm_dbg_menu").remove();
+                            $("#bcrm_debug_msg").text("SQL tracing in progress.");
+                        },
+                        Save: function () {
+                            $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
+                                var sn = $(this).attr("id");
+                                localStorage.setItem(sn, $(this).val());
                             });
                             $(this).dialog("destroy");
                         },
-                        Close: function (e, ui) {
+                        Cancel: function (e, ui) {
                             $(this).dialog("destroy");
                         }
                     }
@@ -749,17 +778,17 @@ BCRMWSIconEnhancer = function () {
 
 //courtesy of Jason MacZura: view trace file in browser
 BCRMViewLog = function () {
-    var fp,rf;
-    if (typeof(localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined"){
+    var fp, rf;
+    if (typeof (localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined") {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
     }
-    else{
+    else {
         fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
     }
-    if (typeof(localStorage.BCRM_OPT_StartTracing_RetainFile) !== "undefined"){
+    if (typeof (localStorage.BCRM_OPT_StartTracing_RetainFile) !== "undefined") {
         rf = localStorage.BCRM_OPT_StartTracing_RetainFile;
     }
-    else{
+    else {
         rf = "false";
     }
     var jm_myOutput = "";
@@ -779,10 +808,10 @@ BCRMViewLog = function () {
     $("body").append('<div id="developer_log"' + jm_myOutput + '</div>');
     var value = $("#developer_log").text();
     $("#developer_log").remove();
-    var dtitle = "<h3>" + "SQL Trace" + "</h3>";
+    //var dtitle = "<h3>" + "SQL Trace" + "</h3>";
     var cm = $("<div id='bcrm_cm' style='height:400px;'>");
     var dlg = $("<div style='overflow:auto;'>");
-    dlg.append(dtitle);
+    //dlg.append(dtitle);
     dlg.append(cm);
 
     //ahansal added support for codemirror
@@ -826,21 +855,21 @@ BCRMStartLogging = function () {
     var jm_ps = SiebelApp.S_App.NewPropertySet();
     //get saved/defaults
     var fp, tt;
-    if (typeof(localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined"){
+    if (typeof (localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined") {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
     }
-    else{
+    else {
         fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
     }
-    if (typeof(localStorage.BCRM_OPT_StartTracing_TraceType) !== "undefined"){
+    if (typeof (localStorage.BCRM_OPT_StartTracing_TraceType) !== "undefined") {
         tt = localStorage.BCRM_OPT_StartTracing_TraceType;
     }
-    else{
+    else {
         tt = "SQL";
     }
     jm_ps.SetProperty("FilePath", fp);
     jm_ps.SetProperty("Operation", "StartLogging");
-    jm_ps.SetProperty("TraceType",tt);
+    jm_ps.SetProperty("TraceType", tt);
     var jm_outps = jm_service.InvokeMethod("ProcessLogRequest", jm_ps);
     var jm_myOutput = "";
 
@@ -1156,7 +1185,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             retval = thelabel;
                         }
                     }
-                    catch(e){
+                    catch (e) {
                         console.log("Error in GetLabelElem for applet: " + pm.GetObjName() + " : " + e.toString());
                     }
                 }
