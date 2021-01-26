@@ -551,7 +551,7 @@ BCRMCreateDebugMenu = function () {
             "options": {
                 "FilePath": {
                     "label": "File Path",
-                    "default": "C:\\Siebel\\ses\\siebsrvr\\temp",
+                    "default": "C:\\Siebel\\ses\\siebsrvr\\temp\\",
                     "tip": "Enter a valid server path (without file name)",
                     "type": "input"
                 },
@@ -650,8 +650,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.1.XXV",
-            "title": "Learn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.1.xxvi",
+            "title": "devpops 21.1 (Sean MacBride)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -774,23 +774,30 @@ BCRMCreateDebugMenu = function () {
 
 //devpops Add debug button
 BCRMAddDebugButton = function () {
+    var next_to = $("#SiebComposerConfig");
+    //var next_to = $("#siebui-toolbar-settings");
     if ($("#bcrm_debug").length == 0) {
         var btn = $('<div id="bcrm_debug" class="siebui-banner-btn siebui-toolbar-toggle-script-debugger"><ul class="siebui-toolbar"><li class="siebui-toolbar-enable" role="menuitem" title="Debug Options"><span class="siebui-icon-tb-toggle_script_debugger ToolbarButtonOn"><span class="siebui-toolbar-text">BCRM Debugger</span></span></li></ul></div>');
-        if ($("#SiebComposerConfig").length == 1) {
-            $("#SiebComposerConfig").parent().before(btn);
+        if (next_to.length == 1) {
+            $(next_to).parent().before(btn);
         }
         $(btn.find("li")[0]).on("click", function (e) {
             if ($("#bcrm_dbg_menu").length == 0) {
-                var mc = $("<div id='bcrm_dbg_menu'></div>");
+                var mc = $("<div id='bcrm_dbg_menu' style='position: relative;min-width: 240px;'></div>");
                 var menu = BCRMCreateDebugMenu();
                 mc.append(menu);
                 $(this).prepend(mc);
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu({
-                    position: { my: "left top", at: "right-5 top+5" }
+                    create: function (e, ui) {
+                        var myright = $(this)[0].getClientRects()[0].right;
+                        var maxright = window.innerWidth;
+                        if (myright > maxright) {
+                            $(this).parent().css("right", "200px");
+                        }
+                    }
                 });
             }
             else {
-                //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 $("#bcrm_dbg_menu").remove();
             }
         });
@@ -815,7 +822,7 @@ BCRMViewLog = function () {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
     }
     else {
-        fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
+        fp = "C:\\Siebel\\ses\\siebsrvr\\temp\\";
     }
     if (typeof (localStorage.BCRM_OPT_StartTracing_RetainFile) !== "undefined") {
         rf = localStorage.BCRM_OPT_StartTracing_RetainFile;
@@ -891,7 +898,7 @@ BCRMStartLogging = function () {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
     }
     else {
-        fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
+        fp = "C:\\Siebel\\ses\\siebsrvr\\temp\\";
     }
     if (typeof (localStorage.BCRM_OPT_StartTracing_TraceType) !== "undefined") {
         tt = localStorage.BCRM_OPT_StartTracing_TraceType;
