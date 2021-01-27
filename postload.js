@@ -545,7 +545,7 @@ BCRMCreateDebugMenu = function () {
                 BCRMStartLogging();
                 sessionStorage.BCRMTracingCycle = "StartTracing";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-                $("#bcrm_debug_msg").text("SQL tracing in progress.");
+                $("#bcrm_debug_msg").text("Tracing in progress.");
             },
             "showoptions": true,
             "options": {
@@ -568,6 +568,12 @@ BCRMCreateDebugMenu = function () {
                     "tip": "Trace Type: SQL or Allocation",
                     "type": "select",
                     "lov": ["SQL", "Allocation"]
+                }, "TraceEvents": {
+                    "label": "Additional Event Tracing",
+                    "default": "none",
+                    "tip": "Inject trace comments for application events.",
+                    "type": "select",
+                    "lov": ["none", "Presentation Model"]
                 }
             }
         },
@@ -650,8 +656,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.1.xxvi",
-            "title": "devpops 21.1 (Sean MacBride)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.1.xxvii",
+            "title": "devpops 21.1 (Mairead Corrigan-Maguire)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -748,7 +754,7 @@ BCRMCreateDebugMenu = function () {
                             sessionStorage.BCRMTracingCycle = "StartTracing";
                             $(this).dialog("destroy");
                             $("#bcrm_dbg_menu").remove();
-                            $("#bcrm_debug_msg").text("SQL tracing in progress.");
+                            $("#bcrm_debug_msg").text("Tracing in progress.");
                         },
                         Save: function () {
                             $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -843,14 +849,8 @@ BCRMViewLog = function () {
 
     }
 
-    $("#developer_log").remove();
-    $("body").append('<div id="developer_log"' + jm_myOutput + '</div>');
-    var value = $("#developer_log").text();
-    $("#developer_log").remove();
-    //var dtitle = "<h3>" + "SQL Trace" + "</h3>";
-    var cm = $("<div id='bcrm_cm' style='height:400px;'>");
-    var dlg = $("<div style='overflow:auto;'>");
-    //dlg.append(dtitle);
+    var cm = $("<div id='bcrm_cm'>");
+    var dlg = $("<div style='overflow:none;'>");
     dlg.append(cm);
 
     //ahansal added support for codemirror
@@ -870,7 +870,7 @@ BCRMViewLog = function () {
             Copy: function () {
                 $(this).focus();
                 var tempta = $("<textarea id='bcrm_temp_ta'>");
-                tempta.val(value);
+                tempta.val(jm_myOutput);
                 tempta.appendTo("body");
                 tempta.focus();
                 tempta[0].select();
@@ -878,13 +878,13 @@ BCRMViewLog = function () {
                 tempta.remove();
             }
         }
-
     });
     setTimeout(function () {
         CodeMirror($("#bcrm_cm")[0], {
-            value: value,
+            value: jm_myOutput,
             mode: "sql"
         });
+        $("#bcrm_cm").children("div").css("height", "500px");
     }, 100);
 };
 
@@ -915,23 +915,12 @@ BCRMStartLogging = function () {
     if (jm_outps.GetChildByType("ResultSet") != null && jm_outps.GetChildByType("ResultSet") != "undefined") {
         jm_myOutput = jm_outps.GetChildByType("ResultSet").GetProperty("Status");
     }
-
     $(function () {
 
         if ($('#developer_log').length > 0) {
             $('#developer_log').remove();
         }
         $("body").append('<div id="developer_log" style="background-color:#BDD3F0";>' + jm_myOutput + '</div>');
-        /*
-        $("#developer_log").dialog({
-            modal: true,
-            buttons: {
-                Ok: function () {
-                    $(this).dialog("destroy");
-                }
-            }
-        });
-        */
     });
 };
 
@@ -963,23 +952,36 @@ BCRMStopLogging = function () {
         if ($('#developer_log').length > 0) {
             $('#developer_log').remove();
         }
-
         $("body").append('<div id="developer_log" style="background-color:#BDD3F0";>' + jm_myOutput + '</div>');
-        /*
-        $("#developer_log").dialog({
-            modal: true,
-            buttons: {
-                Ok: function () {
-                    $(this).dialog("destroy");
-                }
-            }
-        });
-        */
     });
 };
 //END TRACE FILE VIEWER by Jason MacZura******************************
 
+//PM Invoke Method handler for enhanced tracing
+BCRMTracePMMethod = function (m, i, c, r) {
+    if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
+        var ut = new SiebelAppFacade.BCRMUtils();
+        var pm = ut.ValidateContext(this);
+        if (pm && typeof (pm.GetObjName) === "function") {
+            var on = pm.GetObjName();
+            BCRMTrace("PMTRACE:" + on + "::" + m);
+        }
+    }
+}
 
+//PM Tracing registration
+BCRMRegisterPMTracing = function () {
+    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    for (a in am) {
+        pm = am[a].GetPModel();
+        if (pm.Get("BCRMInvokeMethodTracing") != "enabled") {
+            //attach invoke method handler
+            pm.AddMethod("InvokeMethod", BCRMTracePMMethod, { sequence: true, scope: pm });
+            pm.SetProperty("BCRMInvokeMethodTracing", "enabled");
+        }
+    }
+
+}
 
 //xray postload helper to apply default settings
 BCRMApplyDefaultXray = function () {
@@ -1045,6 +1047,9 @@ BCRMWSHelper = function () {
 
             //default xray toggle
             BCRMApplyDefaultXray();
+
+            //PM tracing
+            BCRMRegisterPMTracing();
         }
 
     }
