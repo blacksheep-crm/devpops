@@ -325,7 +325,8 @@ BCRMWSGetObjectDef = function (cell) {
         setTimeout(function () {
             CodeMirror($("#bcrm_cm")[0], {
                 value: value,
-                mode: "json"
+                mode: "json",
+                lineNumbers: true
             });
         }, 100);
 
@@ -656,8 +657,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.1.xxvii",
-            "title": "devpops 21.1 (Mairead Corrigan-Maguire)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.1.xxviii",
+            "title": "devpops 21.1 (Robert William Holley)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -846,8 +847,9 @@ BCRMViewLog = function () {
 
     if (jm_outps.GetChildByType("ResultSet") != null && jm_outps.GetChildByType("ResultSet") != "undefined") {
         jm_myOutput = jm_outps.GetChildByType("ResultSet").GetProperty("myOutput");
-
     }
+
+    console.log(BCRMParseTrace(jm_myOutput));
 
     var cm = $("<div id='bcrm_cm'>");
     var dlg = $("<div style='overflow:none;'>");
@@ -882,7 +884,8 @@ BCRMViewLog = function () {
     setTimeout(function () {
         CodeMirror($("#bcrm_cm")[0], {
             value: jm_myOutput,
-            mode: "sql"
+            mode: "sql",
+            lineNumbers: true
         });
         $("#bcrm_cm").children("div").css("height", "500px");
     }, 100);
@@ -955,8 +958,191 @@ BCRMStopLogging = function () {
         $("body").append('<div id="developer_log" style="background-color:#BDD3F0";>' + jm_myOutput + '</div>');
     });
 };
+
+//not so simple SQL Trace parser
+BCRMParseTrace = function (s) {
+    //presuming the input is valid trace file content
+
+    //tokenize
+    var timers = [];
+    var stables = {};
+    var alltables = {};
+    var tcounters = [];
+    var ticounters = [];
+    var mostused = [];
+    var mostqueried = [];
+    var mostinserted = [];
+    var worst = [];
+    var maxt = 0;
+    var rrc = 0;
+    var tk = {};
+    var type = "";
+    var stmts = s.split("SQLSTMT");
+    for (var j = 1; j < stmts.length; j++) {
+        if (stmts[j].indexOf("INSERT INTO") > -1){
+            type = "INSERT";
+            var sn = stmts[j].split(",INSERT/UPDATE,")[0].split(",")[1];
+            var sql = stmts[j].split(",INSERT/UPDATE,")[1];
+            tk[sn] = {};
+            tk[sn].type = type;
+            tk[sn].sql = sql;
+
+            //collect tables
+            stables = {};
+            var tt = sql.split("INSERT INTO SIEBEL.");
+            for (var l = 1; l <= 1; l++) {
+                var ttn = tt[l].split("(")[0].trim();
+                if (typeof (stables[ttn]) === "undefined") {
+                    stables[ttn] = {};
+                    stables[ttn].count = 1;
+                }
+                else {
+                    stables[ttn].count = stables[ttn].count + 1;
+                }
+
+                if (typeof (alltables[ttn]) === "undefined") {
+                    alltables[ttn] = {};
+                    alltables[ttn].insert_count = 1;
+                }
+                else {
+                    if (typeof(alltables[ttn].insert_count) === "undefined"){
+                        alltables[ttn].insert_count = 1;
+                    }
+                    else{
+                        alltables[ttn].insert_count = alltables[ttn].insert_count + 1;
+                    }
+                }
+                if (alltables[ttn].insert_count > 0){
+                    var ttw = ticounters;
+                    ttw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (alltables[ttn].insert_count >= ttw[0]) {
+                        mostused.push({ table: ttn, count: alltables[ttn].insert_count });
+                        mostinserted.push({ table: ttn, count: alltables[ttn].insert_count });
+                        //maxu = alltables[ttn].insert_count;
+                    }
+                }
+                ticounters.push(alltables[ttn].insert_count);
+            }
+            tk[sn].tables = stables;
+        }
+        if (stmts[j].indexOf(",SELECT,") > -1) {
+            type = "SELECT";
+            var sn = stmts[j].split(",SELECT,")[0].split(",")[1];
+            var sql = stmts[j].split(",SELECT,")[1];
+            var isrr = sql.indexOf("S_RR") > -1 ? true : false;
+            if (!isrr){
+                isrr = sql.indexOf("S_WEB_TMPL") > -1 ? true : false;
+            }
+            if (!isrr){
+                isrr = sql.indexOf("S_UI_") > -1 ? true : false;
+            }
+            if (isrr) {
+                rrc++;
+            }
+            tk[sn] = {};
+            tk[sn].type = type;
+            tk[sn].sql = sql;
+            tk[sn].isrr = isrr;
+
+            //timer
+            if (sql.indexOf("SQLTIME") > -1) {
+                var tkt = sql.split(",SQLTIME,");
+                var tkd = parseInt(tkt[1].split(",")[1].split("\n")[0]);
+                tk[sn].timer = tkd;
+
+                if (tkd > 0) {
+                    var tw = timers;
+                    tw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (tkd >= tw[0]) {
+                        worst.push({ sn: sn, time: tkd });
+                        maxt = tkd;
+                    }
+                }
+                timers.push(tkd);
+            }
+            //collect tables
+            stables = {};
+            var tt = sql.split("SIEBEL.");
+            for (var l = 1; l < tt.length; l++) {
+                var ttn = tt[l].split(" ")[0];
+                if (typeof (stables[ttn]) === "undefined") {
+                    stables[ttn] = {};
+                    stables[ttn].count = 1;
+                }
+                else {
+                    stables[ttn].count = stables[ttn].count + 1;
+                }
+
+                if (typeof (alltables[ttn]) === "undefined") {
+                    alltables[ttn] = {};
+                    alltables[ttn].select_count = 1;
+                }
+                else {
+                    if (typeof(alltables[ttn].select_count) === "undefined"){
+                        alltables[ttn].select_count = 1;
+                    }
+                    else{
+                        alltables[ttn].select_count = alltables[ttn].select_count + 1;
+                    }
+                }
+                if (alltables[ttn].select_count > 1){
+                    var ttw = tcounters;
+                    ttw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (alltables[ttn].select_count >= ttw[0]) {
+                        mostused.push({ table: ttn, count: alltables[ttn].select_count });
+                        mostqueried.push({ table: ttn, count: alltables[ttn].select_count });
+                        maxu = alltables[ttn].select_count;
+                    }
+                }
+                tcounters.push(alltables[ttn].select_count);
+            }
+            tk[sn].tables = stables;
+        }
+    }
+    //collect stats
+    var stats = {};
+    stats.totals = {};
+    stats.agg = {};
+    stats.totals.stmt_count = s.split("SQLSTMT").length - 1;
+    stats.agg.select_count = s.split(",SELECT,").length - 1;
+    stats.agg.insert_count = s.split("INSERT INTO").length - 1;
+    stats.agg.update_count = s.split("UPDATE ").length - 1;
+    stats.agg.delete_count = s.split("\"DELETE").length - 1;
+    stats.totals.timer_count = s.split(",SQLTIME,").length - 1;
+    stats.totals.line_count = s.split("\n").length - 1;
+    //get timings
+    var t = s.split(",SQLTIME,");
+    var total_time = 0;
+    for (var i = 1; i < t.length; i++) {
+        var td = parseInt(t[i].split(",")[1].split("\n")[0]);
+        total_time += td;
+    }
+    stats.totals.total_time = total_time;
+    stats.totals.longest_query = maxt;
+    stats.worst_queries = worst;
+    stats.agg.rr_query_count = rrc;
+    stats.tables = alltables;
+    stats.tables.mostqueried = mostqueried;
+    stats.tables.mostinserted = mostinserted;
+    stats.tokens = tk;
+    return stats;
+};
+
 //END TRACE FILE VIEWER by Jason MacZura******************************
 
+//View Tracer (piggybacks on PM until further notice)
+BCRMTraceView = function () {
+    if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
+        var vn = SiebelApp.S_App.GetActiveView().GetName();
+        BCRMTrace("VIEWTRACE:" + vn + "::postload");
+    }
+};
 //PM Invoke Method handler for enhanced tracing
 BCRMTracePMMethod = function (m, i, c, r) {
     if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
@@ -964,7 +1150,8 @@ BCRMTracePMMethod = function (m, i, c, r) {
         var pm = ut.ValidateContext(this);
         if (pm && typeof (pm.GetObjName) === "function") {
             var on = pm.GetObjName();
-            BCRMTrace("PMTRACE:" + on + "::" + m);
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            BCRMTrace("PMTRACE:" + vn + "::" + on + "::" + m);
         }
     }
 }
@@ -1050,6 +1237,9 @@ BCRMWSHelper = function () {
 
             //PM tracing
             BCRMRegisterPMTracing();
+
+            //View tracing
+            BCRMTraceView();
         }
 
     }
