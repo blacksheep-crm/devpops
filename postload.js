@@ -28,6 +28,9 @@ if (typeof (SiebelAppFacade.Postload) == "undefined") {
 var bcrm_meta = {};
 var defs = [];
 var dt = [];
+var trace_raw;
+var trace_parsed;
+var trace_norr;
 
 //get data from custom BO for Web Tools display of who else is editing an object definition
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
@@ -657,8 +660,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.1.xxviii",
-            "title": "devpops 21.1 (Robert William Holley)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.1.xxvix",
+            "title": "devpops 21.1 (Karl von Perfall)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -849,7 +852,10 @@ BCRMViewLog = function () {
         jm_myOutput = jm_outps.GetChildByType("ResultSet").GetProperty("myOutput");
     }
 
-    console.log(BCRMParseTrace(jm_myOutput));
+    trace_raw = jm_myOutput;
+    if (localStorage.BCRM_OPT_StartTracing_TraceType != "Allocation") {
+        trace_parsed = BCRMParseTrace(jm_myOutput);
+    }
 
     var cm = $("<div id='bcrm_cm'>");
     var dlg = $("<div style='overflow:none;'>");
@@ -866,13 +872,60 @@ BCRMViewLog = function () {
         overflow: scroll,
         resizable: true,
         buttons: {
+            ShowStats: {
+                text: "Show Stats",
+                click: function (e) {
+                    if (sessionStorage.BCRMShowStats == "true") {
+                        BCRMResetTrace();
+                        sessionStorage.BCRMShowStats = "false";
+                        $(e.currentTarget).text("Show Stats");
+                    }
+                    else {
+                        sessionStorage.BCRMShowStats = "true";
+                        $(e.currentTarget).text("Reset");
+                        $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(BCRMShowTraceStats());
+                    }
+                }
+            },
+            ShowWorst: {
+                text: "Show Slowest",
+                click: function (e) {
+                    if (sessionStorage.BCRMShowWorst == "true") {
+                        BCRMResetTrace();
+                        sessionStorage.BCRMShowWorst = "false";
+                        $(e.currentTarget).text("Show Slowest");
+                    }
+                    else {
+                        sessionStorage.BCRMShowWorst = "true";
+                        $(e.currentTarget).text("Show All");
+                        $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(BCRMShowWorstQueries());
+                    }
+                }
+            },
+            ToggleRR: {
+                text: sessionStorage.BCRMHideRRTrace == "true" ? "Show RR Queries" : "Hide RR Queries",
+                click: function (e) {
+                    if (sessionStorage.BCRMHideRRTrace == "true") {
+                        BCRMResetTrace();
+                        sessionStorage.BCRMHideRRTrace = "false";
+                        $(e.currentTarget).text("Hide RR Queries");
+                    }
+                    else {
+                        BCRMRemoveRRTrace(trace_parsed);
+                        sessionStorage.BCRMHideRRTrace = "true";
+                        $(e.currentTarget).text("Show RR Queries");
+                    }
+                }
+            },
             Close: function (e, ui) {
                 $(this).dialog("destroy");
+                sessionStorage.BCRMShowWorst = "false";
+                sessionStorage.BCRMShowStats = "false";
             },
             Copy: function () {
                 $(this).focus();
                 var tempta = $("<textarea id='bcrm_temp_ta'>");
-                tempta.val(jm_myOutput);
+                tempta.val($("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.getValue());
                 tempta.appendTo("body");
                 tempta.focus();
                 tempta[0].select();
@@ -881,15 +934,139 @@ BCRMViewLog = function () {
             }
         }
     });
+    var cmval = trace_raw;
+    if (localStorage.BCRM_OPT_StartTracing_TraceType != "Allocation") {
+        if (sessionStorage.BCRMHideRRTrace == "true") {
+            cmval = BCRMRemoveRRTrace(trace_parsed, true);
+        }
+    }
     setTimeout(function () {
         CodeMirror($("#bcrm_cm")[0], {
-            value: jm_myOutput,
-            mode: "sql",
+            value: cmval,
+            mode: "text/x-sql",
             lineNumbers: true
         });
         $("#bcrm_cm").children("div").css("height", "500px");
     }, 100);
 };
+
+BCRMResetTrace = function () {
+    $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(trace_raw);
+};
+
+BCRMRemoveRRTrace = function (p, textonly) {
+    trace_norr = "";
+    var tokens = p.tokens;
+    for (t in tokens) {
+        if (!tokens[t].isrr) {
+            if (tokens[t].type != "COMMENT" && t != "0.0") {
+                trace_norr += "SQLSTMT" + tokens[t].text;
+            }
+            else {
+                trace_norr += tokens[t].text;
+            }
+        }
+    }
+    if (!textonly) {
+        $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(trace_norr);
+    }
+    else {
+        return trace_norr;
+    }
+};
+
+//Show stats
+BCRMShowTraceStats = function () {
+    var divisor = 5;
+    var agg = trace_parsed.agg;
+    var tot = trace_parsed.totals;
+    var out = "SQL TRACE STATS\n";
+    var dt;
+    var i;
+    var bar = "#";
+    dt = new Date(tot.starttime);
+    out += "Trace started    : " + dt.toLocaleString() + "\n";
+    dt = new Date(tot.endtime);
+    out += "Trace stopped    : " + dt.toLocaleString() + "\n";
+    out += "Total Statements : " + tot.stmt_count + "\n";
+    out += "Time Measurements: " + tot.timer_count + "\n";
+    out += "Total DB Time(ms): " + tot.total_time + "\n";
+    out += "Worst SELECT (ms): " + tot.longest_select + "\n";
+    out += "Worst INSERT (ms): " + tot.longest_insert + "\n";
+    out += "Worst UPDATE (ms): " + tot.longest_update + "\n";
+    out += "Worst DELETE (ms): " + tot.longest_delete + "\n";
+
+    out += "\n\nDETAILED QUERY COUNTS\n";
+    //selects, no RR
+    var ti = agg.select_count - agg.rr_query_count;
+    bar = "\t#";
+    for (i = 0; i <= ti / divisor; i++) {
+        bar += "#";
+    }
+
+    out += "SELECT (NO RR):" + ti + bar + "\n";
+
+    //selects, RR
+    var ti = agg.rr_query_count;
+    bar = "\t#";
+    for (i = 0; i <= ti / divisor; i++) {
+        bar += "#";
+    }
+    out += "SELECT (RR)   :" + ti + bar + "\n";
+
+    //inserts
+    var ti = agg.insert_count;
+    bar = "\t#";
+    for (i = 0; i <= ti / divisor; i++) {
+        bar += "#";
+    }
+    out += "INSERT        :" + ti + bar + "\n";
+
+    //updates
+    var ti = agg.update_count;
+    bar = "\t#";
+    for (i = 0; i <= ti / divisor; i++) {
+        bar += "#";
+    }
+    out += "UPDATE        :" + ti + bar + "\n";
+
+    //deletes
+    var ti = agg.delete_count;
+    bar = "\t#";
+    for (i = 0; i <= ti / divisor; i++) {
+        bar += "#";
+    }
+    out += "DELETE        :" + ti + bar + "\n";
+
+    return out;
+
+}
+//show worst queries
+BCRMShowWorstQueries = function () {
+    var sta = trace_parsed.worst_statements;
+    var divisor = 5;
+    var tracew = "";
+    var max = 0;
+    var ma = [];
+    var sa;
+    var i;
+    //sort
+    for (i = 0; i < sta.length; i++) {
+        ma.push([sta[i].sql, sta[i].time]);
+    }
+    ma.sort(function (a, b) {
+        return b[1] - a[1];
+    });
+    for (i = 0; i < ma.length; i++) {
+        var bar = "MILLISECONDS:" + ma[i][1] + " *";
+        for (var b = 0; b < parseInt(ma[i][1]) / divisor; b++) {
+            bar += "*";
+        }
+        bar += "\n";
+        tracew += bar + ma[i][0] + "\n\n";
+    }
+    return tracew;
+}
 
 //courtesy of Jason MacZura: start tracing from browser
 BCRMStartLogging = function () {
@@ -961,31 +1138,117 @@ BCRMStopLogging = function () {
 
 //not so simple SQL Trace parser
 BCRMParseTrace = function (s) {
-    //presuming the input is valid trace file content
+    //presuming the input is valid SQL trace file content
 
     //tokenize
+    var slow = 100;
     var timers = [];
+    var itimers = [];
+    var dtimers = [];
+    var utimers = [];
     var stables = {};
     var alltables = {};
     var tcounters = [];
     var ticounters = [];
+    var tucounters = [];
+    var tdcounters = [];
     var mostused = [];
     var mostqueried = [];
     var mostinserted = [];
+    var mostupdated = [];
+    var mostdeleted = [];
     var worst = [];
     var maxt = 0;
+    var maxd = 0;
+    var maxu = 0;
+    var maxi = 0;
     var rrc = 0;
     var tk = {};
     var type = "";
+    var ft;
+    var lt;
+    var pt;
+    var tot;
+    var com;
+    var comt;
+    var statement;
+    var isrr = false;
     var stmts = s.split("SQLSTMT");
+    tk["0.0"] = {};
+    tk["0.0"].text = stmts[0];
     for (var j = 1; j < stmts.length; j++) {
-        if (stmts[j].indexOf("INSERT INTO") > -1){
+        //get timestamp
+        var tsa = stmts[j - 1].split("\n")[stmts[j - 1].split("\n").length - 1].split(",");
+        var mm = tsa[0].split("/")[0];
+        var dd = tsa[0].split("/")[1];
+        var yy = tsa[0].split("/")[2];
+        var time = tsa[1];
+        //stops working on 1/1/2100
+        var ts = new Date("20" + yy + "-" + mm + "-" + dd + "T" + time).getTime();
+        if (j > 1) {
+            var elapsed = ts - pt;
+            pt = ts;
+        }
+        if (j == 1) {
+            ft = ts;
+        }
+        if (j == stmts.length - 1) {
+            lt = ts;
+            tot = lt - ft;
+        }
+        //check for comments
+        com = [];
+        comt = [];
+        if (stmts[j].indexOf(",COMMENT,") > -1) {
+            var ca = stmts[j].split(",COMMENT,");
+            for (var m = 1; m < ca.length; m++) {
+                var ctsa = ca[m - 1].split("\n")[ca[m - 1].split("\n").length - 1].split(",");
+                var mm = ctsa[0].split("/")[0];
+                var dd = ctsa[0].split("/")[1];
+                var yy = ctsa[0].split("/")[2];
+                var time = ctsa[1];
+                //stops working 1/1/2100
+                var cts = new Date("20" + yy + "-" + mm + "-" + dd + "T" + time).getTime();
+                comt.push(cts);
+                com.push(",COMMENT," + ca[m]);
+            }
+            statement = ca[0];
+        }
+        else {
+            statement = stmts[j];
+        }
+
+        //handle INSERTS
+        if (statement.indexOf("INSERT INTO") > -1) {
             type = "INSERT";
-            var sn = stmts[j].split(",INSERT/UPDATE,")[0].split(",")[1];
-            var sql = stmts[j].split(",INSERT/UPDATE,")[1];
+            var sn = statement.split(",INSERT/UPDATE,")[0].split(",")[1] + ".0";
+            var sql = statement.split(",INSERT/UPDATE,")[1];
             tk[sn] = {};
             tk[sn].type = type;
-            tk[sn].sql = sql;
+            tk[sn].text = ",INSERT/UPDATE," + sql;
+            tk[sn].timestamp = ts;
+            tk[sn].elapsed = elapsed;
+
+            //timer
+            if (sql.indexOf("SQLTIME") > -1) {
+                var tkt = sql.split(",SQLTIME,");
+                var tkd = parseInt(tkt[1].split(",")[1].split("\n")[0]);
+                tk[sn].timer = tkd;
+
+                if (tkd > 0) {
+                    var tw = itimers;
+                    tw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (tkd >= slow) {
+                        worst.push({ sn: sn, time: tkd, type: type, sql: sql });
+                        if (tkd >= tw[0]) {
+                            maxi = tkd;
+                        }
+                    }
+                }
+                itimers.push(tkd);
+            }
 
             //collect tables
             stables = {};
@@ -1005,14 +1268,14 @@ BCRMParseTrace = function (s) {
                     alltables[ttn].insert_count = 1;
                 }
                 else {
-                    if (typeof(alltables[ttn].insert_count) === "undefined"){
+                    if (typeof (alltables[ttn].insert_count) === "undefined") {
                         alltables[ttn].insert_count = 1;
                     }
-                    else{
+                    else {
                         alltables[ttn].insert_count = alltables[ttn].insert_count + 1;
                     }
                 }
-                if (alltables[ttn].insert_count > 0){
+                if (alltables[ttn].insert_count > 0) {
                     var ttw = ticounters;
                     ttw.sort(function (a, b) {
                         return b - a;
@@ -1027,24 +1290,170 @@ BCRMParseTrace = function (s) {
             }
             tk[sn].tables = stables;
         }
-        if (stmts[j].indexOf(",SELECT,") > -1) {
+
+        //HANDLE UPDATES
+        if (statement.indexOf("UPDATE SIEBEL") > -1) {
+            type = "UPDATE";
+            var sn = statement.split(",INSERT/UPDATE,")[0].split(",")[1] + ".0";
+            var sql = statement.split(",INSERT/UPDATE,")[1];
+            tk[sn] = {};
+            tk[sn].type = type;
+            tk[sn].text = ",INSERT/UPDATE," + sql;
+            tk[sn].timestamp = ts;
+            tk[sn].elapsed = elapsed;
+
+            //timer
+            if (sql.indexOf("SQLTIME") > -1) {
+                var tkt = sql.split(",SQLTIME,");
+                var tkd = parseInt(tkt[1].split(",")[1].split("\n")[0]);
+                tk[sn].timer = tkd;
+
+                if (tkd > 0) {
+                    var tw = utimers;
+                    tw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (tkd >= slow) {
+                        worst.push({ sn: sn, time: tkd, type: type, sql: sql });
+                        if (tkd >= tw[0]) {
+                            maxu = tkd;
+                        }
+                    }
+                }
+                utimers.push(tkd);
+            }
+
+            //collect tables
+            stables = {};
+            var tt = sql.split("UPDATE SIEBEL.");
+            for (var l = 1; l <= 1; l++) {
+                var ttn = tt[l].split(" SET")[0].trim();
+                if (typeof (stables[ttn]) === "undefined") {
+                    stables[ttn] = {};
+                    stables[ttn].count = 1;
+                }
+                else {
+                    stables[ttn].count = stables[ttn].count + 1;
+                }
+
+                if (typeof (alltables[ttn]) === "undefined") {
+                    alltables[ttn] = {};
+                    alltables[ttn].update_count = 1;
+                }
+                else {
+                    if (typeof (alltables[ttn].update_count) === "undefined") {
+                        alltables[ttn].update_count = 1;
+                    }
+                    else {
+                        alltables[ttn].update_count = alltables[ttn].update_count + 1;
+                    }
+                }
+                if (alltables[ttn].update_count > 0) {
+                    var ttw = tucounters;
+                    ttw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (alltables[ttn].update_count >= ttw[0]) {
+                        mostused.push({ table: ttn, count: alltables[ttn].update_count });
+                        mostupdated.push({ table: ttn, count: alltables[ttn].update_count });
+                        //maxu = alltables[ttn].insert_count;
+                    }
+                }
+                tucounters.push(alltables[ttn].update_count);
+            }
+            tk[sn].tables = stables;
+        }
+
+        //HANDLE DELETES
+        if (statement.indexOf("DELETE FROM") > -1) {
+            type = "DELETE";
+            var sn = statement.split(",INSERT/UPDATE,")[0].split(",")[1] + ".0";
+            var sql = statement.split(",INSERT/UPDATE,")[1];
+            tk[sn] = {};
+            tk[sn].type = type;
+            tk[sn].text = ",INSERT/UPDATE," + sql;
+            tk[sn].timestamp = ts;
+            tk[sn].elapsed = elapsed;
+
+            //timer
+            if (sql.indexOf("SQLTIME") > -1) {
+                var tkt = sql.split(",SQLTIME,");
+                var tkd = parseInt(tkt[1].split(",")[1].split("\n")[0]);
+                tk[sn].timer = tkd;
+
+                if (tkd > 0) {
+                    var tw = dtimers;
+                    tw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (tkd >= slow) {
+                        worst.push({ sn: sn, time: tkd, type: type, sql: sql });
+                        if (tkd >= tw[0]) {
+                            maxd = tkd;
+                        }
+                    }
+                }
+                dtimers.push(tkd);
+            }
+            //collect tables
+            stables = {};
+            var tt = sql.split("DELETE FROM SIEBEL.");
+            for (var l = 1; l <= 1; l++) {
+                var ttn = tt[l].split("\n")[0].trim();
+                if (typeof (stables[ttn]) === "undefined") {
+                    stables[ttn] = {};
+                    stables[ttn].count = 1;
+                }
+                else {
+                    stables[ttn].count = stables[ttn].count + 1;
+                }
+
+                if (typeof (alltables[ttn]) === "undefined") {
+                    alltables[ttn] = {};
+                    alltables[ttn].delete_count = 1;
+                }
+                else {
+                    if (typeof (alltables[ttn].delete_count) === "undefined") {
+                        alltables[ttn].delete_count = 1;
+                    }
+                    else {
+                        alltables[ttn].delete_count = alltables[ttn].delete_count + 1;
+                    }
+                }
+                if (alltables[ttn].delete_count > 0) {
+                    var ttw = tdcounters;
+                    ttw.sort(function (a, b) {
+                        return b - a;
+                    });
+                    if (alltables[ttn].delete_count >= ttw[0]) {
+                        mostused.push({ table: ttn, count: alltables[ttn].delete_count });
+                        mostdeleted.push({ table: ttn, count: alltables[ttn].delete_count });
+                        //maxu = alltables[ttn].insert_count;
+                    }
+                }
+                tdcounters.push(alltables[ttn].delete_count);
+            }
+            tk[sn].tables = stables;
+        }
+
+        //Handle SELECTS
+        if (statement.indexOf(",SELECT,") > -1) {
             type = "SELECT";
-            var sn = stmts[j].split(",SELECT,")[0].split(",")[1];
-            var sql = stmts[j].split(",SELECT,")[1];
-            var isrr = sql.indexOf("S_RR") > -1 ? true : false;
-            if (!isrr){
-                isrr = sql.indexOf("S_WEB_TMPL") > -1 ? true : false;
-            }
-            if (!isrr){
-                isrr = sql.indexOf("S_UI_") > -1 ? true : false;
-            }
-            if (isrr) {
+            var sn = statement.split(",SELECT,")[0].split(",")[1] + ".0";
+            var sql = statement.split(",SELECT,")[1];
+            if (sql.indexOf("S_RR") > -1 || sql.indexOf("S_WEB_TMPL") > -1 || sql.indexOf("S_UI_") > -1) {
+                isrr = true;
                 rrc++;
+            }
+            else {
+                isrr = false;
             }
             tk[sn] = {};
             tk[sn].type = type;
-            tk[sn].sql = sql;
+            tk[sn].text = ",SELECT," + sql;
             tk[sn].isrr = isrr;
+            tk[sn].timestamp = ts;
+            tk[sn].elapsed = elapsed;
 
             //timer
             if (sql.indexOf("SQLTIME") > -1) {
@@ -1057,9 +1466,11 @@ BCRMParseTrace = function (s) {
                     tw.sort(function (a, b) {
                         return b - a;
                     });
-                    if (tkd >= tw[0]) {
-                        worst.push({ sn: sn, time: tkd });
-                        maxt = tkd;
+                    if (tkd >= slow) {
+                        worst.push({ sn: sn, time: tkd, type: type, sql: sql });
+                        if (tkd >= tw[0]) {
+                            maxt = tkd;
+                        }
                     }
                 }
                 timers.push(tkd);
@@ -1082,14 +1493,14 @@ BCRMParseTrace = function (s) {
                     alltables[ttn].select_count = 1;
                 }
                 else {
-                    if (typeof(alltables[ttn].select_count) === "undefined"){
+                    if (typeof (alltables[ttn].select_count) === "undefined") {
                         alltables[ttn].select_count = 1;
                     }
-                    else{
+                    else {
                         alltables[ttn].select_count = alltables[ttn].select_count + 1;
                     }
                 }
-                if (alltables[ttn].select_count > 1){
+                if (alltables[ttn].select_count > 1) {
                     var ttw = tcounters;
                     ttw.sort(function (a, b) {
                         return b - a;
@@ -1103,6 +1514,15 @@ BCRMParseTrace = function (s) {
                 tcounters.push(alltables[ttn].select_count);
             }
             tk[sn].tables = stables;
+        }
+        if (com.length > 0) {
+            for (var n = 0; n < com.length; n++) {
+                var csn = sn.split(".")[0] + "." + (n + 1).toString();
+                tk[csn] = {};
+                tk[csn].type = "COMMENT";
+                tk[csn].text = com[n];
+                tk[csn].timestamp = comt[n];
+            }
         }
     }
     //collect stats
@@ -1124,13 +1544,23 @@ BCRMParseTrace = function (s) {
         total_time += td;
     }
     stats.totals.total_time = total_time;
-    stats.totals.longest_query = maxt;
-    stats.worst_queries = worst;
+    stats.totals.longest_select = maxt;
+    stats.totals.longest_delete = maxd;
+    stats.totals.longest_insert = maxi;
+    stats.totals.longest_update = maxu;
+    stats.worst_statements = worst;
     stats.agg.rr_query_count = rrc;
-    stats.tables = alltables;
-    stats.tables.mostqueried = mostqueried;
+    stats.tables = {};
+    stats.tables.alltables = alltables;
+    stats.tables.mostselected = mostqueried;
     stats.tables.mostinserted = mostinserted;
+    stats.tables.mostupdated = mostupdated;
+    stats.tables.mostdeleted = mostdeleted;
+    stats.tables.mostused = mostused;
     stats.tokens = tk;
+    stats.totals.starttime = ft;
+    stats.totals.endtime = lt;
+    stats.totals.totaltime = tot;
     return stats;
 };
 
