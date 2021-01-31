@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<REPOSITORY
+   NAME="Siebel Repository"
+   UPDATED="09/04/2019 02:46:47"
+   UPDATED_BY="SADMIN"
+   CREATED="09/04/2019 02:04:45"
+   CREATED_BY="SADMIN"
+   FIO_PLACEHOLDER_FIO="TRUE">
+	<PROJECT
+	   ALLOW_OBJECT_LOCKING="Y"
+	   INACTIVE="N"
+	   LANGUAGE_LOCKED="ENU"
+	   LOCKED="N"
+	   NAME="00Phoenix"
+	   UI_FREEZE="N"
+	   UPDATED="04/10/2019 12:55:46"
+	   UPDATED_BY="SADMIN"
+	   CREATED="04/12/2012 14:08:49"
+	   CREATED_BY="SADMIN"
+	   FIO_PLACEHOLDER_FIO="TRUE">
+		<BUSINESS_SERVICE
+		   CACHE="N"
+		   CLASS="CSSEXEDDLSVC"
+		   COMMENTS="blacksheep IT consulting for devpops"
+		   EXTERNAL_USE="Y"
+		   HIDDEN="N"
+		   INACTIVE="N"
+		   NAME="BCRM Server Manager Service"
+		   SERVER_ENABLED="N"
+		   STATE_MANAGEMENT_TYPE="Stateful"
+		   WEB_SERVICE_ENABLED="N"
+		   UPDATED="01/31/2021 08:55:29"
+		   UPDATED_BY="SADMIN"
+		   CREATED="01/31/2021 08:55:29"
+		   CREATED_BY="SADMIN">
+			<BUSINESS_SERVICE_LOCALE
+			   APPLICATION_CODE="STD"
+			   DISPLAY_NAME="Server Manager Service"
+			   INACTIVE="N"
+			   LANGUAGE_CODE="ENU"
+			   NAME="ENU-STD"
+			   TRANSLATE="Y"
+			   UPDATED="01/31/2021 08:55:36"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:36"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_LOCALE>
+			<BUSINESS_SERVICE_METHOD
+			   DISPLAY_NAME_-_STRING_REFERENCE="SBL_EXPORT-1004224646-077"
+			   HIDDEN="N"
+			   INACTIVE="N"
+			   NAME="Export"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="migrationid"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="trackingid"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+			</BUSINESS_SERVICE_METHOD>
+			<BUSINESS_SERVICE_METHOD
+			   DISPLAY_NAME_-_STRING_REFERENCE="SBL_LANDING_SITE_STATUS_CODE"
+			   HIDDEN="N"
+			   INACTIVE="N"
+			   NAME="GetStatus"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="error"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="getlog"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="log"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="migrationid"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="status"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="trackingid"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+			</BUSINESS_SERVICE_METHOD>
+			<BUSINESS_SERVICE_METHOD
+			   DISPLAY_NAME_-_STRING_REFERENCE="SBL_GET_WATERMARK"
+			   HIDDEN="N"
+			   INACTIVE="N"
+			   NAME="GetWatermark"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="watermark"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+			</BUSINESS_SERVICE_METHOD>
+			<BUSINESS_SERVICE_METHOD
+			   DISPLAY_NAME_-_STRING_REFERENCE="SBL_IMPORT-1005000053-6GR"
+			   HIDDEN="N"
+			   INACTIVE="N"
+			   NAME="Import"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="filename"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="migrationid"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="password"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="trackingid"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="username"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+			</BUSINESS_SERVICE_METHOD>
+			<BUSINESS_SERVICE_METHOD
+			   DISPLAY_NAME_-_STRING_REFERENCE="SBL_HAS_SCHEMA_CHANGED"
+			   HIDDEN="N"
+			   INACTIVE="N"
+			   NAME="IsSchemaChanged"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="isschemachanged"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Output"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="watermark"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="01/31/2021 08:55:34"
+				   UPDATED_BY="SADMIN"
+				   CREATED="01/31/2021 08:55:34"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+			</BUSINESS_SERVICE_METHOD>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="$ExpLogPrefix"
+			   VALUE="bcrmsmexp_"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="$ImpLogPrefix"
+			   VALUE="bcrmsmimp_"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="$LogExt"
+			   VALUE=".log"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="$OutExtn"
+			   VALUE=".txt"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Executable"
+			   VALUE="srvrmgr"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable"
+			   VALUE="srvrmgr"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:Parameter:/e"
+			   VALUE="ENG"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:Parameter:/g"
+			   VALUE="ncc1701.company.com:2320"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:Parameter:/i"
+			   VALUE="C:\Siebel\ses\siebsrvr\TEMP\srvrmgr_input.txt"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:Parameter:/o"
+			   VALUE="$ExpLogPrefix + $UniqueName + $OutExtn"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:Parameter:/p"
+			   VALUE="$Password"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:Parameter:/u"
+			   VALUE="$UserName"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Export Executable:TrackingIdSwitch"
+			   VALUE="/o"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Status:bcrmsmexp_:FailureText"
+			   VALUE="SBL-"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+			<BUSINESS_SERVICE_USER_PROP
+			   INACTIVE="N"
+			   NAME="Status:bcrmsmexp_:SuccessText"
+			   VALUE="rows returned"
+			   UPDATED="01/31/2021 08:55:30"
+			   UPDATED_BY="SADMIN"
+			   CREATED="01/31/2021 08:55:30"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_USER_PROP>
+		</BUSINESS_SERVICE>
+	</PROJECT>
+</REPOSITORY>
+
+
+
