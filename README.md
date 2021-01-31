@@ -12,9 +12,9 @@ Fast Inspect of workspaces in the application (right click on workspace dashboar
 
 Debug menu in application to invoke xray (by blacksheep), tracing (by Jason MacZura) and xapuk.com utilities (by Slava)
 
-Video:
+Video (early version): https://youtu.be/pesmDPSNIvw
 
-https://youtu.be/pesmDPSNIvw
+Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
 
 Installation:
 
