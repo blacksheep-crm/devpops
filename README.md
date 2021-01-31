@@ -24,7 +24,9 @@ Installation:
 
 3. Register BCRM Modified Objects List View with a responsibility of your choice
 
-4. Register FWK Runtime business service with your Application(s) in Application User Prop (ClientBusinessServiceN)
+4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser ;-)
+
+4. Register FWK Runtime and BCRM Server Manager Service business servicess with your Application(s) in Application User Prop (ClientBusinessServiceN)
 
 5. Deliver repository changes.
 
