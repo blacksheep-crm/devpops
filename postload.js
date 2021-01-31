@@ -653,6 +653,16 @@ BCRMCreateDebugMenu = function () {
                 BCRMExprEditor();
             }
         },
+        "srvrmgr": {
+            "label": "Server Manager",
+            "title": "Run Siebel Server Manager Commands (experimental)",
+            "onclick": function () {
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                $("body").css("cursor","wait");
+                BCRMSrvrMgr();
+                $("body").css("cursor","");
+            }
+        },
         "SiebelHub": {
             "label": "Siebel Hub",
             "title": "Get your Siebel kicks on da hub with a random page (might require login).",
@@ -3022,3 +3032,43 @@ BCRMLoadBCs = function () {
     return a;
 }
 //END xapuk.com utilities by Slava**********************************
+
+//run srvrmgr commands, requires BCRM Server Manager Business Service
+BCRMSrvrMgr = function (command) {
+    if (typeof (command) === "undefined") {
+        command = SiebelApp.Utils.Prompt("Enter a valid srvrmgr command.\nSeparate commands with \\n.","list comps");
+    }
+    //separate commands with \n
+    //command examples: "list comps", "list servers\nlist comps", "change param sarmlevel=2 for comp sccobjmgr_enu server server01"
+    
+    var svc = SiebelApp.S_App.GetService("FWK Runtime");
+    var ips = SiebelApp.S_App.NewPropertySet();
+    ips.SetProperty("cmd", command);
+    ips.SetProperty("FilePath", "C:\\Siebel\\ses\\siebsrvr\\TEMP\\");
+    //set longer sleep time if output is not as desired
+    ips.SetProperty("FileSleepTime", "5000");
+    var ops = svc.InvokeMethod("srvrmgr", ips);
+    var value = ops.GetChildByType("ResultSet").GetValue();
+    //$("body").css("cursor","");
+    var cm = $("<div id='bcrm_cm'>");
+    var dlg = $("<div style='overflow:auto;'>");
+    dlg.append(cm);
+    dlg.dialog({
+        title: "Server Manager Output",
+        width: 1200,
+        height: 600,
+        close: function (e, ui) {
+            $(this).dialog("destroy");
+        }
+    });
+    
+    setTimeout(function () {
+        CodeMirror($("#bcrm_cm")[0], {
+            value: value,
+            mode: "txt",
+            lineNumbers: true
+        });
+        $("#bcrm_cm").children("div").css("height", "500px");
+    }, 100);
+    //return result;
+}
