@@ -549,7 +549,14 @@ BCRMCreateDebugMenu = function () {
                 BCRMStartLogging();
                 sessionStorage.BCRMTracingCycle = "StartTracing";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-                $("#bcrm_debug_msg").text("Tracing in progress.");
+                var msg = "<span>Tracing in progress</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop'n'View" + "</button>";
+                $("#bcrm_debug_msg").html(msg);
+                $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                    BCRMStopLogging();
+                    sessionStorage.BCRMTracingCycle = "StopTracing";
+                    $("#bcrm_debug_msg").text("");
+                    BCRMViewLog();
+                });
             },
             "showoptions": true,
             "options": {
@@ -572,12 +579,19 @@ BCRMCreateDebugMenu = function () {
                     "tip": "Trace Type: SQL or Allocation",
                     "type": "select",
                     "lov": ["SQL", "Allocation"]
-                }, "TraceEvents": {
+                },
+                "TraceEvents": {
                     "label": "Additional Event Tracing",
                     "default": "none",
                     "tip": "Inject trace comments for application events.",
                     "type": "select",
                     "lov": ["none", "Presentation Model"]
+                },
+                "SlowQuery": {
+                    "label": "Slow Query Threshold (ms)",
+                    "default": "100",
+                    "tip": "Show slow query stats for queries that run longer than this.",
+                    "type": "input"
                 }
             }
         },
@@ -660,8 +674,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.1.xxvix",
-            "title": "devpops 21.1 (Karl von Perfall)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.1.xxxi",
+            "title": "devpops 21.1 (Oe Kenzaburo)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -758,7 +772,14 @@ BCRMCreateDebugMenu = function () {
                             sessionStorage.BCRMTracingCycle = "StartTracing";
                             $(this).dialog("destroy");
                             $("#bcrm_dbg_menu").remove();
-                            $("#bcrm_debug_msg").text("Tracing in progress.");
+                            var msg = "<span>Tracing in progress</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop'n'View" + "</button>";
+                            $("#bcrm_debug_msg").html(msg);
+                            $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                                BCRMStopLogging();
+                                sessionStorage.BCRMTracingCycle = "StopTracing";
+                                $("#bcrm_debug_msg").text("");
+                                BCRMViewLog();
+                            });
                         },
                         Save: function () {
                             $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -787,7 +808,7 @@ BCRMAddDebugButton = function () {
     var next_to = $("#SiebComposerConfig");
     //var next_to = $("#siebui-toolbar-settings");
     if ($("#bcrm_debug").length == 0) {
-        var btn = $('<div id="bcrm_debug" class="siebui-banner-btn siebui-toolbar-toggle-script-debugger"><ul class="siebui-toolbar"><li class="siebui-toolbar-enable" role="menuitem" title="Debug Options"><span class="siebui-icon-tb-toggle_script_debugger ToolbarButtonOn"><span class="siebui-toolbar-text">BCRM Debugger</span></span></li></ul></div>');
+        var btn = $('<div id="bcrm_debug" class="siebui-banner-btn siebui-toolbar-toggle-script-debugger"><ul class="siebui-toolbar"><li class="siebui-toolbar-enable" role="menuitem" title="blacksheep devpops is a Siebel Community effort"><span class="siebui-icon-tb-toggle_script_debugger ToolbarButtonOn"><span class="siebui-toolbar-text">BCRM Debugger</span></span></li></ul></div>');
         if (next_to.length == 1) {
             $(next_to).parent().before(btn);
         }
@@ -978,11 +999,15 @@ BCRMRemoveRRTrace = function (p, textonly) {
 //Show stats
 BCRMShowTraceStats = function () {
     var divisor = 5;
+    var top = 10;
     var agg = trace_parsed.agg;
     var tot = trace_parsed.totals;
+    var tbl = trace_parsed.tables;
     var out = "SQL TRACE STATS\n";
     var dt;
     var i;
+    var ti;
+    var ta;
     var bar = "#";
     dt = new Date(tot.starttime);
     out += "Trace started    : " + dt.toLocaleString() + "\n";
@@ -998,7 +1023,7 @@ BCRMShowTraceStats = function () {
 
     out += "\n\nDETAILED QUERY COUNTS\n";
     //selects, no RR
-    var ti = agg.select_count - agg.rr_query_count;
+    ti = agg.select_count - agg.rr_query_count;
     bar = "\t#";
     for (i = 0; i <= ti / divisor; i++) {
         bar += "#";
@@ -1007,7 +1032,7 @@ BCRMShowTraceStats = function () {
     out += "SELECT (NO RR):" + ti + bar + "\n";
 
     //selects, RR
-    var ti = agg.rr_query_count;
+    ti = agg.rr_query_count;
     bar = "\t#";
     for (i = 0; i <= ti / divisor; i++) {
         bar += "#";
@@ -1015,7 +1040,7 @@ BCRMShowTraceStats = function () {
     out += "SELECT (RR)   :" + ti + bar + "\n";
 
     //inserts
-    var ti = agg.insert_count;
+    ti = agg.insert_count;
     bar = "\t#";
     for (i = 0; i <= ti / divisor; i++) {
         bar += "#";
@@ -1023,7 +1048,7 @@ BCRMShowTraceStats = function () {
     out += "INSERT        :" + ti + bar + "\n";
 
     //updates
-    var ti = agg.update_count;
+    ti = agg.update_count;
     bar = "\t#";
     for (i = 0; i <= ti / divisor; i++) {
         bar += "#";
@@ -1031,13 +1056,78 @@ BCRMShowTraceStats = function () {
     out += "UPDATE        :" + ti + bar + "\n";
 
     //deletes
-    var ti = agg.delete_count;
+    ti = agg.delete_count;
     bar = "\t#";
     for (i = 0; i <= ti / divisor; i++) {
         bar += "#";
     }
     out += "DELETE        :" + ti + bar + "\n";
 
+    out += "\n\nTOP " + top + " TABLE USAGE: SELECT\n";
+    ta = tbl.mostselected;
+    var lim = ta.length >= top ? top : ta.length;
+    for (t = 0; t < lim; t++) {
+        ti = ta[t].count;
+        var tn = ta[t].table;
+        var fill = 25 - tn.length;
+        for (f = 0; f < fill; f++) {
+            tn += " ";
+        }
+        bar = "\t#";
+        for (i = 0; i <= ti; i++) {
+            bar += "#";
+        }
+        out += tn + ": " + ti + bar + "\n";
+    }
+
+    out += "\n\nTOP " + top + " TABLE USAGE: INSERT\n";
+    ta = tbl.mostinserted;
+    var lim = ta.length >= top ? top : ta.length;
+    for (t = 0; t < lim; t++) {
+        ti = ta[t].count;
+        var tn = ta[t].table;
+        var fill = 25 - tn.length;
+        for (f = 0; f < fill; f++) {
+            tn += " ";
+        }
+        bar = "\t#";
+        for (i = 0; i <= ti; i++) {
+            bar += "#";
+        }
+        out += tn + ": " + ti + bar + "\n";
+    }
+    out += "\n\nTOP " + top + " TABLE USAGE: UPDATE\n";
+    ta = tbl.mostupdated;
+    var lim = ta.length >= top ? top : ta.length;
+    for (t = 0; t < lim; t++) {
+        ti = ta[t].count;
+        var tn = ta[t].table;
+        var fill = 25 - tn.length;
+        for (f = 0; f < fill; f++) {
+            tn += " ";
+        }
+        bar = "\t#";
+        for (i = 0; i <= ti; i++) {
+            bar += "#";
+        }
+        out += tn + ": " + ti + bar + "\n";
+    }
+    out += "\n\nTOP " + top + " TABLE USAGE: DELETE\n";
+    ta = tbl.mostdeleted;
+    var lim = ta.length >= top ? top : ta.length;
+    for (t = 0; t < lim; t++) {
+        ti = ta[t].count;
+        var tn = ta[t].table;
+        var fill = 25 - tn.length;
+        for (f = 0; f < fill; f++) {
+            tn += " ";
+        }
+        bar = "\t#";
+        for (i = 0; i <= ti; i++) {
+            bar += "#";
+        }
+        out += tn + ": " + ti + bar + "\n";
+    }
     return out;
 
 }
@@ -1141,7 +1231,7 @@ BCRMParseTrace = function (s) {
     //presuming the input is valid SQL trace file content
 
     //tokenize
-    var slow = 100;
+    var slow = typeof (localStorage.BCRM_OPT_StartTracing_SlowQuery) !== "undefined" ? localStorage.BCRM_OPT_StartTracing_SlowQuery : 100;
     var timers = [];
     var itimers = [];
     var dtimers = [];
@@ -1161,6 +1251,7 @@ BCRMParseTrace = function (s) {
     var maxt = 0;
     var maxd = 0;
     var maxu = 0;
+    var maxupd = 0;
     var maxi = 0;
     var rrc = 0;
     var tk = {};
@@ -1316,7 +1407,7 @@ BCRMParseTrace = function (s) {
                     if (tkd >= slow) {
                         worst.push({ sn: sn, time: tkd, type: type, sql: sql });
                         if (tkd >= tw[0]) {
-                            maxu = tkd;
+                            maxupd = tkd;
                         }
                     }
                 }
@@ -1525,6 +1616,42 @@ BCRMParseTrace = function (s) {
             }
         }
     }
+
+    //aggregate tables
+    var select_ranked = [];
+    var insert_ranked = [];
+    var update_ranked = [];
+    var delete_ranked = [];
+    for (tbl in alltables) {
+        if (typeof (alltables[tbl].select_count) !== "undefined") {
+            //ignore RR tables
+            if (!(tbl.indexOf("S_RR") > -1 || tbl.indexOf("S_WEB_TMPL") > -1 || tbl.indexOf("S_UI_") > -1)) {
+                select_ranked.push({ table: tbl, count: alltables[tbl].select_count });
+            }
+        }
+        if (typeof (alltables[tbl].insert_count) !== "undefined") {
+            insert_ranked.push({ table: tbl, count: alltables[tbl].insert_count });
+        }
+        if (typeof (alltables[tbl].update_count) !== "undefined") {
+            update_ranked.push({ table: tbl, count: alltables[tbl].update_count });
+        }
+        if (typeof (alltables[tbl].delete_count) !== "undefined") {
+            delete_ranked.push({ table: tbl, count: alltables[tbl].delete_count });
+        }
+    }
+    select_ranked.sort(function (a, b) {
+        return b.count - a.count;
+    });
+    insert_ranked.sort(function (a, b) {
+        return b.count - a.count;
+    });
+    update_ranked.sort(function (a, b) {
+        return b.count - a.count;
+    });
+    delete_ranked.sort(function (a, b) {
+        return b.count - a.count;
+    });
+
     //collect stats
     var stats = {};
     stats.totals = {};
@@ -1547,16 +1674,16 @@ BCRMParseTrace = function (s) {
     stats.totals.longest_select = maxt;
     stats.totals.longest_delete = maxd;
     stats.totals.longest_insert = maxi;
-    stats.totals.longest_update = maxu;
+    stats.totals.longest_update = maxupd;
     stats.worst_statements = worst;
     stats.agg.rr_query_count = rrc;
     stats.tables = {};
     stats.tables.alltables = alltables;
-    stats.tables.mostselected = mostqueried;
-    stats.tables.mostinserted = mostinserted;
-    stats.tables.mostupdated = mostupdated;
-    stats.tables.mostdeleted = mostdeleted;
-    stats.tables.mostused = mostused;
+    stats.tables.mostselected = select_ranked;
+    stats.tables.mostinserted = insert_ranked;
+    stats.tables.mostupdated = update_ranked;
+    stats.tables.mostdeleted = delete_ranked;
+    //stats.tables.mostused = mostused;
     stats.tokens = tk;
     stats.totals.starttime = ft;
     stats.totals.endtime = lt;
@@ -1771,6 +1898,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 le = ut.GetLabelElem(c, pm);
                 if (le) {
                     le.text(nl);
+                    le.attr("title", nl);
                     //mark label as changed
                     le.attr("bcrm-custom-label", "true");
                 }
