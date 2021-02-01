@@ -24,19 +24,20 @@ Installation:
 
 3. Register BCRM Modified Objects List View with a responsibility of your choice
 
-4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser ;-)
+4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser ;-).
+   Edit the Business Service User Properties to match your Enterprise, Gateway host address and Gateway TLS port number
 
-4. Register FWK Runtime and BCRM Server Manager Service business servicess with your Application(s) in Application User Prop (ClientBusinessServiceN)
+5. Register FWK Runtime and BCRM Server Manager Service business servicess with your Application(s) in Application User Prop (ClientBusinessServiceN)
 
-5. Deliver repository changes.
+6. Deliver repository changes.
 
-6. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
+7. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
 
-7. Copy SiebelQueryLang.js file to $AI_APPLICATIONCONTAINER$/webapps/siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
+8. Copy SiebelQueryLang.js file to $AI_APPLICATIONCONTAINER$/webapps/siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
 
-8. Copy code from postload.js to the vanilla postload.js for a quick demo. 
+9. Copy code from postload.js to the vanilla postload.js for a quick demo. 
 
-9. Validate the functionality and move code to custom file(s).
+10. Validate the functionality and move code to custom file(s).
 
 Pre-requisites:
 
