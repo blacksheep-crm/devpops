@@ -658,9 +658,9 @@ BCRMCreateDebugMenu = function () {
             "title": "Run Siebel Server Manager Commands (experimental)",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-                $("body").css("cursor","wait");
+                $("body").css("cursor", "wait");
                 BCRMSrvrMgr();
-                $("body").css("cursor","");
+                $("body").css("cursor", "");
             }
         },
         "SiebelHub": {
@@ -684,8 +684,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.1.xxxi",
-            "title": "devpops 21.1 (Oe Kenzaburo)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.i",
+            "title": "devpops 21.2 (Emilio Gino Segre)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -3034,13 +3034,13 @@ BCRMLoadBCs = function () {
 //END xapuk.com utilities by Slava**********************************
 
 //run srvrmgr commands, requires BCRM Server Manager Business Service
-BCRMSrvrMgr = function (command) {
+BCRMSrvrMgr = function (command, fromdialog) {
     if (typeof (command) === "undefined") {
-        command = SiebelApp.Utils.Prompt("Enter a valid srvrmgr command.\nSeparate commands with \\n.","list comps");
+        command = SiebelApp.Utils.Prompt("Enter a valid srvrmgr command.\nSeparate commands with \\n.", "list comps");
     }
     //separate commands with \n
     //command examples: "list comps", "list servers\nlist comps", "change param sarmlevel=2 for comp sccobjmgr_enu server server01"
-    
+
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
     ips.SetProperty("cmd", command);
@@ -3050,25 +3050,44 @@ BCRMSrvrMgr = function (command) {
     var ops = svc.InvokeMethod("srvrmgr", ips);
     var value = ops.GetChildByType("ResultSet").GetValue();
     //$("body").css("cursor","");
-    var cm = $("<div id='bcrm_cm'>");
-    var dlg = $("<div style='overflow:auto;'>");
-    dlg.append(cm);
-    dlg.dialog({
-        title: "Server Manager Output",
-        width: 1200,
-        height: 600,
-        close: function (e, ui) {
-            $(this).dialog("destroy");
-        }
-    });
+    if (!fromdialog){
+        var cm = $("<div id='bcrm_cm'>");
+        var dlg = $("<div style='overflow:auto;'>");
+        dlg.append(cm);
+        dlg.dialog({
+            title: "Server Manager Output",
+            width: 1200,
+            height: 800,
+            buttons: {
+                Submit: function () {
+                    var output = BCRMSrvrMgr($("#bcrm_sm_ta").val(),true);
+                    $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(output);
+                },
+                Close: function (e, ui) {
+                    $(this).dialog("destroy");
+                }
+            },
+            close: function (e, ui) {
+                $(this).dialog("destroy");
+            }
     
-    setTimeout(function () {
-        CodeMirror($("#bcrm_cm")[0], {
-            value: value,
-            mode: "txt",
-            lineNumbers: true
         });
-        $("#bcrm_cm").children("div").css("height", "500px");
-    }, 100);
-    //return result;
+    
+        setTimeout(function () {
+            CodeMirror($("#bcrm_cm")[0], {
+                value: value,
+                mode: "txt",
+                lineNumbers: true
+            });
+            $("#bcrm_cm").children("div").css("height", "500px");
+    
+            //enhance dialog
+            var c = $("<div id='bcrm_sm_c' style='margin-top:6px;'>");
+            c.append("<textarea placeholder='Enter srvrmgr commands in separate lines and click Submit.' id='bcrm_sm_ta' style='width:800px;height:100px'>");
+            $("#bcrm_cm").after(c);
+        }, 100);
+    }
+    else{
+        return value;
+    }
 }
