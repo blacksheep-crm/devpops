@@ -684,8 +684,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.i",
-            "title": "devpops 21.2 (Emilio Gino Segre)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.iii",
+            "title": "devpops 21.2 (Carlos Felipe Ximenes Belo)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -1722,6 +1722,39 @@ BCRMTracePMMethod = function (m, i, c, r) {
         }
     }
 }
+//PM Invoke Method handler for ShowSelection
+var bcrm_sc_counter = 0;
+BCRMTraceShowSelection = function () {
+    //calling trace causes a loop on ShowSelection
+    //workaround with counter which is reset after 2 seconds
+    bcrm_sc_counter++;
+    if (bcrm_sc_counter == 1){
+        if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var pm = ut.ValidateContext(this);
+            if (pm && typeof (pm.GetObjName) === "function") {
+                var on = pm.GetObjName();
+                var vn = SiebelApp.S_App.GetActiveView().GetName();
+                BCRMTrace("PMTRACE:" + vn + "::" + on + "::" + "ShowSelection");
+            }
+        }
+        setTimeout(function(){
+            bcrm_sc_counter = 0;
+        },2000);
+    }
+}
+//PM Invoke Method handler for FieldChange
+BCRMTraceFieldChange = function (f,v) {
+    if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
+        var ut = new SiebelAppFacade.BCRMUtils();
+        var pm = ut.ValidateContext(this);
+        if (pm && typeof (pm.GetObjName) === "function") {
+            var on = pm.GetObjName();
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            BCRMTrace("PMTRACE:" + vn + "::" + on + "::" + "FieldChange::" + f.GetDisplayName() + " (" + f.GetFieldName() + ")::" + v);
+        }
+    }
+}
 
 //PM Tracing registration
 BCRMRegisterPMTracing = function () {
@@ -1731,10 +1764,11 @@ BCRMRegisterPMTracing = function () {
         if (pm.Get("BCRMInvokeMethodTracing") != "enabled") {
             //attach invoke method handler
             pm.AddMethod("InvokeMethod", BCRMTracePMMethod, { sequence: true, scope: pm });
+            pm.AddMethod("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
+            pm.AttachPMBinding("FieldChange", BCRMTraceFieldChange, { scope: pm, sequence: true });
             pm.SetProperty("BCRMInvokeMethodTracing", "enabled");
         }
     }
-
 }
 
 //xray postload helper to apply default settings
@@ -1745,7 +1779,11 @@ BCRMApplyDefaultXray = function () {
     if (typeof (t) !== "undefined") {
         if (t != "") {
             for (a in am) {
-                ut.ToggleLabels(t, a);
+                var pm = ut.ValidateContext(a);
+                if (pm && pm.Get("BCRM_DEFAULT_XRAY") != "true") {
+                    pm.SetProperty("BCRM_DEFAULT_XRAY", "true");
+                    ut.ToggleLabels(t, a);
+                }
             }
             $("#bcrm_debug_msg").text("X-Ray default set to: " + t);
         }
@@ -1835,25 +1873,30 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             if (pm) {
                 tp = ut.GetAppletType(pm);
                 if (tp == "form" || tp == "list") {
-                    ae = ut.GetAppletElem(pm);
-                    ae.dblclick(function () //jQuery double-click event handler
-                    {
-                        var cycle; //the toggle cycle
-                        switch (pm.Get("C_ToggleCycle")) {
-                            case "ShowBCFields": cycle = "ShowTableColumns";
-                                break;
-                            case "ShowTableColumns": cycle = "Reset";
-                                break;
-                            case "Reset": cycle = "ShowBCFields";
-                                break;
-                            default: cycle = "ShowBCFields";
-                                break;
-                        }
-                        pm.SetProperty("C_ToggleCycle", cycle); //set property to current cycle
-                        ut.ToggleLabels(cycle, pm); //call utility method
-                        //console.log(cycle);
-                    });
+                    if (pm.Get("BCRM_XRAY_HANDLER_ENABLED") != "true") {
+                        ae = ut.GetAppletElem(pm);
+                        ae.dblclick(function () //jQuery double-click event handler
+                        {
+                            var cycle; //the toggle cycle
+                            switch (pm.Get("C_ToggleCycle")) {
+                                case "ShowBCFields": cycle = "ShowTableColumns";
+                                    break;
+                                case "ShowTableColumns": cycle = "Reset";
+                                    break;
+                                case "Reset": cycle = "ShowBCFields";
+                                    break;
+                                default: cycle = "ShowBCFields";
+                                    break;
+                            }
+                            pm.SetProperty("C_ToggleCycle", cycle); //set property to current cycle
+                            ut.ToggleLabels(cycle, pm); //call utility method
+                            //console.log(cycle);
+                        });
+                        //console.log("BCRM XRay double-click handler enabled on: " + pm.GetObjName());
+                        pm.SetProperty("BCRM_XRAY_HANDLER_ENABLED", "true");
+                    }
                 }
+
             }
         };
 
@@ -3050,7 +3093,7 @@ BCRMSrvrMgr = function (command, fromdialog) {
     var ops = svc.InvokeMethod("srvrmgr", ips);
     var value = ops.GetChildByType("ResultSet").GetValue();
     //$("body").css("cursor","");
-    if (!fromdialog){
+    if (!fromdialog) {
         var cm = $("<div id='bcrm_cm'>");
         var dlg = $("<div style='overflow:auto;'>");
         dlg.append(cm);
@@ -3060,7 +3103,7 @@ BCRMSrvrMgr = function (command, fromdialog) {
             height: 800,
             buttons: {
                 Submit: function () {
-                    var output = BCRMSrvrMgr($("#bcrm_sm_ta").val(),true);
+                    var output = BCRMSrvrMgr($("#bcrm_sm_ta").val(), true);
                     $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(output);
                 },
                 Close: function (e, ui) {
@@ -3070,9 +3113,9 @@ BCRMSrvrMgr = function (command, fromdialog) {
             close: function (e, ui) {
                 $(this).dialog("destroy");
             }
-    
+
         });
-    
+
         setTimeout(function () {
             CodeMirror($("#bcrm_cm")[0], {
                 value: value,
@@ -3080,14 +3123,108 @@ BCRMSrvrMgr = function (command, fromdialog) {
                 lineNumbers: true
             });
             $("#bcrm_cm").children("div").css("height", "500px");
-    
+
             //enhance dialog
             var c = $("<div id='bcrm_sm_c' style='margin-top:6px;'>");
             c.append("<textarea placeholder='Enter srvrmgr commands in separate lines and click Submit.' id='bcrm_sm_ta' style='width:800px;height:100px'>");
             $("#bcrm_cm").after(c);
         }, 100);
     }
-    else{
+    else {
         return value;
     }
+}
+
+//Demo: enable SARM
+BCRMSARMOn = function(){
+    var logdir = "C:\\Siebel\\ses\\siebsrvr\\temp";
+    var comp = "sccobjmgr_enu";
+    var server = "server01";
+    var period = "1";
+    var sarmuser = SiebelApp.S_App.GetUserName();
+    var level = "2";
+
+    var cmd = "";
+    cmd += "set server " + server + "\n";
+    cmd += "change param sarmlogdirectory=" + logdir + " for comp " + comp + "\n";
+    cmd += "change param sarmperiod=" + period + " for comp " + comp + "\n";
+    cmd += "change param sarmusers=" + sarmuser + " for comp " + comp + "\n";
+    cmd += "change param sarmlevel=" + level  + " for comp " + comp + "\n";
+    cmd += "list param sarm% for comp " + comp + "\n";
+    cmd += "list advanced param sarm% for comp " + comp + "\n";
+    cmd += "unset server";
+
+    BCRMSrvrMgr(cmd);
+};
+
+//Demo: disable SARM
+BCRMSARMOff = function(){
+    var logdir = "C:\\Siebel\\ses\\siebsrvr\\temp";
+    var comp = "sccobjmgr_enu";
+    var server = "server01";
+    var period = "1";
+    var sarmuser = SiebelApp.S_App.GetUserName();
+    var level = "2";
+
+    var cmd = "";
+    cmd += "delete parameter override for server " + server + " component " + comp + " param sarmperiod" + "\n";
+    cmd += "delete parameter override for server " + server + " component " + comp + " param sarmlogdirectory" + "\n";
+    cmd += "delete parameter override for server " + server + " component " + comp + " param sarmusers" + "\n";
+    cmd += "delete parameter override for server " + server + " component " + comp + " param sarmlevel" + "\n";
+    cmd += "list param sarm% for comp " + comp + "\n";
+    cmd += "list advanced param sarm% for comp " + comp + "\n";
+
+    BCRMSrvrMgr(cmd);
+};
+
+//popup catcher: this uses a PW to trigger on popup applets only, could be a PR
+if (typeof (SiebelAppFacade.BCRMPopupPW) === "undefined") {
+
+    SiebelJS.Namespace("SiebelAppFacade.BCRMPopupPW");
+    define("siebel/custom/BCRMPopupPW", ["siebel/pwinfra"],
+        function () {
+            SiebelAppFacade.BCRMPopupPW = (function () {
+
+                function BCRMPopupPW(pm) {
+                    SiebelAppFacade.BCRMPopupPW.superclass.constructor.apply(this, arguments);
+                }
+                SiebelJS.Extend(BCRMPopupPW, SiebelAppFacade.FieldPW);
+
+                BCRMPopupPW.prototype.Init = function () {
+                    SiebelAppFacade.BCRMPopupPW.superclass.Init.apply(this, arguments);
+                }
+
+                BCRMPopupPW.prototype.ShowUI = function () {
+                    SiebelAppFacade.BCRMPopupPW.superclass.ShowUI.apply(this, arguments);
+
+                    //register PM Tracing for all current applets in view, including popups
+                    BCRMRegisterPMTracing();
+
+                    //xray handler
+                    setTimeout(function () {
+                        BCRMApplyDefaultXray();
+                        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                        var ut = new SiebelAppFacade.BCRMUtils();
+                        for (a in am){
+                            ut.AddXrayHandler(a);
+                        }
+                    }, 300);
+                }
+                return BCRMPopupPW;
+            }()
+            );
+
+            SiebelApp.S_App.PluginBuilder.AttachPW(consts.get("SWE_CTRL_TEXT"), SiebelAppFacade.BCRMPopupPW, function (control, objName) {
+                var retval = false;
+                if (SiebelApp.S_App.GetName() != "Siebel Web Tools") {
+                    //only attach to popup applets which include inline search
+                    //could find a better way, like applet type="popup"
+                    if (control.GetName() == "PopupQuerySrchspec") {
+                        retval = true;
+                    }
+                }
+                return retval;
+            });
+            return "SiebelAppFacade.BCRMPopupPW";
+        })
 }
