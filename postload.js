@@ -663,6 +663,63 @@ BCRMCreateDebugMenu = function () {
                 $("body").css("cursor", "");
             }
         },
+        "StartSARM": {
+            "label": "Start SARM",
+            "title": "Start SARM logging",
+            "onclick": function () {
+                BCRMSARMOn();
+                sessionStorage.BCRMSARMCycle = "StartSARM";
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                var msg = "<span id='bcrm_sarm_msg'>Logging SARM data for 300 seconds</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop Now" + "</button>";
+                $("#bcrm_debug_msg").html(msg);
+                $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                    BCRMSARMOff();
+                    sessionStorage.BCRMSARMCycle = "StopSARM";
+                    clearInterval(sarmintv);
+                    $("#bcrm_debug_msg").text("");
+                });
+            },
+            "showoptions": true,
+            "options": {
+                "FilePath": {
+                    "label": "File Path",
+                    "default": "C:\\Siebel\\ses\\siebsrvr\\temp",
+                    "tip": "Enter a valid server path (without file name)",
+                    "type": "input"
+                },
+                "Component": {
+                    "label": "Component Alias",
+                    "default": "sccobjmgr_enu",
+                    "tip": "Select component alias",
+                    "type": "select",
+                    "lov": ["sccobjmgr_enu", "eaiobjmgr_enu", "sseobjmgr_enu", "ecommunicationsobjmgr_enu", "wfprocmgr", "xmlpreportserver"]
+                },
+                "Server": {
+                    "label": "Siebel Server",
+                    "default": "server01",
+                    "tip": "Select Siebel Server",
+                    "type": "select",
+                    "lov": ["server01", "server02"]
+                },
+                "Duration": {
+                    "label": "Duration (seconds)",
+                    "default": "300",
+                    "tip": "Stop SARM logging after time has elapsed",
+                    "type": "input"
+                }
+            }
+        },
+        "StopSARM": {
+            "label": "Stop SARM",
+            "title": "Stop SARM logging",
+            "onclick": function () {
+                BCRMSARMOff();
+                clearInterval(sarmintv);
+                sessionStorage.BCRMSARMCycle = "StopSARM";
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                $("#bcrm_debug_msg").text("");
+            }
+        },
         "SiebelHub": {
             "label": "Siebel Hub",
             "title": "Get your Siebel kicks on da hub with a random page (might require login).",
@@ -696,13 +753,16 @@ BCRMCreateDebugMenu = function () {
     for (i in items) {
         var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
         var dv = $("<div title='" + items[i].title + "'>" + items[i].label + "</div>");
-        if (sessionStorage.BCRMToggleCycle == i || sessionStorage.BCRMTracingCycle == i) {
+        if (sessionStorage.BCRMToggleCycle == i || sessionStorage.BCRMTracingCycle == i || sessionStorage.BCRMSARMCycle == i) {
             dv.addClass("ui-state-disabled");
         }
         else if (typeof (sessionStorage.BCRMToggleCycle) === "undefined" && i == "Reset") {
             dv.addClass("ui-state-disabled");
         }
         else if (typeof (sessionStorage.BCRMTracingCycle) === "undefined" && i == "StopTracing") {
+            dv.addClass("ui-state-disabled");
+        }
+        else if (typeof (sessionStorage.BCRMSARMCycle) === "undefined" && i == "StopSARM") {
             dv.addClass("ui-state-disabled");
         }
         else {
@@ -778,18 +838,36 @@ BCRMCreateDebugMenu = function () {
                                 var sn = $(this).attr("id");
                                 localStorage.setItem(sn, $(this).val());
                             });
-                            BCRMStartLogging();
-                            sessionStorage.BCRMTracingCycle = "StartTracing";
+                            if (id == "StartTracing") {
+                                BCRMStartLogging();
+                                sessionStorage.BCRMTracingCycle = "StartTracing";
+                            }
+                            if (id == "StartSARM") {
+                                BCRMSARMOn();
+                                sessionStorage.BCRMSARMCycle = "StartSARM";
+                            }
                             $(this).dialog("destroy");
                             $("#bcrm_dbg_menu").remove();
-                            var msg = "<span>Tracing in progress</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop'n'View" + "</button>";
-                            $("#bcrm_debug_msg").html(msg);
-                            $("#bcrm_debug_msg").find("button").on("click", function (e) {
-                                BCRMStopLogging();
-                                sessionStorage.BCRMTracingCycle = "StopTracing";
-                                $("#bcrm_debug_msg").text("");
-                                BCRMViewLog();
-                            });
+                            if (id == "StartTracing") {
+                                var msg = "<span>Tracing in progress</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop'n'View" + "</button>";
+                                $("#bcrm_debug_msg").html(msg);
+                                $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                                    BCRMStopLogging();
+                                    sessionStorage.BCRMTracingCycle = "StopTracing";
+                                    $("#bcrm_debug_msg").text("");
+                                    BCRMViewLog();
+                                });
+                            }
+                            if (id == "StartSARM") {
+                                var msg = "<span id='bcrm_sarm_msg'>Logging SARM data for 300 seconds</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop Now" + "</button>";
+                                $("#bcrm_debug_msg").html(msg);
+                                $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                                    BCRMSARMOff();
+                                    clearInterval(sarmintv);
+                                    sessionStorage.BCRMSARMCycle = "StopSARM";
+                                    $("#bcrm_debug_msg").text("");
+                                });
+                            }
                         },
                         Save: function () {
                             $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -1728,7 +1806,7 @@ BCRMTraceShowSelection = function () {
     //calling trace causes a loop on ShowSelection
     //workaround with counter which is reset after 2 seconds
     bcrm_sc_counter++;
-    if (bcrm_sc_counter == 1){
+    if (bcrm_sc_counter == 1) {
         if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(this);
@@ -1738,13 +1816,13 @@ BCRMTraceShowSelection = function () {
                 BCRMTrace("PMTRACE:" + vn + "::" + on + "::" + "ShowSelection");
             }
         }
-        setTimeout(function(){
+        setTimeout(function () {
             bcrm_sc_counter = 0;
-        },2000);
+        }, 2000);
     }
 }
 //PM Invoke Method handler for FieldChange
-BCRMTraceFieldChange = function (f,v) {
+BCRMTraceFieldChange = function (f, v) {
     if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
         var ut = new SiebelAppFacade.BCRMUtils();
         var pm = ut.ValidateContext(this);
@@ -1764,8 +1842,9 @@ BCRMRegisterPMTracing = function () {
         if (pm.Get("BCRMInvokeMethodTracing") != "enabled") {
             //attach invoke method handler
             pm.AddMethod("InvokeMethod", BCRMTracePMMethod, { sequence: true, scope: pm });
-            pm.AddMethod("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
-            pm.AttachPMBinding("FieldChange", BCRMTraceFieldChange, { scope: pm, sequence: true });
+            pm.AttachPMBinding("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
+            //FieldChange tracing kills popups, let's not do this
+            //pm.AttachPMBinding("FieldChange", BCRMTraceFieldChange, { scope: pm, sequence: true });
             pm.SetProperty("BCRMInvokeMethodTracing", "enabled");
         }
     }
@@ -3136,10 +3215,37 @@ BCRMSrvrMgr = function (command, fromdialog) {
 }
 
 //Demo: enable SARM
-BCRMSARMOn = function(){
-    var logdir = "C:\\Siebel\\ses\\siebsrvr\\temp";
-    var comp = "sccobjmgr_enu";
-    var server = "server01";
+var sarmduration = 0;
+var sarmintv;
+BCRMSARMOn = function () {
+    //get input
+    var logdir, comp, server, duration;
+    if (typeof (localStorage.BCRM_OPT_StartSARM_FilePath) !== "undefined") {
+        logdir = localStorage.BCRM_OPT_StartSARM_FilePath;
+    }
+    else {
+        fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
+    }
+    if (typeof (localStorage.BCRM_OPT_StartSARM_Component) !== "undefined") {
+        comp = localStorage.BCRM_OPT_StartSARM_Component;
+    }
+    else {
+        comp = "sccobjmgr_enu";
+    }
+    if (typeof (localStorage.BCRM_OPT_StartSARM_Server) !== "undefined") {
+        server = localStorage.BCRM_OPT_StartSARM_Server;
+    }
+    else {
+        server = "server01";
+    }
+    if (typeof (localStorage.BCRM_OPT_StartSARM_Duration) !== "undefined") {
+        duration = 1000 * parseInt(localStorage.BCRM_OPT_StartSARM_Duration);
+    }
+    else {
+        duration = 300000;
+    }
+
+    sarmduration = duration;
     var period = "1";
     var sarmuser = SiebelApp.S_App.GetUserName();
     var level = "2";
@@ -3149,22 +3255,29 @@ BCRMSARMOn = function(){
     cmd += "change param sarmlogdirectory=" + logdir + " for comp " + comp + "\n";
     cmd += "change param sarmperiod=" + period + " for comp " + comp + "\n";
     cmd += "change param sarmusers=" + sarmuser + " for comp " + comp + "\n";
-    cmd += "change param sarmlevel=" + level  + " for comp " + comp + "\n";
+    cmd += "change param sarmlevel=" + level + " for comp " + comp + "\n";
     cmd += "list param sarm% for comp " + comp + "\n";
     cmd += "list advanced param sarm% for comp " + comp + "\n";
     cmd += "unset server";
 
     BCRMSrvrMgr(cmd);
+    sarmintv = setInterval(function () {
+        sarmduration = sarmduration - 1000;
+        var disp = sarmduration / 1000;
+        $("#bcrm_sarm_msg").text("Logging SARM data for " + disp + " seconds");
+        if (sarmduration <= 0) {
+            BCRMSARMOff();
+            sessionStorage.BCRMSARMCycle = "StopSARM";
+            clearInterval(sarmintv);
+            $("#bcrm_debug_msg").text("");
+        }
+    }, 1000);
 };
 
 //Demo: disable SARM
-BCRMSARMOff = function(){
-    var logdir = "C:\\Siebel\\ses\\siebsrvr\\temp";
+BCRMSARMOff = function () {
     var comp = "sccobjmgr_enu";
     var server = "server01";
-    var period = "1";
-    var sarmuser = SiebelApp.S_App.GetUserName();
-    var level = "2";
 
     var cmd = "";
     cmd += "delete parameter override for server " + server + " component " + comp + " param sarmperiod" + "\n";
@@ -3205,7 +3318,7 @@ if (typeof (SiebelAppFacade.BCRMPopupPW) === "undefined") {
                         BCRMApplyDefaultXray();
                         var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                         var ut = new SiebelAppFacade.BCRMUtils();
-                        for (a in am){
+                        for (a in am) {
                             ut.AddXrayHandler(a);
                         }
                     }, 300);
