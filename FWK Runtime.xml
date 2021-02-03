@@ -135,10 +135,10 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function Service_usPreInvokeMethod (MethodName, Inputs, Outputs)_newline{_newline if (MethodName == &quot;EvalExpr&quot;){_newline  EvalExpr(Inputs, Outputs);_newline }_newline if (MethodName == &quot;EvalScript&quot;){_newline  EvalScript(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InvokeServiceMethod&quot;){_newline  InvokeServiceMethod(Inputs, Outputs);_newline }_newline if (MethodName == &quot;Log&quot;){_newline  AppLog(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWS&quot;){_newline  InspectWS (Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWSVersion&quot;){_newline  InspectWSVersion(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;FastInspect&quot;){_newline  FastInspect(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;ProcessLogRequest&quot;){_newline  ProcessLogRequest(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;GetRRData&quot;){_newline  GetRRData(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;srvrmgr&quot;){_newline  srvrmgr(Inputs, Outputs);_newline }_newline return (CancelOperation);_newline}"
+ Script="function Service_usPreInvokeMethod (MethodName, Inputs, Outputs)_newline{_newline if (MethodName == &quot;EvalExpr&quot;){_newline  EvalExpr(Inputs, Outputs);_newline }_newline if (MethodName == &quot;EvalScript&quot;){_newline  EvalScript(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InvokeServiceMethod&quot;){_newline  InvokeServiceMethod(Inputs, Outputs);_newline }_newline if (MethodName == &quot;Log&quot;){_newline  AppLog(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWS&quot;){_newline  InspectWS (Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWSVersion&quot;){_newline  InspectWSVersion(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;FastInspect&quot;){_newline  FastInspect(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;ProcessLogRequest&quot;){_newline  ProcessLogRequest(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;GetRRData&quot;){_newline  GetRRData(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;srvrmgr&quot;){_newline  srvrmgr(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;runcmd&quot;){_newline  runcmd(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;readFile&quot;){_newline  readFile(Inputs, Outputs);_newline }_newline return (CancelOperation);_newline}"
  Program_spcLanguage="JS"
  Name="Service_usPreInvokeMethod"
- Sequence="19"
+ Sequence="21"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -149,7 +149,7 @@
  Script="function TranslateAttr(Inputs, psCache) {_newline    try{_newline        var psFilter = TheApplication().NewPropertySet();_newline        var psIn = TheApplication().NewPropertySet();_newline        var psAttr = TheApplication().NewPropertySet();_newline        var psDef = Inputs;_newline        var otype = &quot;&quot;;_newline        var sAttr = psDef.GetProperty(&quot;ATTRS&quot;);_newline        var arrAttr = CleanAttributes(sAttr);_newline        var rrfmap = &quot;&quot;;_newline        var arTypeFilteredRR;_newline        var ts;_newline        var fv = &quot;&quot;;_newline_newline        otype = psDef.GetType();_newline        if (psCache.GetProperty(otype) == &quot;&quot;) {_newline            psIn.SetProperty(&quot;Object Type&quot;, otype);_newline            GetTypeRRFieldMap(psIn, psFilter);_newline            rrfmap = psFilter.GetProperty(&quot;RRFieldMap&quot;);_newline            psCache.SetProperty(otype, rrfmap);_newline        }_newline        else {_newline            rrfmap = psCache.GetProperty(otype);_newline        }_newline_newline        arTypeFilteredRR = rrfmap.split(&quot;,&quot;);_newline_newline        for (var h = 0; h &lt; arrAttr.length; h++) {_newline            ts = arrAttr[h];_newline            fv = arTypeFilteredRR[h];_newline            psAttr.SetProperty(fv, ts);_newline        }_newline        psAttr.SetType(&quot;Properties&quot;);_newline    }_newline    catch(e){_newline        TheApplication().RaiseErrorText(&quot;Error in TranslateAttr: &quot; + e.toString() + &quot;otype: &quot; + otype + &quot;***rrfmap: &quot; + rrfmap + &quot;***fv: &quot; + fv);_newline    }_newline    return psAttr;_newline}"
  Program_spcLanguage="JS"
  Name="TranslateAttr"
- Sequence="18"
+ Sequence="20"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -212,10 +212,32 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
+ Script="function readFile (Inputs,Outputs)_newline{_newlinevar fn = Inputs.GetProperty(&quot;FileName&quot;);_newlinevar st = Inputs.GetProperty(&quot;FileSleepTime&quot;);_newlineif (st == &quot;&quot;){ st = &quot;5000&quot;; }_newlinevar fs = TheApplication().GetService(&quot;EAI File Transport&quot;);_newlinevar fi = TheApplication().NewPropertySet();_newlinevar fo = TheApplication().NewPropertySet();_newlinefi.SetProperty(&quot;FileName&quot;,fn);_newlinefi.SetProperty(&quot;FileSleepTime&quot;,st);_newlinefs.InvokeMethod(&quot;Receive&quot;,fi,fo);_newline//convert output_newlinevar ts = TheApplication().GetService(&quot;Transcode Service&quot;);_newlinevar tso = TheApplication().NewPropertySet();_newlinefo.SetProperty(&quot;ConversionMode&quot;, &quot;EncodingToString&quot;);_newlinefo.SetProperty(&quot;SourceEncoding&quot;, &quot;UTF-8&quot;);_newlinets.InvokeMethod(&quot;Convert&quot;, fo, tso);_newlineOutputs.SetValue(tso.GetValue());_newline}_newline"
+ Program_spcLanguage="JS"
+ Name="readFile"
+ Sequence="17"
+></Business_spcService_spcScript
+><Business_spcService_spcScript
+ Comments=""
+ Parent_spcId="1-35MB"
+ Parent_spcName="FWK Runtime"
+ Parent_spcInactive="N"
+ Inactive="N"
+ Script="function runcmd (Inputs, Outputs)_newline{_newline   var cmd = Inputs.GetProperty(&quot;cmd&quot;);_newline   Clib.system(cmd);_newline}_newline"
+ Program_spcLanguage="JS"
+ Name="runcmd"
+ Sequence="18"
+></Business_spcService_spcScript
+><Business_spcService_spcScript
+ Comments=""
+ Parent_spcId="1-35MB"
+ Parent_spcName="FWK Runtime"
+ Parent_spcInactive="N"
+ Inactive="N"
  Script="function srvrmgr (Inputs,Outputs)_newline{_newlinevar ts = new Date;_newlinevar tsm = ts.toSystem().toString();_newlinevar ln = TheApplication().LoginName();_newlinevar pa = Inputs.GetProperty(&quot;FilePath&quot;);_newlineif (pa == &quot;&quot;){_newline	pa = &quot;C:\\Siebel\\ses\\siebsrvr\\TEMP\\&quot;;_newline}_newlinevar st = Inputs.GetProperty(&quot;FileSleepTime&quot;);_newlineif (st == &quot;&quot;){_newline	st = &quot;5000&quot;;_newline}_newlinevar fn = pa + &quot;srvrmgr_usinput.txt&quot;;_newlinevar sf = pa + ln + &quot;_us&quot; + tsm + &quot;_ussrvrmgr_usspool.txt&quot;;_newlinevar cmd = Inputs.GetProperty(&quot;cmd&quot;);_newline_newlinevar fs = TheApplication().GetService(&quot;EAI File Transport&quot;);_newlinevar svc = TheApplication().GetService(&quot;BCRM Server Manager Service&quot;);_newlinevar ts = TheApplication().GetService(&quot;Transcode Service&quot;);_newline_newline//write input file_newlinevar fi = TheApplication().NewPropertySet();_newlinevar fo = TheApplication().NewPropertySet();_newlinefi.SetProperty(&quot;FileName&quot;,fn);_newlinecmd = &quot;spool &quot; + sf + &quot;\n&quot; + cmd + &quot;\n&quot; + &quot;spool off&quot; + &quot;\n&quot; + &quot;exit&quot;;_newlinefi.SetValue(cmd);_newlinefs.InvokeMethod(&quot;Send&quot;,fi,fo);_newline_newline//run srvrmgr command_newlinevar ips = TheApplication().NewPropertySet();_newline//ips.SetProperty(&quot;migrationid&quot;,&quot;TEST1&quot;);_newlinevar ops = TheApplication().NewPropertySet();_newlinesvc.InvokeMethod(&quot;Export&quot;, ips, ops);_newline_newline//retrieve spool file_newlinefi.Reset();_newlinefi.SetProperty(&quot;FileSleepTime&quot;, st);_newlinefi.SetProperty(&quot;FileName&quot;,sf);_newlinefi.SetProperty(&quot;DeleteFile&quot;,&quot;true&quot;);_newlinefs.InvokeMethod(&quot;Receive&quot;,fi,fo);_newline_newline//convert output_newlinevar tso = TheApplication().NewPropertySet();_newlinefo.SetProperty(&quot;ConversionMode&quot;, &quot;EncodingToString&quot;);_newlinefo.SetProperty(&quot;SourceEncoding&quot;, &quot;UTF-8&quot;);_newlinets.InvokeMethod(&quot;Convert&quot;, fo, tso);_newlineOutputs.SetValue(tso.GetValue());_newline}_newline"
  Program_spcLanguage="JS"
  Name="srvrmgr"
- Sequence="17"
+ Sequence="19"
 ></Business_spcService_spcScript
 ></Business_spcService
 >
