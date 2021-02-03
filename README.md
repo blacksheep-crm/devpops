@@ -12,6 +12,8 @@ Fast Inspect of workspaces in the application (right click on workspace dashboar
 
 Debug menu in application to invoke xray (by blacksheep), tracing (by Jason MacZura) and xapuk.com utilities (by Slava)
 
+Server Manager command line (srvrmgr) via browser, quick SARM on/off (user must have Siebel Administrator responsibility)
+
 Video (early version): https://youtu.be/pesmDPSNIvw
 
 Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
