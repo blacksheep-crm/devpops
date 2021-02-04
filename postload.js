@@ -501,9 +501,23 @@ BCRMCreateDebugMenu = function () {
         $("head").append(st);
     }
     var items = {
+        "ShowControls": {
+            "label": "Show Controls",
+            "title": "X-Ray: Toggle Form Applets to display Control information in labels",
+            "onclick": function () {
+                var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                var ut = new SiebelAppFacade.BCRMUtils();
+                for (a in am) {
+                    ut.ShowControls(a);
+                }
+                sessionStorage.BCRMToggleCycle = "ShowControls";
+                //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+            },
+            "showtoggle": true
+        },
         "ShowBCFields": {
             "label": "Show BC Fields",
-            "title": "Toggle Form and List Applets to display BC Field information in labels",
+            "title": "X-Ray: Toggle Form and List Applets to display BC Field information in labels",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                 var ut = new SiebelAppFacade.BCRMUtils();
@@ -517,7 +531,7 @@ BCRMCreateDebugMenu = function () {
         },
         "ShowTableColumns": {
             "label": "Show Tables/Columns",
-            "title": "Toggle Form and List Applets to display physical layer information",
+            "title": "X-Ray: Toggle Form and List Applets to display physical layer information",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                 var ut = new SiebelAppFacade.BCRMUtils();
@@ -531,7 +545,7 @@ BCRMCreateDebugMenu = function () {
         },
         "Reset": {
             "label": "Reset Labels",
-            "title": "Toggle Form and List Applets to display original labels",
+            "title": "X-Ray: Toggle Form and List Applets to display original labels",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                 var ut = new SiebelAppFacade.BCRMUtils();
@@ -741,8 +755,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.iii",
-            "title": "devpops 21.2 (Carlos Felipe Ximenes Belo)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.iv",
+            "title": "devpops 21.2 (Robert Hofstadter)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -1842,7 +1856,7 @@ BCRMRegisterPMTracing = function () {
         if (pm.Get("BCRMInvokeMethodTracing") != "enabled") {
             //attach invoke method handler
             pm.AddMethod("InvokeMethod", BCRMTracePMMethod, { sequence: true, scope: pm });
-            pm.AttachPMBinding("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
+            pm.AddMethod("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
             //FieldChange tracing kills popups, let's not do this
             //pm.AttachPMBinding("FieldChange", BCRMTraceFieldChange, { scope: pm, sequence: true });
             pm.SetProperty("BCRMInvokeMethodTracing", "enabled");
@@ -1958,13 +1972,15 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         {
                             var cycle; //the toggle cycle
                             switch (pm.Get("C_ToggleCycle")) {
+                                case "ShowControls": cycle = "ShowBCFields";
+                                    break;
                                 case "ShowBCFields": cycle = "ShowTableColumns";
                                     break;
                                 case "ShowTableColumns": cycle = "Reset";
                                     break;
-                                case "Reset": cycle = "ShowBCFields";
+                                case "Reset": cycle = "ShowControls";
                                     break;
-                                default: cycle = "ShowBCFields";
+                                default: cycle = "ShowControls";
                                     break;
                             }
                             pm.SetProperty("C_ToggleCycle", cycle); //set property to current cycle
@@ -1986,6 +2002,8 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             if (pm) {
                 switch (cycle) //determine current toggle cycle and spawn functions
                 {
+                    case "ShowControls": ut.ShowControls(pm);
+                        break;
                     case "ShowBCFields": ut.ShowBCFields(pm);
                         break;
                     //only simple physical metatdata as of yet,
@@ -2029,7 +2047,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             if (pm) {
                 le = ut.GetLabelElem(c, pm);
                 if (le) {
-                    le.text(nl);
+                    le.html(nl);
                     le.attr("title", nl);
                     //mark label as changed
                     le.attr("bcrm-custom-label", "true");
@@ -2223,6 +2241,100 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 bcd = JSON.parse(sessionStorage.getItem(cache));
             }
             return bcd;
+        };
+
+        BCRMUtils.prototype.ExtractAppletData = function (rrdata) {
+            var retval = {};
+            var ap;
+            var props;
+            var pc;
+            var cc;
+            var fn;
+            retval["Applet"] = {};
+            ap = retval["Applet"];
+            props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
+            pc = props.length;
+            for (p in props) {
+                ap[p] = props[p];
+            }
+            ap["Controls"] = {};
+            cc = rrdata.GetChild(0).childArray;
+            for (c in cc) {
+                if (cc[c].type == "Control") {
+                    props = cc[c].GetChildByType("Properties").propArray;
+                    fn = cc[c].GetChildByType("Properties").propArray["Name"];
+                    ap["Controls"][fn] = {};
+                    for (p in props) {
+                        ap["Controls"][fn][p] = props[p];
+                    }
+                }
+            }
+            return retval;
+        };
+
+        BCRMUtils.prototype.GetAppletData = function (an) {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var rrdata, appletdata, ad;
+            //use session storage as client-side cache to avoid multiple queries for the same object
+            var cache = "BCRM_RR_CACHE_APPLET_" + an;
+            if (!sessionStorage.getItem(cache)) {
+                rrdata = ut.GetRRData("Applet", an);
+                appletdata = ut.ExtractAppletData(rrdata);
+                ad = appletdata["Applet"];
+                sessionStorage.setItem(cache, JSON.stringify(ad));
+            }
+            else {
+                ad = JSON.parse(sessionStorage.getItem(cache));
+            }
+            return ad;
+        };
+
+        BCRMUtils.prototype.ShowControls = function(context){
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var pm = ut.ValidateContext(context);
+            var an, apd, tp, cs, cn, uit, pop;
+            var nl;
+            if (pm){
+                an = pm.GetObjName();
+                apd = ut.GetAppletData(an);
+                tp = ut.GetAppletType(pm);
+                //currently supporting form applets only
+                if (tp == "form"){
+                    cs = pm.Get("GetControls");
+                    for (c in cs) {
+                        pop = "";
+                        if (cs.hasOwnProperty(c) && c != "CleanEmptyElements") {
+                            cn = c;
+                            uit = cs[c].GetUIType();
+                            if (uit == "Mvg"){
+                                if (typeof(apd["Controls"][c]) !== "undefined"){
+                                    pop = apd["Controls"][c]["MVG Applet"];
+                                    //get Assoc applet
+                                    var mvgd = ut.GetAppletData(pop);
+                                    var asa = mvgd["Associate Applet"];
+                                    if (asa != ""){
+                                        uit = "Shuttle";
+                                        pop = asa + "<br>" + pop;
+                                    }
+                                }
+                            }
+                            if (uit == "Pick"){
+                                if (typeof(apd["Controls"][c]) !== "undefined"){
+                                    pop = apd["Controls"][c]["Pick Applet"];
+                                }
+                            }
+                            else{
+                                //nothing to do as of yet
+                            }
+                            nl = uit + ":" + c;
+                            if (pop != ""){
+                                nl += "<br>" + pop;
+                            }
+                            ut.SetLabel(cs[c], nl, pm);
+                        }
+                    }
+                }
+            }
         };
 
         //show physical metadata (table.column), requires BCRM RR Reader service
