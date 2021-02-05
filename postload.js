@@ -31,6 +31,10 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
+var devpops_version=35;
+var devpops_uv = 0;
+var devpops_vcheck = false;
+var BCRCMETACACHE = {};
 
 //get data from custom BO for Web Tools display of who else is editing an object definition
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
@@ -781,6 +785,12 @@ BCRMCreateDebugMenu = function () {
         }
         else {
             dv.on("click", items[i].onclick);
+        }
+        if (i == "devpops"){
+            if (devpops_uv > devpops_version){
+                dv.css("color","#14ca21");
+                dv.attr("title","Updates available!\n" + dv.attr("title"));
+            }
         }
         if (items[i].showtoggle) {
             var tog = $('<span style="float: right; margin-right: 6px;" title="Set/unset this toggle cycle as default"><input class="bcrm-toggle" style="height: 0;width: 0;visibility: hidden;" type="checkbox" id="toggle_' + i + '"><label class="bcrm-toggle-label" for="toggle_' + i + '" style="cursor: pointer;text-indent: -9999px;width: 35px;height: 15px;background: grey;display: inline-block;border-radius: 100px;position: relative;top: 12px;">Toggle</label></span>');
@@ -1883,6 +1893,17 @@ BCRMApplyDefaultXray = function () {
     }
 };
 
+BCRMCheckVersion = function(){
+    if (!devpops_vcheck){
+        var vd = $.ajax({
+            dataType: "json",
+            url: "https://raw.githubusercontent.com/blacksheep-crm/devpops/main/v",
+            async: false
+        });
+        devpops_vcheck = true;
+        devpops_uv = vd.responseJSON;
+    }
+}
 //main postload function
 BCRMWSHelper = function () {
     try {
@@ -1938,6 +1959,9 @@ BCRMWSHelper = function () {
 
             //View tracing
             BCRMTraceView();
+
+            //Version chack
+            BCRMCheckVersion();
         }
 
     }
@@ -2229,16 +2253,17 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.GetBCData = function (bcn) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, bcdata, bcd;
-            //use session storage as client-side cache to avoid multiple queries for the same object
+            //use variable as client-side cache to avoid multiple queries for the same object
+            //tried sesssionstorage but reaches quota
             var cache = "BCRM_RR_CACHE_BC_" + bcn;
-            if (!sessionStorage.getItem(cache)) {
+            if (typeof(BCRCMETACACHE[cache]) === "undefined") {
                 rrdata = ut.GetRRData("Buscomp", bcn);
                 bcdata = ut.ExtractBCData(rrdata);
                 bcd = bcdata["Business Component"];
-                sessionStorage.setItem(cache, JSON.stringify(bcd));
+                BCRCMETACACHE[cache] = JSON.stringify(bcd);
             }
             else {
-                bcd = JSON.parse(sessionStorage.getItem(cache));
+                bcd = JSON.parse(BCRCMETACACHE[cache]);
             }
             return bcd;
         };
@@ -2275,16 +2300,17 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.GetAppletData = function (an) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, appletdata, ad;
-            //use session storage as client-side cache to avoid multiple queries for the same object
+            //use variable as client-side cache to avoid multiple queries for the same object
+            //tried sesssionstorage but reaches quota
             var cache = "BCRM_RR_CACHE_APPLET_" + an;
-            if (!sessionStorage.getItem(cache)) {
+            if (typeof(BCRCMETACACHE[cache]) === "undefined") {
                 rrdata = ut.GetRRData("Applet", an);
                 appletdata = ut.ExtractAppletData(rrdata);
                 ad = appletdata["Applet"];
-                sessionStorage.setItem(cache, JSON.stringify(ad));
+                BCRCMETACACHE[cache] = JSON.stringify(ad);
             }
             else {
-                ad = JSON.parse(sessionStorage.getItem(cache));
+                ad = JSON.parse(BCRCMETACACHE[cache]);
             }
             return ad;
         };
