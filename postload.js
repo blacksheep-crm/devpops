@@ -31,7 +31,7 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version=35;
+var devpops_version = 37;
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -720,10 +720,11 @@ BCRMCreateDebugMenu = function () {
                     "lov": ["server01", "server02"]
                 },
                 "Duration": {
-                    "label": "Duration (seconds)",
+                    "label": "Duration (min 60 seconds)",
                     "default": "300",
                     "tip": "Stop SARM logging after time has elapsed",
-                    "type": "input"
+                    "type": "number",
+                    "min": 60
                 }
             }
         },
@@ -736,6 +737,31 @@ BCRMCreateDebugMenu = function () {
                 sessionStorage.BCRMSARMCycle = "StopSARM";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 $("#bcrm_debug_msg").text("");
+            }
+        },
+        "ShowSARM": {
+            "label": "Show SARM Stats",
+            "title": "Very limited demo, knock yourself out",
+            "onclick": function () {
+                BCRMShowSARM();
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+            },
+            "showoptions": true,
+            "options": {
+                "GroupBy": {
+                    "label": "Group By",
+                    "default": "area",
+                    "tip": "Aggregation level",
+                    "type": "select",
+                    "lov": ["area", "subarea", "workflow"]
+                },
+                "Type": {
+                    "label": "Output Type",
+                    "default": "chart",
+                    "tip": "Output type",
+                    "type": "select",
+                    "lov": ["chart", "classic"]
+                }
             }
         },
         "SiebelHub": {
@@ -759,8 +785,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.iv",
-            "title": "devpops 21.2 (Robert Hofstadter)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.vi",
+            "title": "devpops 21.2 (Toshihide Maskawa)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -786,10 +812,10 @@ BCRMCreateDebugMenu = function () {
         else {
             dv.on("click", items[i].onclick);
         }
-        if (i == "devpops"){
-            if (devpops_uv > devpops_version){
-                dv.css("color","#14ca21");
-                dv.attr("title","Updates available!\n" + dv.attr("title"));
+        if (i == "devpops") {
+            if (devpops_uv > devpops_version) {
+                dv.css("color", "#14ca21");
+                dv.attr("title", "Updates available!\n" + dv.attr("title"));
             }
         }
         if (items[i].showtoggle) {
@@ -836,6 +862,12 @@ BCRMCreateDebugMenu = function () {
                     if (opt.type == "input") {
                         ic = $("<input style='width: 220px;height: 20px;margin-bottom: 4px;font-size:14px;' class='bcrm-option' id='" + sn + "'>");
                     }
+                    if (opt.type == "number") {
+                        ic = $("<input type='number' style='width: 220px;height: 20px;margin-bottom: 4px;font-size:14px;' class='bcrm-option' id='" + sn + "'>");
+                        if (opt.min) {
+                            ic.attr("min", opt.min.toString());
+                        }
+                    }
                     if (opt.type == "select") {
                         ic = $("<select style='width: 220px;height: 20px;margin-bottom: 4px;font-size:14px' class='bcrm-option' id='" + sn + "' selected='" + opt.default + "'>");
                         for (var i = 0; i < opt.lov.length; i++) {
@@ -857,7 +889,7 @@ BCRMCreateDebugMenu = function () {
                 dlg.dialog({
                     title: items[id].label + " Options",
                     buttons: {
-                        "Save & Start": function () {
+                        "Save & Go": function () {
                             $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
                                 var sn = $(this).attr("id");
                                 localStorage.setItem(sn, $(this).val());
@@ -869,6 +901,9 @@ BCRMCreateDebugMenu = function () {
                             if (id == "StartSARM") {
                                 BCRMSARMOn();
                                 sessionStorage.BCRMSARMCycle = "StartSARM";
+                            }
+                            if (id == "ShowSARM") {
+                                BCRMShowSARM();
                             }
                             $(this).dialog("destroy");
                             $("#bcrm_dbg_menu").remove();
@@ -1005,6 +1040,18 @@ BCRMViewLog = function () {
         overflow: scroll,
         resizable: true,
         buttons: {
+            ShowChart: {
+                text: "Show Chart",
+                click: function (e) {
+                    var cdata = BCRMShowTraceStats("chart");
+                    BCRMChartEngine("Query Stats", "horizontalBar", cdata.labels, cdata.data);
+                    $("#bcrm_chart").dialog({
+                        width: 800,
+                        height: 500,
+                        modal: false
+                    });
+                }
+            },
             ShowStats: {
                 text: "Show Stats",
                 click: function (e) {
@@ -1109,12 +1156,16 @@ BCRMRemoveRRTrace = function (p, textonly) {
 };
 
 //Show stats
-BCRMShowTraceStats = function () {
+BCRMShowTraceStats = function (type) {
     var divisor = 5;
     var top = 10;
     var agg = trace_parsed.agg;
     var tot = trace_parsed.totals;
     var tbl = trace_parsed.tables;
+    var chartdata = {
+        labels: [],
+        data: []
+    };
     var out = "SQL TRACE STATS\n";
     var dt;
     var i;
@@ -1142,6 +1193,8 @@ BCRMShowTraceStats = function () {
     }
 
     out += "SELECT (NO RR):" + ti + bar + "\n";
+    chartdata.labels.push("SELECT (NO RR)");
+    chartdata.data.push(ti);
 
     //selects, RR
     ti = agg.rr_query_count;
@@ -1150,6 +1203,8 @@ BCRMShowTraceStats = function () {
         bar += "#";
     }
     out += "SELECT (RR)   :" + ti + bar + "\n";
+    chartdata.labels.push("SELECT (RR)");
+    chartdata.data.push(ti);
 
     //inserts
     ti = agg.insert_count;
@@ -1158,6 +1213,8 @@ BCRMShowTraceStats = function () {
         bar += "#";
     }
     out += "INSERT        :" + ti + bar + "\n";
+    chartdata.labels.push("INSERT");
+    chartdata.data.push(ti);
 
     //updates
     ti = agg.update_count;
@@ -1166,6 +1223,8 @@ BCRMShowTraceStats = function () {
         bar += "#";
     }
     out += "UPDATE        :" + ti + bar + "\n";
+    chartdata.labels.push("UPDATE");
+    chartdata.data.push(ti);
 
     //deletes
     ti = agg.delete_count;
@@ -1174,6 +1233,8 @@ BCRMShowTraceStats = function () {
         bar += "#";
     }
     out += "DELETE        :" + ti + bar + "\n";
+    chartdata.labels.push("DELETE");
+    chartdata.data.push(ti);
 
     out += "\n\nTOP " + top + " TABLE USAGE: SELECT\n";
     ta = tbl.mostselected;
@@ -1240,8 +1301,12 @@ BCRMShowTraceStats = function () {
         }
         out += tn + ": " + ti + bar + "\n";
     }
-    return out;
-
+    if (typeof (type) === "undefined" || type == "text") {
+        return out;
+    }
+    else if (type == "chart") {
+        return chartdata;
+    }
 }
 //show worst queries
 BCRMShowWorstQueries = function () {
@@ -1893,8 +1958,8 @@ BCRMApplyDefaultXray = function () {
     }
 };
 
-BCRMCheckVersion = function(){
-    if (!devpops_vcheck){
+BCRMCheckVersion = function () {
+    if (!devpops_vcheck) {
         var vd = $.ajax({
             dataType: "json",
             url: "https://raw.githubusercontent.com/blacksheep-crm/devpops/main/v",
@@ -1962,6 +2027,13 @@ BCRMWSHelper = function () {
 
             //Version chack
             BCRMCheckVersion();
+
+            //experimental: include chart.js
+            var cjs = $('<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>');
+            if ($("script[src*='chart.js']").length == 0) {
+                $("head").append(cjs);
+            }
+
         }
 
     }
@@ -2256,7 +2328,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             //use variable as client-side cache to avoid multiple queries for the same object
             //tried sesssionstorage but reaches quota
             var cache = "BCRM_RR_CACHE_BC_" + bcn;
-            if (typeof(BCRCMETACACHE[cache]) === "undefined") {
+            if (typeof (BCRCMETACACHE[cache]) === "undefined") {
                 rrdata = ut.GetRRData("Buscomp", bcn);
                 bcdata = ut.ExtractBCData(rrdata);
                 bcd = bcdata["Business Component"];
@@ -2303,7 +2375,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             //use variable as client-side cache to avoid multiple queries for the same object
             //tried sesssionstorage but reaches quota
             var cache = "BCRM_RR_CACHE_APPLET_" + an;
-            if (typeof(BCRCMETACACHE[cache]) === "undefined") {
+            if (typeof (BCRCMETACACHE[cache]) === "undefined") {
                 rrdata = ut.GetRRData("Applet", an);
                 appletdata = ut.ExtractAppletData(rrdata);
                 ad = appletdata["Applet"];
@@ -2315,48 +2387,48 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return ad;
         };
 
-        BCRMUtils.prototype.ShowControls = function(context){
+        BCRMUtils.prototype.ShowControls = function (context) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var an, apd, tp, cs, cn, uit, pop;
             var nl;
-            if (pm){
+            if (pm) {
                 an = pm.GetObjName();
                 apd = ut.GetAppletData(an);
                 tp = ut.GetAppletType(pm);
                 //currently supporting form applets only
-                if (tp == "form"){
+                if (tp == "form") {
                     cs = pm.Get("GetControls");
                     for (c in cs) {
                         pop = "";
                         if (cs.hasOwnProperty(c) && c != "CleanEmptyElements") {
                             cn = c;
-                            uit = cs[c].GetUIType();
-                            if (uit == "Mvg"){
-                                if (typeof(apd["Controls"][c]) !== "undefined"){
-                                    pop = apd["Controls"][c]["MVG Applet"];
+                            uit = cs[cn].GetUIType();
+                            if (uit == "Mvg") {
+                                if (typeof (apd["Controls"][cn]) !== "undefined") {
+                                    pop = apd["Controls"][cn]["MVG Applet"];
                                     //get Assoc applet
                                     var mvgd = ut.GetAppletData(pop);
                                     var asa = mvgd["Associate Applet"];
-                                    if (asa != ""){
+                                    if (asa != "") {
                                         uit = "Shuttle";
                                         pop = asa + "<br>" + pop;
                                     }
                                 }
                             }
-                            if (uit == "Pick"){
-                                if (typeof(apd["Controls"][c]) !== "undefined"){
-                                    pop = apd["Controls"][c]["Pick Applet"];
+                            if (uit == "Pick") {
+                                if (typeof (apd["Controls"][cn]) !== "undefined") {
+                                    pop = apd["Controls"][cn]["Pick Applet"];
                                 }
                             }
-                            else{
+                            else {
                                 //nothing to do as of yet
                             }
-                            nl = uit + ":" + c;
-                            if (pop != ""){
+                            nl = uit + ":" + cn;
+                            if (pop != "") {
                                 nl += "<br>" + pop;
                             }
-                            ut.SetLabel(cs[c], nl, pm);
+                            ut.SetLabel(cs[cn], nl, pm);
                         }
                     }
                 }
@@ -2384,7 +2456,8 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     cs = pm.Get("GetControls");
                     for (c in cs) {
                         if (cs.hasOwnProperty(c) && c != "CleanEmptyElements") {
-                            fn = cs[c].GetFieldName();
+                            var cn = c;
+                            fn = cs[cn].GetFieldName();
                             if (fn != "") {
                                 fd = fm[fn];
                                 fdt = fd.GetDataType(); //get the data type (text, bool, etc)
@@ -2446,7 +2519,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                     //display field info from OUI layer
                                     nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
                                 }
-                                ut.SetLabel(cs[c], nl, pm);
+                                ut.SetLabel(cs[cn], nl, pm);
                             }
                         }
                     }
@@ -3428,6 +3501,125 @@ BCRMSARMOff = function () {
     BCRMSrvrMgr(cmd);
 };
 
+//SARM Demo
+BCRMShowSARM = function (type, sarmcmd, ofile) {
+    var cmd = "";
+    var labels = [];
+    var data = [];
+    var labelfound = false;
+    var datafound = false;
+    var sarmquery = "C:\\Siebel\\ses\\siebsrvr\\BIN\\sarmquery";
+    var sarminp = "C:\\Siebel\\ses\\siebsrvr\\TEMP";
+    var sarmuser = SiebelApp.S_App.GetUserName();
+    if (typeof (ofile) === "undefined") {
+        ofile = "C:\\Siebel\\ses\\siebsrvr\\TEMP\\" + sarmuser + "_out.txt";
+    }
+    if (typeof (sarmcmd) === "undefined") {
+        sarmcmd = sarmquery + " -inp " + sarminp;
+        if (typeof (localStorage.BCRM_OPT_ShowSARM_GroupBy) !== "undefined") {
+            if (localStorage.BCRM_OPT_ShowSARM_GroupBy == "workflow") {
+                sarmcmd += " -sel area=workflow -sel tree=all -agg instance";
+            }
+            else {
+                sarmcmd += " -agg " + localStorage.BCRM_OPT_ShowSARM_GroupBy;
+            }
+        }
+        else {
+            sarmcmd += " -agg subarea";
+        }
+    }
+    cmd = sarmcmd + " > " + ofile;
+    var sarmstats = "";
+    if (BCRMRunCmd(cmd)) {
+        sarmstats = BCRMReadFile(ofile, 3000)
+    }
+    if (typeof (type) === "undefined") {
+        if (typeof (localStorage.BCRM_OPT_ShowSARM_Type) !== "undefined") {
+            type = localStorage.BCRM_OPT_ShowSARM_Type;
+        }
+        else {
+            type = "text";
+        }
+    }
+    if (type == "text") {
+        return sarmstats;
+    }
+    if (type == "classic") {
+        $("#sarm_stats").remove();
+        var ct = $("<div id='sarm_stats' style='overflow:auto;'><pre>" + sarmstats + "</pre></div>");
+        ct.dialog({
+            width: 1000,
+            height: 800
+        });
+    }
+    if (type == "chart") {
+        var t = sarmstats.split("\n");
+        for (var i = 5; i < t.length; i++) {
+            labelfound = false;
+            datafound = false;
+            var s;
+            if (localStorage.BCRM_OPT_ShowSARM_GroupBy == "workflow") {
+                s = t[i].split("  ");
+            }
+            else {
+                s = t[i].split(" ");
+            }
+            for (var k = 0; k < s.length; k++) {
+                if (!labelfound && s[k] != "") {
+                    labelfound = true;
+                    labels.push(s[k]);
+                }
+                else if (labelfound && !datafound && s[k] != "") {
+                    datafound = true;
+                    data.push(parseFloat(s[k]));
+                }
+            }
+        }
+        BCRMChartEngine("SARM Stats", "horizontalBar", labels, data);
+        $("#bcrm_chart").dialog({
+            width: 1000,
+            height: 800,
+            modal: false
+        });
+    }
+};
+
+//run command line on Siebel Server, requires System Preference: Runtime Scripts System Access = TRUE
+//C:\\Siebel\ses\siebsrvr\BIN\sarmquery -inp C:\Siebel\ses\siebsrvr\TEMP -agg area >> C:\Siebel\ses\siebsrvr\TEMP\area.txt
+BCRMRunCmd = function (cmd) {
+    var svc = SiebelApp.S_App.GetService("FWK Runtime");
+    var ips = SiebelApp.S_App.NewPropertySet();
+    var ops = SiebelApp.S_App.NewPropertySet();
+    ips.SetProperty("cmd", cmd);
+    ops = svc.InvokeMethod("runcmd", ips);
+    if (ops.GetProperty("Status") == "OK") {
+        return true;
+    }
+    else {
+        return false;
+    }
+};
+//retrieve text files from server
+BCRMReadFile = function (filepath, sleeptime) {
+    var svc = SiebelApp.S_App.GetService("FWK Runtime");
+    var ips = SiebelApp.S_App.NewPropertySet();
+    var ops = SiebelApp.S_App.NewPropertySet();
+    var content = "";
+    ips.SetProperty("FileName", filepath);
+    if (typeof (sleeptime) !== "undefined") {
+        ips.SetProperty("FileSleepTime", sleeptime);
+    }
+
+    ops = svc.InvokeMethod("readFile", ips);
+    if (ops.GetProperty("Status") == "OK") {
+        content = ops.GetChildByType("ResultSet").GetValue();
+    }
+    else {
+        content = ops.GetProperty("Status");
+    }
+    return content;
+};
+
 //popup catcher: this uses a PW to trigger on popup applets only, could be a PR
 if (typeof (SiebelAppFacade.BCRMPopupPW) === "undefined") {
 
@@ -3478,4 +3670,90 @@ if (typeof (SiebelAppFacade.BCRMPopupPW) === "undefined") {
             });
             return "SiebelAppFacade.BCRMPopupPW";
         })
+}
+
+BCRMsleep = function (ms) {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+        currentDate = Date.now();
+    } while (currentDate - date < ms);
+}
+
+//Test function
+BCRMdevpopsTest = function () {
+    var v1 = "ISS Product Administration View";
+    var st = 2000;
+    var btn = $($("#bcrm_debug ul li")[0]);
+    var tests = {
+        "ShowControls": {
+            mn: "#ShowControls div",
+            tc: "#FINS_Name_Label_2",
+            tt: "text",
+            asrt: "JText:FINS Name",
+            pass: false
+        },
+        "ShowBCFields": {
+            mn: "#ShowBCFields div",
+            tc: "#FINS_Name_Label_2",
+            tt: "text",
+            asrt: "Name (text/100)*",
+            pass: false
+        },
+        "ShowTableColumns": {
+            mn: "#ShowTableColumns div",
+            tc: "#FINS_Name_Label_2",
+            tt: "text",
+            asrt: "S_PROD_INT.NAME",
+            pass: false
+        },
+        "Reset": {
+            mn: "#Reset div",
+            tc: "#FINS_Name_Label_2",
+            tt: "text",
+            asrt: "Product",
+            pass: false
+        }
+    };
+
+    BCRCMETACACHE = {};
+
+    for (t in tests) {
+        //SiebelApp.S_App.GotoView(v1);
+        console.log("Executing Test: " + t);
+        btn.click();
+        BCRMsleep(st);
+        $(tests[t].mn).click();
+        BCRMsleep(st);
+        if ($(tests[t].tc).text() == tests[t].asrt) {
+            tests[t].pass = true;
+            console.log("Test " + t + " passed successfully");
+        }
+        else {
+            console.log("Test " + t + " failed");
+        }
+    }
+    console.log(tests);
+}
+
+//chart.js Demo
+BCRMChartEngine = function (id, type, labels, data) {
+    //try BCRMChartEngine("Revenue","horizontalBar",["Jan","Feb","Mar","Apr","May"],[100,150,75,70,110]);
+    //see chartjs.org for details
+    $("#bcrm_chart").remove();
+    $("body").append("<div id='bcrm_chart' style='display:none;'><canvas id='" + id + "'></canvas></div>");
+    var ctx = document.getElementById(id).getContext('2d');
+    var chart = new Chart(ctx, {
+        type: type,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: id,
+                backgroundColor: 'rgb(82, 119, 184)',
+                borderColor: 'rgb(221, 221, 221)',
+                data: data
+            }]
+        },
+        options: {}
+    });
 }
