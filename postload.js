@@ -31,10 +31,15 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 37;
+var devpops_version = 38;
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
+
+//module configuration, most defaults and other stuff can be controlled from here
+var devpops_config = {
+    ses_home: "C:\\Siebel\\ses\\siebsrvr"
+};
 
 //get data from custom BO for Web Tools display of who else is editing an object definition
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
@@ -580,7 +585,7 @@ BCRMCreateDebugMenu = function () {
             "options": {
                 "FilePath": {
                     "label": "File Path",
-                    "default": "C:\\Siebel\\ses\\siebsrvr\\temp\\",
+                    "default": devpops_config.ses_home + "\\temp\\",
                     "tip": "Enter a valid server path (without file name)",
                     "type": "input"
                 },
@@ -701,7 +706,7 @@ BCRMCreateDebugMenu = function () {
             "options": {
                 "FilePath": {
                     "label": "File Path",
-                    "default": "C:\\Siebel\\ses\\siebsrvr\\temp",
+                    "default": devpops_config.ses_home + "\\temp",
                     "tip": "Enter a valid server path (without file name)",
                     "type": "input"
                 },
@@ -785,8 +790,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.vi",
-            "title": "devpops 21.2 (Toshihide Maskawa)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.vii",
+            "title": "devpops 21.2 (Ulf Svante von Euler-Chelpin)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -1000,7 +1005,7 @@ BCRMViewLog = function () {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
     }
     else {
-        fp = "C:\\Siebel\\ses\\siebsrvr\\temp\\";
+        fp = devpops_config.ses_home + "\\temp\\";
     }
     if (typeof (localStorage.BCRM_OPT_StartTracing_RetainFile) !== "undefined") {
         rf = localStorage.BCRM_OPT_StartTracing_RetainFile;
@@ -1345,7 +1350,7 @@ BCRMStartLogging = function () {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
     }
     else {
-        fp = "C:\\Siebel\\ses\\siebsrvr\\temp\\";
+        fp = devpops_config.ses_home + "\\temp\\";
     }
     if (typeof (localStorage.BCRM_OPT_StartTracing_TraceType) !== "undefined") {
         tt = localStorage.BCRM_OPT_StartTracing_TraceType;
@@ -2156,17 +2161,18 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var tp;
-            var pr, ce, li, ae, inpname, gh, ph, ch, cm, fn, cn;
+            var pr, ce, li, ae, inpname, gh, ph, ch, cm, fn, cn, uit;
             var thelabel;
             var retval = null;
             if (pm) {
                 tp = ut.GetAppletType(pm);
                 pr = pm.GetRenderer();
                 ae = ut.GetAppletElem(pm);
+                uit = c.GetUIType();
+                inpname = c.GetInputName();
                 if (tp == "form" && pr.GetUIWrapper(c)) {
                     //get control element
                     ce = pr.GetUIWrapper(c).GetEl();
-                    inpname = c.GetInputName();
                     //first attempt: get by label id
                     li = $(ce).attr("aria-labelledby");
 
@@ -2194,6 +2200,10 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         thelabel = ae.find("[bcrm-label-for='" + li + "']");
                     }
 
+                    if (uit == "Button"){
+                        thelabel = ae.find("[name='" + inpname +"']");
+                    }
+
                     //check if label has been found
                     if (thelabel.length == 1) {
                         //tag the label
@@ -2215,6 +2225,11 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         }
                         li = "div#jqgh_" + ph + "_" + cn;
                         thelabel = gh.find(li);
+                        
+                        if (uit == "Button"){
+                            thelabel = ae.find("[name='" + inpname +"']");
+                        }
+
                         if (thelabel.length == 1) {
                             retval = thelabel;
                         }
@@ -2397,7 +2412,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 apd = ut.GetAppletData(an);
                 tp = ut.GetAppletType(pm);
                 //currently supporting form applets only
-                if (tp == "form") {
+                if (tp == "form" || tp == "list") {
                     cs = pm.Get("GetControls");
                     for (c in cs) {
                         pop = "";
@@ -2420,6 +2435,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                 if (typeof (apd["Controls"][cn]) !== "undefined") {
                                     pop = apd["Controls"][cn]["Pick Applet"];
                                 }
+                            }
+                            if (uit == "Button"){
+                                pop = cs[cn].GetMethodName();
                             }
                             else {
                                 //nothing to do as of yet
@@ -3377,7 +3395,7 @@ BCRMSrvrMgr = function (command, fromdialog) {
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
     ips.SetProperty("cmd", command);
-    ips.SetProperty("FilePath", "C:\\Siebel\\ses\\siebsrvr\\TEMP\\");
+    ips.SetProperty("FilePath", devpops_config.ses_home + "\\TEMP\\");
     //set longer sleep time if output is not as desired
     ips.SetProperty("FileSleepTime", "5000");
     var ops = svc.InvokeMethod("srvrmgr", ips);
@@ -3435,7 +3453,7 @@ BCRMSARMOn = function () {
         logdir = localStorage.BCRM_OPT_StartSARM_FilePath;
     }
     else {
-        fp = "C:\\Siebel\\ses\\siebsrvr\\temp";
+        fp = devpops_config.ses_home + "\\temp";
     }
     if (typeof (localStorage.BCRM_OPT_StartSARM_Component) !== "undefined") {
         comp = localStorage.BCRM_OPT_StartSARM_Component;
@@ -3508,11 +3526,11 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
     var data = [];
     var labelfound = false;
     var datafound = false;
-    var sarmquery = "C:\\Siebel\\ses\\siebsrvr\\BIN\\sarmquery";
-    var sarminp = "C:\\Siebel\\ses\\siebsrvr\\TEMP";
+    var sarmquery = devpops_config.ses_home + "\\BIN\\sarmquery";
+    var sarminp = devpops_config.ses_home + "\\TEMP";
     var sarmuser = SiebelApp.S_App.GetUserName();
     if (typeof (ofile) === "undefined") {
-        ofile = "C:\\Siebel\\ses\\siebsrvr\\TEMP\\" + sarmuser + "_out.txt";
+        ofile = sarminp + "\\" + sarmuser + "_out.txt";
     }
     if (typeof (sarmcmd) === "undefined") {
         sarmcmd = sarmquery + " -inp " + sarminp;
@@ -3585,7 +3603,6 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
 };
 
 //run command line on Siebel Server, requires System Preference: Runtime Scripts System Access = TRUE
-//C:\\Siebel\ses\siebsrvr\BIN\sarmquery -inp C:\Siebel\ses\siebsrvr\TEMP -agg area >> C:\Siebel\ses\siebsrvr\TEMP\area.txt
 BCRMRunCmd = function (cmd) {
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
