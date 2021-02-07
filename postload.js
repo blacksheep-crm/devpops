@@ -684,7 +684,8 @@ BCRMCreateDebugMenu = function () {
                 $("body").css("cursor", "wait");
                 BCRMSrvrMgr();
                 $("body").css("cursor", "");
-            }
+            },
+            "acl" : ["Siebel Administrator"]
         },
         "StartSARM": {
             "label": "Start SARM",
@@ -702,6 +703,7 @@ BCRMCreateDebugMenu = function () {
                     $("#bcrm_debug_msg").text("");
                 });
             },
+            "acl" : ["Siebel Administrator"],
             "showoptions": true,
             "options": {
                 "FilePath": {
@@ -742,7 +744,8 @@ BCRMCreateDebugMenu = function () {
                 sessionStorage.BCRMSARMCycle = "StopSARM";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 $("#bcrm_debug_msg").text("");
-            }
+            },
+            "acl" : ["Siebel Administrator"]
         },
         "ShowSARM": {
             "label": "Show SARM Stats",
@@ -767,7 +770,8 @@ BCRMCreateDebugMenu = function () {
                     "type": "select",
                     "lov": ["chart", "classic"]
                 }
-            }
+            },
+            "acl" : ["Siebel Administrator"]
         },
         "SiebelHub": {
             "label": "Siebel Hub",
@@ -798,6 +802,7 @@ BCRMCreateDebugMenu = function () {
             }
         }
     };
+    var hasresp = true;
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
     for (i in items) {
         var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
@@ -821,6 +826,20 @@ BCRMCreateDebugMenu = function () {
             if (devpops_uv > devpops_version) {
                 dv.css("color", "#14ca21");
                 dv.attr("title", "Updates available!\n" + dv.attr("title"));
+            }
+        }
+        if (items[i].acl){
+            var resps = BCRMGetResps();
+            hasresp = false;
+            for (var x = 0; x < items[i].acl.length; x++){
+                if (resps.indexOf(items[i].acl[x]) > -1 ){
+                    hasresp = true;
+                    break;
+                }
+            }
+            if (!hasresp){
+                dv.addClass("ui-state-disabled");
+                dv.attr("title", "Access denied due to missing responsibilities\n" + dv.attr("title"));
             }
         }
         if (items[i].showtoggle) {
@@ -853,7 +872,7 @@ BCRMCreateDebugMenu = function () {
                 }, 50)
             }
         }
-        if (items[i].showoptions) {
+        if (hasresp && items[i].showoptions) {
             var opt = $('<span style="float: right; margin-right: 6px;" title="Options"><span class="miniBtnUIC"><button type="button" id="options_' + i + '" style="background: transparent;border: 0;" class="siebui-appletmenu-btn"><span>Options</span></button></span></span>');
             $(opt).find("button").on("click", function (e, ui) {
                 var id = $(this).attr("id").split("_")[1];
@@ -3773,4 +3792,26 @@ BCRMChartEngine = function (id, type, labels, data) {
         },
         options: {}
     });
+};
+
+//expression runner
+BCRMQuickEval = function(expr, bo, bc){
+    var svc = SiebelApp.S_App.GetService("FWK Runtime");
+    var ips = SiebelApp.S_App.NewPropertySet();
+    var ops = SiebelApp.S_App.NewPropertySet();
+    if (typeof (bo) === "undefined"){
+        bo = "Account";
+    }
+    if (typeof(bc) === "undefined"){
+        bc = "Account";
+    }
+    ips.SetProperty("Expr", expr);
+    ips.SetProperty("BO",bo);
+    ips.SetProperty("BC",bc);
+    ops = svc.InvokeMethod("EvalExpr", ips);
+    return ops.GetChildByType("ResultSet").GetProperty("Result");
 }
+//get responsibilities of current user
+BCRMGetResps = function(){
+    return BCRMQuickEval("GetProfileAttrAsList(\"User Responsibilities\")");
+};
