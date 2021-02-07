@@ -36,7 +36,7 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function EvalExpr(Inputs, Outputs) {_newline var sExpr = Inputs.GetProperty(&quot;Expr&quot;);_newline var sBC = Inputs.GetProperty(&quot;BC&quot;);_newline var bc;_newline try {_newline  bc = TheApplication().ActiveBusObject().GetBusComp(sBC);_newline  Outputs.SetProperty(&quot;Result&quot;, bc.InvokeMethod(&quot;EvalExpr&quot;, sExpr));_newline } catch (e) {_newline  Outputs.SetProperty(&quot;Result&quot;, e.toString());_newline } finally {_newline  bc = null;_newline }_newline}_newline_newline"
+ Script="function EvalExpr(Inputs, Outputs) {_newline var sExpr = Inputs.GetProperty(&quot;Expr&quot;);_newline var sBC = Inputs.GetProperty(&quot;BC&quot;);_newline var sBO = Inputs.GetProperty(&quot;BO&quot;);_newline var bc;_newline var bo;_newline try {_newlineif (sBO == &quot;&quot;){_newline  bc = TheApplication().ActiveBusObject().GetBusComp(sBC);_newline}_newlineelse{_newline  bo = TheApplication().GetBusObject(sBO);_newline  bc = bo.GetBusComp(sBC);_newline}_newline  Outputs.SetProperty(&quot;Result&quot;, bc.InvokeMethod(&quot;EvalExpr&quot;, sExpr));_newline } catch (e) {_newline  Outputs.SetProperty(&quot;Result&quot;, e.toString());_newline } finally {_newline  bc = null;_newline  bo = null;_newline }_newline}_newline_newline"
  Program_spcLanguage="JS"
  Name="EvalExpr"
  Sequence="7"
