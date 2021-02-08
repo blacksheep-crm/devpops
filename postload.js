@@ -503,6 +503,24 @@ BCRMWSIconEnhancer = function () {
 
 //START devpops Menu******************************************************
 //devpops MenuCreate Debugger Menu
+
+//helper for SARM timestamps
+BCRMSARMTimeStamp = function(dt){
+    var r = "";
+    r += dt.getFullYear();
+    r += "-";
+    r += (dt.getMonth() + 1) < 10 ? "0" + (dt.getMonth() + 1) : (dt.getMonth() + 1);
+    r += "-";
+    r += dt.getDate() < 10 ? "0" + dt.getDate() : dt.getDate();
+    r += " ";
+    r += dt.getHours() < 10 ? "0" + dt.getHours() : dt.getHours();
+    r += ":";
+    r += dt.getMinutes() < 10 ? "0" + dt.getMinutes() : dt.getMinutes();
+    r += ":";
+    r += dt.getSeconds() < 10 ? "0" + dt.getSeconds() : dt.getSeconds();
+    return r;
+};
+
 BCRMCreateDebugMenu = function () {
     var togglecss = "label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
     var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
@@ -769,7 +787,21 @@ BCRMCreateDebugMenu = function () {
                     "tip": "Output type",
                     "type": "select",
                     "lov": ["chart", "classic"]
+                },
+                "StartTime": {
+                    "label": "Start Time",
+                    //default time range: last 10 minutes
+                    "default": BCRMSARMTimeStamp(new Date(new Date() - 600000)),
+                    "tip": "Start Time Filter",
+                    "type": "input"
+                },
+                "EndTime": {
+                    "label": "End Time",
+                    "default": BCRMSARMTimeStamp(new Date()),
+                    "tip": "End Time Filter",
+                    "type": "input"
                 }
+
             },
             "acl" : ["Siebel Administrator"]
         },
@@ -794,8 +826,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.vii",
-            "title": "devpops 21.2 (Ulf Svante von Euler-Chelpin)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.viii",
+            "title": "devpops 21.2 (Jacoues Monod)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -899,7 +931,17 @@ BCRMCreateDebugMenu = function () {
                         }
                     }
                     if (localStorage.getItem(sn) !== null) {
-                        ic.val(localStorage.getItem(sn));
+                        if (id == "ShowSARM"){
+                            if (o == "StartTime" || o == "EndTime"){
+                                ic.val(opt.default);
+                            }
+                            else{
+                                ic.val(localStorage.getItem(sn));
+                            }
+                        }
+                        else{
+                            ic.val(localStorage.getItem(sn));
+                        }
                     }
                     else {
                         ic.val(opt.default);
@@ -3553,6 +3595,16 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
     }
     if (typeof (sarmcmd) === "undefined") {
         sarmcmd = sarmquery + " -inp " + sarminp;
+        if (typeof (localStorage.BCRM_OPT_ShowSARM_StartTime) !== "undefined"){
+            if (localStorage.BCRM_OPT_ShowSARM_StartTime != ""){
+                sarmcmd += " -sel starttime=\"" + localStorage.BCRM_OPT_ShowSARM_StartTime + "\"";
+            }
+        }
+        if (typeof (localStorage.BCRM_OPT_ShowSARM_EndTime) !== "undefined"){
+            if (localStorage.BCRM_OPT_ShowSARM_EndTime != ""){
+                sarmcmd += " -sel endtime=\"" + localStorage.BCRM_OPT_ShowSARM_EndTime + "\"";
+            }
+        }
         if (typeof (localStorage.BCRM_OPT_ShowSARM_GroupBy) !== "undefined") {
             if (localStorage.BCRM_OPT_ShowSARM_GroupBy == "workflow") {
                 sarmcmd += " -sel area=workflow -sel tree=all -agg instance";
@@ -3579,11 +3631,12 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
         }
     }
     if (type == "text") {
-        return sarmstats;
+        return sarmstats + "\n\n" + sarmcmd;
     }
     if (type == "classic") {
         $("#sarm_stats").remove();
         var ct = $("<div id='sarm_stats' style='overflow:auto;'><pre>" + sarmstats + "</pre></div>");
+        ct.append("<div id='sarm_cmd'>" + sarmcmd + "</div>");
         ct.dialog({
             width: 1000,
             height: 800
@@ -3618,6 +3671,9 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
             height: 800,
             modal: false
         });
+        setTimeout(function(){
+            $("#bcrm_chart").append("<div id='sarm_cmd'>" + sarmcmd + "</div>");
+        },100);
     }
 };
 
