@@ -31,7 +31,7 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 38;
+var devpops_version = 39;
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
