@@ -505,7 +505,7 @@ BCRMWSIconEnhancer = function () {
 //devpops MenuCreate Debugger Menu
 
 //helper for SARM timestamps
-BCRMSARMTimeStamp = function(dt){
+BCRMSARMTimeStamp = function (dt) {
     var r = "";
     r += dt.getFullYear();
     r += "-";
@@ -703,7 +703,7 @@ BCRMCreateDebugMenu = function () {
                 BCRMSrvrMgr();
                 $("body").css("cursor", "");
             },
-            "acl" : ["Siebel Administrator"]
+            "acl": ["Siebel Administrator"]
         },
         "StartSARM": {
             "label": "Start SARM",
@@ -721,7 +721,7 @@ BCRMCreateDebugMenu = function () {
                     $("#bcrm_debug_msg").text("");
                 });
             },
-            "acl" : ["Siebel Administrator"],
+            "acl": ["Siebel Administrator"],
             "showoptions": true,
             "options": {
                 "FilePath": {
@@ -763,7 +763,7 @@ BCRMCreateDebugMenu = function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 $("#bcrm_debug_msg").text("");
             },
-            "acl" : ["Siebel Administrator"]
+            "acl": ["Siebel Administrator"]
         },
         "ShowSARM": {
             "label": "Show SARM Stats",
@@ -803,7 +803,7 @@ BCRMCreateDebugMenu = function () {
                 }
 
             },
-            "acl" : ["Siebel Administrator"]
+            "acl": ["Siebel Administrator"]
         },
         "SiebelHub": {
             "label": "Siebel Hub",
@@ -826,8 +826,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.viii",
-            "title": "devpops 21.2 (Jacoues Monod)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.xii",
+            "title": "devpops 21.2 (Ray Manzarek)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -860,16 +860,16 @@ BCRMCreateDebugMenu = function () {
                 dv.attr("title", "Updates available!\n" + dv.attr("title"));
             }
         }
-        if (items[i].acl){
+        if (items[i].acl) {
             var resps = BCRMGetResps();
             hasresp = false;
-            for (var x = 0; x < items[i].acl.length; x++){
-                if (resps.indexOf(items[i].acl[x]) > -1 ){
+            for (var x = 0; x < items[i].acl.length; x++) {
+                if (resps.indexOf(items[i].acl[x]) > -1) {
                     hasresp = true;
                     break;
                 }
             }
-            if (!hasresp){
+            if (!hasresp) {
                 dv.addClass("ui-state-disabled");
                 dv.attr("title", "Access denied due to missing responsibilities\n" + dv.attr("title"));
             }
@@ -931,15 +931,15 @@ BCRMCreateDebugMenu = function () {
                         }
                     }
                     if (localStorage.getItem(sn) !== null) {
-                        if (id == "ShowSARM"){
-                            if (o == "StartTime" || o == "EndTime"){
+                        if (id == "ShowSARM") {
+                            if (o == "StartTime" || o == "EndTime") {
                                 ic.val(opt.default);
                             }
-                            else{
+                            else {
                                 ic.val(localStorage.getItem(sn));
                             }
                         }
-                        else{
+                        else {
                             ic.val(localStorage.getItem(sn));
                         }
                     }
@@ -2261,8 +2261,8 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         thelabel = ae.find("[bcrm-label-for='" + li + "']");
                     }
 
-                    if (uit == "Button"){
-                        thelabel = ae.find("[name='" + inpname +"']");
+                    if (uit == "Button") {
+                        thelabel = ae.find("[name='" + inpname + "']");
                     }
 
                     //check if label has been found
@@ -2286,9 +2286,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         }
                         li = "div#jqgh_" + ph + "_" + cn;
                         thelabel = gh.find(li);
-                        
-                        if (uit == "Button"){
-                            thelabel = ae.find("[name='" + inpname +"']");
+
+                        if (uit == "Button") {
+                            thelabel = ae.find("[name='" + inpname + "']");
                         }
 
                         if (thelabel.length == 1) {
@@ -2397,6 +2397,38 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return retval;
         };
 
+        //experimental extraction of "SRF" metadata cache, including NEOs
+        //currently limited to BC and Field data
+        //requires Base BCRM RR Integration Object and underlying BO/BCs (see sif files on github)
+        BCRMUtils.prototype.GetNEOData = function (bc, field) {
+            var sv = SiebelApp.S_App.GetService("FWK Runtime");
+            var ips = SiebelApp.S_App.NewPropertySet();
+            var ops = SiebelApp.S_App.NewPropertySet();
+            var retval = {};
+            ips.SetProperty("Business Component", bc);
+            if (typeof (field) !== "undefined") {
+                ips.SetProperty("Field", field);
+            }
+            ops = sv.InvokeMethod("GetRRBC", ips);
+            var listofBC = ops.GetChildByType("ResultSet").GetChildByType("SiebelMessage").GetChild(0);
+
+            //only first BC
+            var thebc = listofBC.GetChild(0);
+            for (prop in thebc.propArray) {
+                retval[prop] = thebc.propArray[prop];
+            }
+            retval["Fields"] = {};
+            var fields = thebc.GetChild(0);
+            for (var i = 0; i < fields.GetChildCount(); i++) {
+                var field = fields.GetChild(i);
+                retval["Fields"][field.GetProperty("Name")] = {};
+                for (fprop in field.propArray) {
+                    retval["Fields"][field.GetProperty("Name")][fprop] = field.propArray[fprop];
+                }
+            }
+            return retval;
+        };
+
         //wrapper to get "formatted" BC data
         BCRMUtils.prototype.GetBCData = function (bcn) {
             var ut = new SiebelAppFacade.BCRMUtils();
@@ -2497,7 +2529,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                     pop = apd["Controls"][cn]["Pick Applet"];
                                 }
                             }
-                            if (uit == "Button"){
+                            if (uit == "Button") {
                                 pop = cs[cn].GetMethodName();
                             }
                             else {
@@ -2595,8 +2627,22 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                 }
                                 //field not found in bcdata
                                 else {
-                                    //display field info from OUI layer
-                                    nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
+                                    //try experimental NEO access
+                                    try {
+                                        var neo = ut.GetNEOData(bcn, fn);
+                                        if (typeof (neo["Fields"][fn]) !== "undefined") {
+                                            table = neo["Fields"][fn]["Join"];
+                                            column = neo["Fields"][fn]["Column"];
+                                            nl = table + "." + column;
+                                        }
+                                        else {
+                                            //display field info from OUI layer
+                                            nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
+                                        }
+                                    }
+                                    catch(e){
+                                        nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
+                                    }
                                 }
                                 ut.SetLabel(cs[cn], nl, pm);
                             }
@@ -3595,13 +3641,13 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
     }
     if (typeof (sarmcmd) === "undefined") {
         sarmcmd = sarmquery + " -inp " + sarminp;
-        if (typeof (localStorage.BCRM_OPT_ShowSARM_StartTime) !== "undefined"){
-            if (localStorage.BCRM_OPT_ShowSARM_StartTime != ""){
+        if (typeof (localStorage.BCRM_OPT_ShowSARM_StartTime) !== "undefined") {
+            if (localStorage.BCRM_OPT_ShowSARM_StartTime != "") {
                 sarmcmd += " -sel starttime=\"" + localStorage.BCRM_OPT_ShowSARM_StartTime + "\"";
             }
         }
-        if (typeof (localStorage.BCRM_OPT_ShowSARM_EndTime) !== "undefined"){
-            if (localStorage.BCRM_OPT_ShowSARM_EndTime != ""){
+        if (typeof (localStorage.BCRM_OPT_ShowSARM_EndTime) !== "undefined") {
+            if (localStorage.BCRM_OPT_ShowSARM_EndTime != "") {
                 sarmcmd += " -sel endtime=\"" + localStorage.BCRM_OPT_ShowSARM_EndTime + "\"";
             }
         }
@@ -3671,9 +3717,9 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
             height: 800,
             modal: false
         });
-        setTimeout(function(){
+        setTimeout(function () {
             $("#bcrm_chart").append("<div id='sarm_cmd'>" + sarmcmd + "</div>");
-        },100);
+        }, 100);
     }
 };
 
@@ -3851,23 +3897,23 @@ BCRMChartEngine = function (id, type, labels, data) {
 };
 
 //expression runner
-BCRMQuickEval = function(expr, bo, bc){
+BCRMQuickEval = function (expr, bo, bc) {
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
     var ops = SiebelApp.S_App.NewPropertySet();
-    if (typeof (bo) === "undefined"){
+    if (typeof (bo) === "undefined") {
         bo = "Account";
     }
-    if (typeof(bc) === "undefined"){
+    if (typeof (bc) === "undefined") {
         bc = "Account";
     }
     ips.SetProperty("Expr", expr);
-    ips.SetProperty("BO",bo);
-    ips.SetProperty("BC",bc);
+    ips.SetProperty("BO", bo);
+    ips.SetProperty("BC", bc);
     ops = svc.InvokeMethod("EvalExpr", ips);
     return ops.GetChildByType("ResultSet").GetProperty("Result");
-}
+};
 //get responsibilities of current user
-BCRMGetResps = function(){
+BCRMGetResps = function () {
     return BCRMQuickEval("GetProfileAttrAsList(\"User Responsibilities\")");
 };
