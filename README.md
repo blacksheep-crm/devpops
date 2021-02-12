@@ -29,7 +29,7 @@ Installation:
 4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser ;-).
    Edit the Business Service User Properties to match your Enterprise, Gateway host address and Gateway TLS port number
 
-5. Register FWK Runtime and BCRM Server Manager Service business servicess with your Application(s) in Application User Prop (ClientBusinessServiceN)
+5. Register FWK Runtime and BCRM Server Manager Service business services with your Application(s) in Application User Prop (ClientBusinessServiceN)
 
 6. Deliver repository changes.
 
