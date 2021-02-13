@@ -31,7 +31,7 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 40;
+var devpops_version = 41;
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -529,7 +529,7 @@ BCRMCreateDebugMenu = function () {
     }
     var items = {
         "ShowControls": {
-            "label": "Show Controls",
+            "label": "XR Show Controls",
             "title": "X-Ray: Toggle Form Applets to display Control information in labels",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -543,7 +543,7 @@ BCRMCreateDebugMenu = function () {
             "showtoggle": true
         },
         "ShowBCFields": {
-            "label": "Show BC Fields",
+            "label": "XR Show BC Fields",
             "title": "X-Ray: Toggle Form and List Applets to display BC Field information in labels",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -557,7 +557,7 @@ BCRMCreateDebugMenu = function () {
             "showtoggle": true
         },
         "ShowTableColumns": {
-            "label": "Show Tables/Columns",
+            "label": "XR Show Columns",
             "title": "X-Ray: Toggle Form and List Applets to display physical layer information",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -570,8 +570,22 @@ BCRMCreateDebugMenu = function () {
             },
             "showtoggle": true
         },
+        "Silent": {
+            "label": "XR Silent Mode",
+            "title": "X-Ray: Complete scan, update tooltips only",
+            "onclick": function () {
+                $("#bcrm_dbg_menu").remove();
+                BCRMsleep(200);
+                BCRMdevpopsTest("xray");
+                $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
+                setTimeout(function(){
+                    $("#bcrm_debug_msg").text("");
+                },5000);
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+            }
+        },
         "Reset": {
-            "label": "Reset Labels",
+            "label": "XR Reset Labels",
             "title": "X-Ray: Toggle Form and List Applets to display original labels",
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -826,8 +840,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.xii",
-            "title": "devpops 21.2 (Ray Manzarek)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.xiii",
+            "title": "devpops 21.2 (William Bradford Shockley)\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -2185,6 +2199,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var pm = ut.ValidateContext(context);
             var tp, cs, le;
             if (pm) {
+                pm.SetProperty("C_ToggleCycle", "Reset");
                 tp = ut.GetAppletType(pm);
                 if (tp == "form" || tp == "list") {
                     cs = pm.Get("GetControls");
@@ -2192,7 +2207,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         if (cs.hasOwnProperty(c)) {
                             le = ut.GetLabelElem(cs[c], pm);
                             //look for "custom" labels
-                            if (le && le.attr("bcrm-custom-label") == "true") {
+                            if (le && le.attr("bcrm-custom-label") != "") {
                                 ut.SetLabel(cs[c], cs[c].GetDisplayName(), pm);
                             }
                         }
@@ -2206,13 +2221,43 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var le;
+            var tc, otitle;
             if (pm) {
                 le = ut.GetLabelElem(c, pm);
                 if (le) {
+                    tc = pm.Get("C_ToggleCycle");
+                    otitle = le.attr("title");
+                    if (otitle == "" || typeof (otitle) === "undefined") {
+                        otitle = "DisplayName" + ": " + le.text();
+                    }
+                    if (otitle.indexOf(nl) == -1) {
+                        otitle += "\n|_" + tc + ": " + nl;
+                    }
                     le.html(nl);
-                    le.attr("title", nl);
+                    le.attr("title", otitle);
                     //mark label as changed
-                    le.attr("bcrm-custom-label", "true");
+
+                    switch (tc) {
+                        case "ShowControls": le.attr("style", "color:blue!important;");
+                            break;
+                        case "ShowBCFields": le.attr("style", "color:red!important;");
+                            break;
+                        case "ShowTableColumns": le.attr("style", "color:green!important;");
+                            break;
+                        default: le.attr("style", "");
+                    }
+                    if (tc != "Reset") {
+                        le.attr("bcrm-custom-label", tc);
+                        le.css("padding", "2px");
+                        le.css("border", "1px solid lightgrey");
+                        le.css("font-weight", "600");
+                        le.css("font-family", "monospace");
+                        le.css("margin", "2px");
+                    }
+                    else {
+                        le.attr("style", "");
+                    }
+
                 }
             }
         };
@@ -2310,6 +2355,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var fdt, fln, fcl, frq;
             var nl;
             if (pm) {
+                pm.SetProperty("C_ToggleCycle", "ShowBCFields");
                 bc = pm.Get("GetBusComp");
                 fm = bc.GetFieldMap();
                 tp = ut.GetAppletType(pm);
@@ -2501,6 +2547,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var an, apd, tp, cs, cn, uit, pop;
             var nl;
             if (pm) {
+                pm.SetProperty("C_ToggleCycle", "ShowControls");
                 an = pm.GetObjName();
                 apd = ut.GetAppletData(an);
                 tp = ut.GetAppletType(pm);
@@ -2556,6 +2603,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var fdt, fln, fcl, frq;
             var nl;
             if (pm) {
+                pm.SetProperty("C_ToggleCycle", "ShowTableColumns");
                 bc = pm.Get("GetBusComp");
                 bcn = bc.GetName();
                 //get RR CLOB Data from BCRM RR Reader service
@@ -2640,7 +2688,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                             nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
                                         }
                                     }
-                                    catch(e){
+                                    catch (e) {
                                         nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
                                     }
                                 }
@@ -3819,9 +3867,13 @@ BCRMsleep = function (ms) {
 }
 
 //Test function
-BCRMdevpopsTest = function () {
+BCRMdevpopsTest = function (mode) {
     var v1 = "ISS Product Administration View";
     var st = 2000;
+    if (mode == "xray"){
+        st = 200;
+        $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
+    }
     var btn = $($("#bcrm_debug ul li")[0]);
     var tests = {
         "ShowControls": {
@@ -3857,18 +3909,26 @@ BCRMdevpopsTest = function () {
     BCRCMETACACHE = {};
 
     for (t in tests) {
+        if (mode == "xray") {
+            var ts = "ShowControls,ShowBCFields,ShowTableColumns,Reset";
+            if (ts.indexOf(t) == -1) {
+                break;
+            }
+        }
         //SiebelApp.S_App.GotoView(v1);
         console.log("Executing Test: " + t);
         btn.click();
         BCRMsleep(st);
         $(tests[t].mn).click();
         BCRMsleep(st);
-        if ($(tests[t].tc).text() == tests[t].asrt) {
-            tests[t].pass = true;
-            console.log("Test " + t + " passed successfully");
-        }
-        else {
-            console.log("Test " + t + " failed");
+        if (mode != "xray") {
+            if ($(tests[t].tc).text() == tests[t].asrt) {
+                tests[t].pass = true;
+                console.log("Test " + t + " passed successfully");
+            }
+            else {
+                console.log("Test " + t + " failed");
+            }
         }
     }
     console.log(tests);
