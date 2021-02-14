@@ -31,7 +31,8 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 41;
+var devpops_version = 42;
+var devpops_tag = "Lois Maxwell";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -570,20 +571,6 @@ BCRMCreateDebugMenu = function () {
             },
             "showtoggle": true
         },
-        "Silent": {
-            "label": "XR Silent Mode",
-            "title": "X-Ray: Complete scan, update tooltips only",
-            "onclick": function () {
-                $("#bcrm_dbg_menu").remove();
-                BCRMsleep(200);
-                BCRMdevpopsTest("xray");
-                $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
-                setTimeout(function(){
-                    $("#bcrm_debug_msg").text("");
-                },5000);
-                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-            }
-        },
         "Reset": {
             "label": "XR Reset Labels",
             "title": "X-Ray: Toggle Form and List Applets to display original labels",
@@ -595,6 +582,22 @@ BCRMCreateDebugMenu = function () {
                 }
                 sessionStorage.BCRMToggleCycle = "Reset";
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+            }
+        },
+        "Silent": {
+            "label": "XR Silent Mode",
+            "title": "X-Ray: Complete scan, update tooltips only",
+            "onclick": function () {
+                $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
+                setTimeout(function () {
+                    $("#bcrm_dbg_menu").remove();
+                    BCRMdevpopsTest("xray");
+                    $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
+                    setTimeout(function () {
+                        $("#bcrm_debug_msg").text("");
+                    }, 5000);
+                    $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                }, 200);
             }
         },
         "StartTracing": {
@@ -819,6 +822,21 @@ BCRMCreateDebugMenu = function () {
             },
             "acl": ["Siebel Administrator"]
         },
+        "freeform": {
+            "label": "Break free!",
+            "title": "Liberate form applets from table layout. Enjoy...",
+            "onclick": function () {
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                var ut = new SiebelAppFacade.BCRMUtils();
+                for (a in am) {
+                    if (ut.GetAppletType(a) == "form") {
+                        rwd.BCRMMakeGridResponsive(a);
+                    }
+                }
+            }
+        },
         "SiebelHub": {
             "label": "Siebel Hub",
             "title": "Get your Siebel kicks on da hub with a random page (might require login).",
@@ -840,8 +858,8 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.xiii",
-            "title": "devpops 21.2 (William Bradford Shockley)\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "label": "devpops 21.2.xiv",
+            "title": "devpops 21.2 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                 window.open("https://github.com/blacksheep-crm/devpops");
@@ -2197,7 +2215,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.LabelReset = function (context) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
-            var tp, cs, le;
+            var tp, cs, le, uit;
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "Reset");
                 tp = ut.GetAppletType(pm);
@@ -2208,8 +2226,14 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             le = ut.GetLabelElem(cs[c], pm);
                             //look for "custom" labels
                             if (le && le.attr("bcrm-custom-label") != "") {
-                                ut.SetLabel(cs[c], cs[c].GetDisplayName(), pm);
+                                if (le.parent().hasClass("siebui-btn-grp-applet")){
+                                    ut.SetLabel(cs[c],"",pm);
+                                }
+                                else{
+                                    ut.SetLabel(cs[c], cs[c].GetDisplayName(), pm);
+                                }
                             }
+                           
                         }
                     }
                 }
@@ -2258,6 +2282,30 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         le.attr("style", "");
                     }
 
+                }
+                //no label, but let's just add a tooltip
+                else {
+                    otitle = "";
+                    var pr = pm.GetRenderer();
+                    var cel = pr.GetUIWrapper(c).GetEl();
+                    if (typeof (cel) !== "undefined") {
+                        tc = pm.Get("C_ToggleCycle");
+                        if (typeof (cel.attr("title")) !== "undefined") {
+                            if (cel.attr("title").indexOf("DisplayName") == -1) {
+                                otitle = "DisplayName" + ": " + c.GetDisplayName();
+                            }
+                            else {
+                                otitle = cel.attr("title");
+                            }
+                        }
+                        else {
+                            otitle = "DisplayName" + ": " + c.GetDisplayName();
+                        }
+                        if (otitle.indexOf(nl) == -1) {
+                            otitle += "\n|_" + tc + ": " + nl;
+                        }
+                        cel.attr("title", otitle);
+                    }
                 }
             }
         };
@@ -3870,9 +3918,8 @@ BCRMsleep = function (ms) {
 BCRMdevpopsTest = function (mode) {
     var v1 = "ISS Product Administration View";
     var st = 2000;
-    if (mode == "xray"){
+    if (mode == "xray") {
         st = 200;
-        $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
     }
     var btn = $($("#bcrm_debug ul li")[0]);
     var tests = {
@@ -3977,3 +4024,522 @@ BCRMQuickEval = function (expr, bo, bc) {
 BCRMGetResps = function () {
     return BCRMQuickEval("GetProfileAttrAsList(\"User Responsibilities\")");
 };
+
+//Really Free Grid Layout (from Siebel2Phone, simplified)
+if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
+    SiebelJS.Namespace("SiebelAppFacade.BCRMRWDFactory");
+
+    SiebelAppFacade.BCRMRWDFactory = (function () {
+        function BCRMRWDFactory(options) { }
+
+        BCRMRWDFactory.prototype.BCRMMakeGridResponsive = function (pm) {
+
+            var utils = new SiebelAppFacade.BCRMUtils();
+            var ts = Date.now();
+            var exp = false;  //switch to export applet layout to conf object
+
+            pm = utils.ValidateContext(pm);
+            var ae = utils.GetAppletElem(pm);
+            var tb = ae.find("table.GridBack");
+            var an = pm.GetObjName();
+            //console.log("BCRMRWDFactory.BCRMMakeGridResponsive: " + an);
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            var cname = an + "__" + vn;
+
+            //start
+            if (true) {
+                var appletconfig = this.GetConfig(pm);
+                var newgriddiv = this.GetResponsiveGrid(pm, appletconfig);
+            }
+
+            //insert responsive grid
+            tb.before(newgriddiv);
+            //hide original table
+            tb.hide();
+            var acconf = {
+                collapsible: true,
+                active: 0,
+            };
+            //ae.find("#bcrm_section_container").accordion(acconf);
+            setTimeout(function () {
+                ae.find("#bcrm_section_container").find(".ui-accordion-content").each(function (x) {
+                    $(this).css({
+                        "display": "grid",
+                        "grid-template-columns": "repeat(auto-fit, 245px)",
+                        "grid-auto-flow": "dense",
+                        "row-gap": "4px",
+                        "margin-left": "4px",
+                        "height":"none"
+                    });
+                    $(this).find("input").attr("style", "width:240px!important;");
+                    $(this).find("textarea").attr("style", "width:240px!important;height:30px!important");
+                    $(this).find(".bcrm-new-grid-wrap .mceGridLabel").css("text-align", "left");
+                    ae.find("#bcrm_section_container").find("h3").css("background","linear-gradient(90deg, #d2e9f5, transparent)");
+                });
+                setTimeout(function(){
+                    ae.find("#bcrm_section_container").find("h3").each(function(i){
+                        ae.find("#bcrm_section_container").accordion("option","active",i);
+                    });
+                    ae.find("#bcrm_section_container").accordion("option","active",0);
+                    if (ae.find("#bcrm_section_container").find("h3").length == 1){
+                        ae.find("#bcrm_section_container").find("h3").hide();
+                    }
+                },20)
+            }, 20);
+
+            //console.log("BCRMRWDFactory.BCRMMakeGridResponsive.Performance: " + an + " : " + (Date.now() - ts) + " ms.");
+            //console.log("Applet '" + an + "' is now responsive. This took " + (Date.now()-ts) + " ms.");
+            if (exp) {
+                var x = {};
+                x[cname] = appletconfig;
+                prompt("Copy Applet Configuration to Clipboard", JSON.stringify(x));
+            }
+        };
+        BCRMRWDFactory.prototype.Reset = function (a) {
+            //console.log("BCRMRWDFactory.Reset");
+            var utils = new SiebelAppFacade.BCRMUtils();
+            var pm = utils.ValidateContext(a);
+            var ae = utils.GetAppletElem(pm);
+            var tb = ae.find("table.GridBack");
+            var ng = ae.find("#bcrm_new_grid");
+            if (ng.length == 1) {
+                $(ng).find("[data-iname]").each(function (i) {
+                    var iname = $(this).attr("data-iname");
+                    var type = $(this).attr("data-btype");
+                    var t = $(this).detach();
+                    $(tb).find("#" + type + "[data-iname='" + iname + "']").before(t);
+                });
+                $(ng).remove();
+                tb.show();
+                tb.find(".mceGridLabel").attr("style", "");
+            }
+        };
+
+        BCRMRWDFactory.prototype.GetResponsiveGrid = function (a, appletconfig) {
+            //3rd pass
+            //now create sections and collect controls
+            var acconf = {
+                collapsible: true,
+                active: false,
+                heightStyle: "content"
+            };
+            var utils = new SiebelAppFacade.BCRMUtils();
+            var pm = utils.ValidateContext(a);
+            var ae = utils.GetAppletElem(pm);
+            var tb = ae.find("table.GridBack");
+            var cs = pm.Get("GetControls");
+            var lbl = [];
+            var fld = [];
+            var lblid = "";
+            var an = pm.GetObjName();
+            //console.log("BCRMRWDFactory.GetResponsiveGrid: " + an);
+            var newgriddiv = $("<div id='bcrm_new_grid' class='bcrm-new-grid'></div>");  //the top container for the "new" grid, replacing the table
+            var wrapdiv = "<div class='bcrm-new-grid-wrap'></div>"; //container for individual labels/controls
+            var cwrapdiv = "<div id='bcrm_section_container' class='bcrm-new-grid-sc'></div>"; //container for new formsections
+            var fs_sel = ".FormSection"; //selector for form sections, for easy replacement
+            var field_sel = ".mceGridField"; //selector for grid layout controls/fields (not labels)
+            var wrapcount = 0;
+            var fieldlist = [];
+            var iname = "";
+            var lbltxt = "";
+            //get free items (not below any formsection) first
+            //fieldlist = appletconfig["free"]["fields"];
+            for (var fx = 0; fx < fieldlist.length; fx++) {
+                var fname = fieldlist[fx];
+                for (c in cs) {
+                    if (cs[c].GetFieldName() == fname) {
+                        var cel = pm.GetRenderer().GetUIWrapper(cs[c]).GetEl();
+                        if (typeof (cel) !== "undefined" && $(cel).parent(".siebui-applet-title").length == 0) {
+                            iname = cs[c].GetInputName();
+                            lblid = $(pm.GetRenderer().GetUIWrapper(cs[c]).GetEl()).attr("aria-labelledby");
+                            lbltxt = $(pm.GetRenderer().GetUIWrapper(cs[c]).GetEl()).attr("aria-label");
+                            break;
+                        }
+                    }
+                }
+                var thefield = ae.find("[name='" + iname + "']").parent(field_sel);
+                var wrap = $(wrapdiv);
+                wrap.attr("id", "wrap" + wrapcount);
+
+                if (fld.length == 0) {
+                    //var thefield = $(this).find(field_sel);
+                    if (thefield.length > 0) {
+                        //lblid = $(thefield.children()[0]).attr("aria-labelledby");
+                        if (typeof (lblid) === "undefined") {
+                            //dig deeper
+                            thefield.children().each(function (z) {
+                                if (typeof ($(this).attr("aria-labelledby")) !== "undefined") {
+                                    lblid = $(this).attr("aria-labelledby");
+                                }
+                            });
+                        }
+                        //leave a mark
+                        if (thefield.parent().find("span[id='bcrm_field']").length == 0) {
+                            thefield.after("<span id='bcrm_field' data-iname='" + iname + "'></span>");
+                        }
+                        fld = thefield;
+                        //fld = thefield.detach();
+                        //fld.attr("data-iname", iname);
+                        //fld.attr("data-btype", "bcrm_field");
+                    }
+                }
+
+                //
+                if (lbl.length == 0) {
+                    if (lblid != "") {
+
+                        //lbl = $(ae).find("[id='" + lblid + "']").parent()[0];
+                        var lblelem = utils.GetLabelElem(cs[c], pm);
+                        if (lblelem) {
+                            lbl = lblelem.parent()[0];
+                            if (typeof (lbl) === "undefined") { //work around misconfigured labels
+                                lbl = $(ae).find("div.mceGridLabel:contains('" + lbltxt + "')")[0];
+                            }
+                            //leave a mark
+                            if ($(lbl).parent().find("span[id='bcrm_label']").length == 0) {
+                                $(lbl).after("<span id='bcrm_label' data-iname='" + iname + "'></span>");
+                            }
+                            lbl = $(lbl);
+                            //lbl = $(lbl).detach();
+                            //lbl.attr("data-iname", iname);
+                            //lbl.attr("data-btype", "bcrm_label");
+                        }
+                    }
+                }
+                if (lbl.length == 1) {
+                    lbl = $(lbl).detach();
+                    lbl.attr("data-iname", iname);
+                    lbl.attr("data-btype", "bcrm_label");
+                    wrap.append(lbl);
+                }
+                if (fld.length == 1) {
+                    fld = thefield.detach();
+                    fld.attr("data-iname", iname);
+                    fld.attr("data-btype", "bcrm_field");
+                    wrap.append(fld);
+                    $(newgriddiv).append(wrap);
+                }
+
+                lbl = [];
+                fld = [];
+                lblid = "";
+                lbltxt = "";
+                fname = "";
+                thefield = null;
+                iname = "";
+                wrapcount++;
+            }
+            var hints;
+            //get section items
+            var cwrap = $(cwrapdiv);
+            formsections = appletconfig;
+            var seq = 0;
+            for (f in formsections) {
+                if (formsections[f]["seq"] >= 0) {
+                    if (formsections[f]["seq"] > seq) {
+                        seq = formsections[f]["seq"];
+                    }
+                }
+            }
+            seq++;
+            for (var k = 0; k < seq; k++) {
+                for (f in formsections) {
+                    if (formsections[f]["seq"] == k) {
+                        fieldlist = formsections[f]["fields"];
+                        hints = formsections[f]["hints"];
+                        var fsec = $("<h3 id='" + formsections[f]["id"] + "'>" + formsections[f]["caption"] + "</h3><div></div>");
+                        for (fx = 0; fx < fieldlist.length; fx++) {
+                            fname = fieldlist[fx];
+                            for (c in cs) {
+                                if (cs[c].GetFieldName() == fname) {
+                                    cel = pm.GetRenderer().GetUIWrapper(cs[c]).GetEl();
+                                    if (typeof (cel) !== "undefined" && $(cel).parent(".siebui-applet-title").length == 0) {
+                                        iname = cs[c].GetInputName();
+                                        lblid = $(pm.GetRenderer().GetUIWrapper(cs[c]).GetEl()).attr("aria-labelledby");
+                                        lbltxt = $(pm.GetRenderer().GetUIWrapper(cs[c]).GetEl()).attr("aria-label");
+                                        break;
+                                    }
+                                }
+                            }
+                            thefield = ae.find("[name='" + iname + "']").parent(field_sel);
+                            wrap = $(wrapdiv);
+                            wrap.attr("id", "wrap" + wrapcount);
+                            wrapcount++;
+                            if (fld.length == 0) {
+                                //var thefield = $(this).find(field_sel);
+                                if (thefield.length > 0) {
+                                    //lblid = $(thefield.children()[0]).attr("aria-labelledby");
+                                    if (typeof (lblid) === "undefined") {
+                                        //dig deeper for a label id
+                                        thefield.children().each(function (z) {
+                                            if (typeof ($(this).attr("aria-labelledby")) !== "undefined") {
+                                                lblid = $(this).attr("aria-labelledby");
+                                            }
+                                        });
+                                    }
+                                    //leave a mark
+                                    if (thefield.parent().find("span[id='bcrm_field']").length == 0) {
+                                        thefield.after("<span id='bcrm_field' data-iname='" + iname + "'></span>");
+                                    }
+                                    fld = thefield;
+                                    //fld = thefield.detach();
+                                    //fld.attr("data-iname", iname);
+                                    //fld.attr("data-btype", "bcrm_field");
+                                }
+                            }
+                            if (lbl.length == 0) {
+                                if (lblid != "") {
+                                    //debugger;
+                                    //lbl = $(ae).find("[id='" + lblid + "']").parent()[0];
+                                    var lblelem = utils.GetLabelElem(cs[c], pm);
+                                    if (lblelem) {
+                                        lbl = lblelem.parent()[0];
+                                        if (typeof (lbl) === "undefined") { //work around misconfigured labels
+                                            lbl = $(ae).find("div.mceGridLabel:contains('" + lbltxt + "')")[0];
+                                        }
+                                        //leave a mark
+                                        if ($(lbl).parent().find("span[id='bcrm_label']").length == 0) {
+                                            $(lbl).after("<span id='bcrm_label' data-iname='" + iname + "'></span>");
+                                        }
+                                        lbl = $(lbl);
+                                        //lbl = $(lbl).detach();
+                                        //lbl.attr("data-iname", iname);
+                                        //lbl.attr("data-btype", "bcrm_label");
+                                    }
+                                }
+                                //hints
+                                if (typeof (hints) !== "undefined") {
+                                    for (h = 0; h < hints.length; h++) {
+                                        var hi = hints[h];
+                                        var ht = "";
+                                        if (typeof (hi[fname]) !== "undefined") {
+                                            ht = hi[fname];
+                                        }
+                                        if (ht != "") {
+                                            $(lbl).attr("data-hint", ht);
+                                            $(lbl).attr("data-hintposition", "top-middle");
+                                        }
+                                    }
+                                }
+                            }
+                            if (lbl.length == 1) {
+                                lbl = $(lbl).detach();
+                                lbl.attr("data-iname", iname);
+                                lbl.attr("data-btype", "bcrm_label");
+                                wrap.append(lbl);
+                            }
+                            if (fld.length == 1) {
+                                fld = thefield.detach();
+                                fld.attr("data-iname", iname);
+                                fld.attr("data-btype", "bcrm_field");
+                                wrap.append(fld);
+                                $(fsec[1]).append(wrap);
+
+                            }
+
+                            lbl = [];
+                            fld = [];
+                            lblid = "";
+                            fname = "";
+                            thefield = null;
+                            iname = "";
+
+
+                        }
+                    }
+                    if ($(fsec).find(".bcrm-new-grid-wrap").length > 0) {
+                        cwrap.append(fsec);
+                    }
+                }
+
+            }
+            $(newgriddiv).append(cwrap);
+            $(newgriddiv).find("#bcrm_section_container").accordion(acconf);
+            return $(newgriddiv);
+        };
+        BCRMRWDFactory.prototype.GetConfig = function (a) {
+            //config examples
+            var BCRMRWDConf = {
+                "SIS Product Form Applet - ISS Admin__ISS Product Administration View": {
+                    "free": { "seq": 0, "id": "free", "caption": "General", "fields": ["Type", "Name"] },//,"Organization","Orderable","Description","Version Status","Product Line","IsComplexProductBundle","Part #","Unit of Measure","IsComplexProductNotBundle","Payment Type","Product Def Type Code","Track As Asset Flag","Inventory Flag","Product Level","Maximum Quantity","Equivalent Product","Format","CDA Pageset","ThumbnImageFileName","Parent Internal Product Name","Start Date","Thumbnail Source Path","Network Element Type","End Date","ImageFileName","SPN Definition Name","Compound Flag","Image Source Path"]},
+                    "HTML_FormSection2_Label": { "caption": "Marketing Info", "seq": 1, "id": "HTML_FormSection2_Label", "fields": ["Targeted Industry", "Targeted Min Age"] },//,"Targeted Postal Code","Targeted Country","Targeted Max Age"]},
+                    "HTML_FormSection4_Label": { "caption": "Service", "seq": 4, "id": "HTML_FormSection4_Label", "fields": ["MTBF", "MTTR", "Field Replacable Unit", "Return if Defective", "Tool Flag", "Billing Type", "Billing Service Type"] },
+                    "HTML_FormSection3_Label": { "caption": "Logistics", "seq": 2, "id": "HTML_FormSection3_Label", "fields": ["Vendor", "Vendor Location", "Vendor Part Number", "Item Size", "Lead Time", "Carrier", "Shipping Method", "Allocate Below Safety Flag", "Auto Substitute  Flag", "Auto Allocate Flag", "Auto Explode Flag"] },
+                    "HTML_FormSection5_Label": { "caption": "Other", "seq": 3, "id": "HTML_FormSection5_Label", "fields": ["SAP Division Code", "Integration Id", "Global Product Identifier", "Serialized", "Configuration", "Taxable Flag", "Tax Subcomponent Flag", "Position Bill Product Flag", "Inclusive Eligibility Flag", "Compensatable"] }
+                },
+                "Service Request Detail Applet__Personal Service Request List View": {
+                    "free": { "seq": 0, "id": "free", "caption": "General", "fields": [] },
+                    "HTML_Label_2_Label": { "caption": "SR Information", "seq": 1, "id": "HTML_Label_2_Label", "fields": ["SR Number", "INS Product", "Contact Last Name", "Area", "Contact First Name", "Sub-Area", "Created", "Account Location", "Account", "CSN", "Commit Time", "Contact Account", "Closed Date", "Contact Business Phone", "Contact Email", "Source", "Reproduce"] },
+                    "HTML_FormSection2_Label": { "caption": "Priority and Ownership", "seq": 2, "id": "HTML_FormSection2_Label", "fields": ["Status", "Sub-Status", "Priority", "Owner", "Created By", "Owner Group", "Organization", "Severity"] },
+                    "SRSummaryForm_Label": { "caption": "Summary", "seq": 3, "id": "SRSummaryForm_Label", "fields": ["Abstract"] },
+                    "DetailDescForm_Label": { "caption": "Detailed Description", "seq": 4, "id": "DetailDescForm_Label", "fields": ["Description", "Billable Flag"] },
+                    "CustomerTimeFormSection_Label": { "caption": "Customer Time Zone", "seq": 5, "id": "CustomerTimeFormSection_Label", "fields": ["Contact Created", "Contact Commit Time", "Contact Closed Date"] },
+                    "Social_Media_Section_Label": { "caption": "Social Media", "seq": 6, "id": "Social_Media_Section_Label", "fields": ["SM Author", "SM Community", "SM Sentiment", "SM Topic", "SM Influence Score", "SM Publish Date"] }
+                },
+                "Contact Form Applet__default": {
+                    "free": { "seq": 0, "id": "free", "caption": "General", "fields": ["First Name", "Last Name", "M/M", "Job Title"] },
+                    "section0": { "seq": 1, "id": "section0", "caption": "<span></span><i>" + "Contact Info" + "</i></span>", "fields": ["Email Address", "Work Phone #", "Cellular Phone #"] },
+                    "section1": { "seq": 2, "id": "section1", "caption": "Company & Address", "fields": ["Account", "Account Location", "Personal Street Address", "Personal City", "Personal State", "Personal Postal Code", "Personal Country"] }
+                },
+                "Activity Form Applet__default": { "free": { "seq": 0, "id": "free", "caption": "General", "fields": ["Description", "Planned", "Type", "Duration Minutes", "Comment", "Planned Completion", "Done Flag", "Private", "Priority", "Primary Owned By", "Status", "Owned By", "Opportunity", "Contact Last Name", "Account Name", "Display"] } },
+                "SIS Account Entry Applet__": {
+                    "free": { "seq": 0, "id": "free", "caption": "General", "fields": ["Name", "Location", "City"] },
+                    "section0": { "seq": 1, "id": "section0", "caption": "Account Details", "fields": ["Sales Rep", "Main Phone Number"] },
+                    "section1": { "seq": 2, "id": "section1", "caption": "Address", "fields": ["Street Address", "State", "Postal Code", "Country"] }
+                }
+            };
+
+            //formsection to accordion transform
+            var utils = new SiebelAppFacade.BCRMUtils();
+            var pm = utils.ValidateContext(a);
+            var ae = utils.GetAppletElem(pm);
+            var cs = pm.Get("GetControls");
+            var formsections = {};
+            var colpos = 0;
+            var rowpos = 0;
+            var seq = 1;
+            var an = pm.GetObjName();
+
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            var cname = an + "__" + vn;
+            var dname = an + "__default";
+            var tname = an + "__";
+            var useconf = "none";
+            var appletconfig = BCRMRWDConf[cname];
+            var hasconfig = false;
+            if (typeof (appletconfig) === "undefined") {
+                appletconfig = BCRMRWDConf[tname];
+            }
+            else {
+                useconf = cname;
+            }
+            if (typeof (appletconfig) === "undefined") {
+                appletconfig = BCRMRWDConf[dname];
+            }
+            else {
+                useconf = tname;
+            }
+            if (typeof (appletconfig) !== "undefined") {
+                hasconfig = true;
+                if (useconf == "none") {
+                    useconf = dname;
+                }
+            }
+
+            //console.log("BCRMRWDFactory.GetConfig: " + an + " : " + useconf);
+            var fs_sel = ".FormSection"; //selector for form sections, for easy replacement
+            var field_sel = ".mceGridField"; //selector for grid layout controls/fields (not labels)
+            var tb = ae.find("table.GridBack");
+            //first pass: markup TR and TD elements and collect formsection info
+            tb.find("tr").each(function (i) {
+                $(this).attr("data-rowpos", rowpos);
+                $(this).find("td").each(function (j) {
+                    //set attributes for each TD
+                    $(this).attr("data-colpos", colpos);
+                    $(this).attr("data-top", $(this).offset().top);
+                    $(this).attr("data-left", $(this).offset().left);
+                    $(this).attr("data-width", $(this).width());
+                    if (j > 0) { colpos++; }
+
+                    if ($(this).find(fs_sel).length > 0) {
+                        //if TD hosts a formsection, collect its info into a temp object
+                        var td = $(this);
+                        var fs = td.find(fs_sel).parent();
+                        var fslbl = td.find("span").attr("id");//td.find(fs_sel).text();
+                        var colspan = parseInt(td.attr("colspan"));
+                        formsections[fslbl] = {};
+                        formsections[fslbl]["caption"] = td.find(fs_sel).text();
+                        //formsections[fslbl]["color"] = "#" + (j+1).toString() + (j+2).toString() + (j+3).toString();
+                        formsections[fslbl]["seq"] = seq;
+                        formsections[fslbl]["id"] = td.find("span").attr("id");
+                        formsections[fslbl]["fields"] = [];
+                        seq++;
+                        colpos += colspan;
+                        //debugger;
+                    }
+                });
+                colpos = 0;
+                rowpos++;
+                //add "free" formsection
+                formsections["free"] = { "seq": 0, "id": "free", "caption": "General", "fields": [] };
+            });
+
+            if (seq == 1) {
+                //applet repo definition has no formsections, but custom config could have
+                if (hasconfig) {
+                    for (acf in appletconfig) {
+                        if (acf != "free") {
+                            seq++;
+                        }
+                    }
+                }
+            }
+            //2nd pass
+            //for each td with an input, "look up" (literally) to which formsection it belongs to
+            tb.find("td").each(function (i) {
+                var td = $(this);
+                if (td.find(fs_sel).length == 0 && td.find(field_sel).length == 1) {  //only include inputs
+                    var r = parseInt(td.parent("tr").attr("data-rowpos"));
+                    var cushion = 5;
+                    var left = parseInt(td.attr("data-left")) + cushion;
+                    var fid = "";
+                    for (var ri = r; ri >= 0; ri--) {
+                        //go upward until we find the formsection
+                        var tr = tb.find("tr[data-rowpos='" + ri + "']");
+                        tr.find("td").each(function (j) {
+                            var tdi = $(this);
+                            if (tdi.find(fs_sel).length == 1 && fid == "") {
+                                var fstart = parseInt(tdi.attr("data-left"));
+                                var fend = fstart + parseInt(tdi.attr("data-width"));
+                                if (fstart <= left && left <= fend) { //if left (plus cushion) side of control is within the formsection's boundaries
+                                    fid = tdi.find("span").attr("id"); //get the formsection id
+                                    //break;
+                                }
+                            }
+                        });
+                    }
+                    if (fid != "") {  //mark each control TD with the formsection id it appears under
+                        if (typeof (td.attr("data-fid")) === "undefined") {
+                            td.attr("data-fid", fid);
+                            //colorize for debugging
+                            /*
+                             for (f in formsections){
+                             if (fid == formsections[f]["id"]){
+                             td.css("background",formsections[f].color);
+                             }
+                             }
+                             */
+                        }
+
+                    }
+                    else {   //control could be "free" , ie not under any formsection
+                        fid = "free";
+                        td.attr("data-fid", fid);
+                    }
+
+                    if (!hasconfig) { //write field list to formsection
+                        var inputname = $(td.find(field_sel).children()[0]).attr("name");
+                        if (typeof (inputname) !== "undefined") {
+
+                            for (c in cs) {
+                                if (cs[c].GetInputName() == inputname) {
+                                    formsections[fid]["fields"].push(cs[c].GetFieldName());
+                                }
+                            }
+                        }
+
+                    }
+                    fid = "";
+                }
+            });
+
+            //use current layout as config if no custom config is present
+            if (!hasconfig) {
+                appletconfig = formsections;
+            }
+            return appletconfig;
+        };
+        return BCRMRWDFactory;
+    }());
+}
+
