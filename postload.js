@@ -2136,6 +2136,13 @@ BCRMWSHelper = function () {
                 $("head").append(cjs);
             }
 
+            //multiselect
+            /*
+            var mjs = $('<script src="scripts/siebel/custom/ui.multiselect.js"></script>');
+            if ($("script[src*='ui.multiselect.js']").length == 0) {
+                $("head").append(mjs);
+            }
+            */
         }
 
     }
@@ -2839,7 +2846,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                     frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
                                     fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
                                 }
-                                else{
+                                else {
                                     fdt = "";
                                     fln = "";
                                     frq = "";
@@ -4717,3 +4724,84 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
     }());
 }
 
+//Experimental/sunsetted: show unmapped fields for an applet
+//uses jquery plugin "multiselect" (see WSHelper)
+/*
+BCRMShowUnmappedFields = function (context) {
+    var ut = new SiebelAppFacade.BCRMUtils();
+    var pm = ut.ValidateContext(context);
+    var mapped = [];
+    var unmapped = {};
+    if (pm) {
+        var an = pm.GetObjName();
+        var bc = pm.Get("GetBusComp").GetName();
+        var bcd = ut.GetBCData(bc);
+        var cs = pm.Get("GetControls");
+        var fields = bcd["Fields"];
+        for (c in cs) {
+            if (cs[c].GetFieldName() != "") {
+                mapped.push(cs[c].GetFieldName());
+            }
+        }
+        for (f in fields) {
+            if (mapped.indexOf(f) == -1) {
+                unmapped[f] = {};
+                unmapped[f]["Type"] = fields[f]["Type"];
+                unmapped[f]["Text Length"] = fields[f]["Text Length"];
+            }
+        }
+    }
+    var ct = $("<div id='bcrm_ms_container'><div class='row' style='display:flex'></div></div>");
+    var c1 = $("<div class='col-sm-5'>Available/Unmapped</div>");
+    var ms = $("<select style='height:500px;width:280px' id='multiselect' class='form-control' size='8' multiple='multiple' name='from[]'>");
+    for (u in unmapped) {
+        var opt = $("<option value='" + u + "'>" + u + "</option>");
+        ms.append(opt);
+    }
+    c1.append(ms);
+    var c2 = $("<div class='col-sm-2' style='display:grid;height:fit-content;margin:10px;'></div>");
+    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_rightAll" class="btn btn-block">&gt;&gt</button>');
+    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_rightSelected" class="btn btn-block">&gt;</button>');
+    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_leftSelected" class="btn btn-block">&lt;</button>');
+    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_leftAll" class="btn btn-block">&lt;&lt;</button>');
+
+    var c3 = $("<div class='col-sm-5'>Selected</div>");
+    c3.append('<select name="to[]" style="height:500px;width:280px" id="multiselect_to" class="form-control" size="8" multiple="multiple"></select>');
+    c3.append('<div class="row" style="display:flex;margin-top:4px;"><div style="margin:auto;" class="col-sm-6"><button type="button" id="multiselect_move_up" class="btn btn-block">Move Up</button></div><div style="margin:auto;" class="col-sm-6"><button type="button" id="multiselect_move_down" class="btn btn-block col-sm-6">Move Down</button></div></div>');
+    ct.find(".row").append(c1);
+    ct.find(".row").append(c2);
+    ct.find(".row").append(c3);
+    
+    ct.dialog({
+        title: "Add Fields to " + an,
+        width:650,
+        height:650,
+        buttons:{
+            Apply: function () {
+                var resp = SiebelApp.Utils.Confirm("Controls will be added to the applet in the current workspace.\nYou must use Siebel Web Tools to complete the layout.\nContinue?");
+                if (resp){
+                    //ISSUE: REST API PUT/POST not working for Controls (Field and Caption not inserted)
+                    $(this).dialog("destroy");
+                }
+                else{
+                    //do nothing
+                }
+            },
+            Cancel: function (e, ui) {
+                $(this).dialog("destroy");
+            }
+        }
+    })
+
+    setTimeout(function(){
+        $("#multiselect").multiselect({
+            search: {
+                left: '<input type="text" name="q" style="width:270px;font-size:1.2em;margin-bottom:4px;" placeholder="Search..." />'
+            },
+            fireSearch: function(value) {
+                return value.length > 0;
+            }
+        });
+    },100);
+}
+*/
