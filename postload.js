@@ -31,8 +31,8 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 42;
-var devpops_tag = "Lois Maxwell";
+var devpops_version = 43;
+var devpops_tag = "Elihu Root";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -535,6 +535,7 @@ BCRMCreateDebugMenu = function () {
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                 var ut = new SiebelAppFacade.BCRMUtils();
+                ut.RemoveLinkOverlay();
                 for (a in am) {
                     ut.ShowControls(a);
                 }
@@ -552,6 +553,7 @@ BCRMCreateDebugMenu = function () {
                 for (a in am) {
                     ut.ShowBCFields(a);
                 }
+                ut.LinkOverlay();
                 sessionStorage.BCRMToggleCycle = "ShowBCFields";
                 //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
             },
@@ -563,6 +565,7 @@ BCRMCreateDebugMenu = function () {
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                 var ut = new SiebelAppFacade.BCRMUtils();
+                ut.RemoveLinkOverlay();
                 for (a in am) {
                     ut.ShowTableColumns(a);
                 }
@@ -577,6 +580,7 @@ BCRMCreateDebugMenu = function () {
             "onclick": function () {
                 var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                 var ut = new SiebelAppFacade.BCRMUtils();
+                ut.RemoveLinkOverlay();
                 for (a in am) {
                     ut.LabelReset(a);
                 }
@@ -858,7 +862,7 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.xiv",
+            "label": "devpops 21.2.xv",
             "title": "devpops 21.2 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
@@ -2226,14 +2230,14 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             le = ut.GetLabelElem(cs[c], pm);
                             //look for "custom" labels
                             if (le && le.attr("bcrm-custom-label") != "") {
-                                if (le.parent().hasClass("siebui-btn-grp-applet")){
-                                    ut.SetLabel(cs[c],"",pm);
+                                if (le.parent().hasClass("siebui-btn-grp-applet")) {
+                                    ut.SetLabel(cs[c], "", pm);
                                 }
-                                else{
+                                else {
                                     ut.SetLabel(cs[c], cs[c].GetDisplayName(), pm);
                                 }
                             }
-                           
+
                         }
                     }
                 }
@@ -2288,7 +2292,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     otitle = "";
                     var pr = pm.GetRenderer();
                     var cel = pr.GetUIWrapper(c).GetEl();
-                    if (typeof (cel) !== "undefined") {
+                    if (cel != null && typeof (cel) !== "undefined") {
                         tc = pm.Get("C_ToggleCycle");
                         if (typeof (cel.attr("title")) !== "undefined") {
                             if (cel.attr("title").indexOf("DisplayName") == -1) {
@@ -2415,12 +2419,17 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             fn = cs[c].GetFieldName();
                             if (fn != "") {
                                 fd = fm[fn];
-                                fdt = fd.GetDataType(); //get the data type (text, bool, etc)
-                                fln = fd.GetLength(); //get the field length (30, 100, etc)
-                                frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
-                                fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
-                                nl = fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
-                                ut.SetLabel(cs[c], nl, pm);
+                                if (typeof (fd) !== "undefined") {
+                                    fdt = fd.GetDataType(); //get the data type (text, bool, etc)
+                                    fln = fd.GetLength(); //get the field length (30, 100, etc)
+                                    frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
+                                    fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
+                                    nl = fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
+                                    ut.SetLabel(cs[c], nl, pm);
+                                }
+                                else {
+                                    ut.SetLabel(cs[c], fn, pm);
+                                }
                             }
                         }
                     }
@@ -2542,6 +2551,163 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return bcd;
         };
 
+        //wrapper to get "formatted" BO data
+        BCRMUtils.prototype.GetBOData = function (bon, bclist) {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var rrdata, bodata, bod;
+            rrdata = ut.GetRRData("Business Object", bon);
+            bodata = ut.ExtractBOData(rrdata, bclist);
+            bod = bodata["Business Object"];
+            return bod;
+        };
+
+        BCRMUtils.prototype.ExtractBOData = function (rrdata, bclist) {
+            var retval = {};
+            var bo;
+            var props;
+            var pc;
+            var cc;
+            var fn;
+            var prim;
+            var ut = new SiebelAppFacade.BCRMUtils();
+            retval["Business Object"] = {};
+            bo = retval["Business Object"];
+            props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
+            pc = props.length;
+            for (p in props) {
+                bo[p] = props[p];
+                if (p == "Primary Business Component") {
+                    prim = props[p];
+                    if (typeof (bclist) !== "undefined") {
+                        if (bclist.indexOf(prim) == -1) {
+                            bclist.push(prim);
+                        }
+                    }
+                }
+            }
+            bo["Business Object Components"] = {};
+            cc = rrdata.GetChild(0).childArray;
+            for (c in cc) {
+                if (cc[c].type == "Business Object Component") {
+                    props = cc[c].GetChildByType("Properties").propArray;
+                    fn = props["BusComp"];
+                    if (typeof (bclist) === "undefined") {
+                        bo["Business Object Components"][fn] = {};
+                        for (p in props) {
+                            bo["Business Object Components"][fn][p] = props[p];
+                            if (p == "Link" && props[p] != "") {
+                                bo["Business Object Components"][fn]["LinkProperties"] = ut.GetLinkData(props[p]);
+                            }
+                        }
+                    }
+                    else {
+                        if (bclist.indexOf(fn) > -1) {
+                            bo["Business Object Components"][fn] = {};
+                            for (p in props) {
+                                bo["Business Object Components"][fn][p] = props[p];
+                                if (p == "Link" && props[p] != "") {
+                                    bo["Business Object Components"][fn]["LinkProperties"] = ut.GetLinkData(props[p]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return retval;
+        };
+
+        //wrapper to get "formatted" Link data
+        BCRMUtils.prototype.GetLinkData = function (ln) {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var rrdata, lndata, lnd;
+            //use variable as client-side cache to avoid multiple queries for the same object
+            //tried sesssionstorage but reaches quota
+            var cache = "BCRM_RR_CACHE_LINK_" + ln;
+            if (typeof (BCRCMETACACHE[cache]) === "undefined") {
+                rrdata = ut.GetRRData("Link", ln);
+                lndata = ut.ExtractLinkData(rrdata);
+                lnd = lndata["Link"];
+                BCRCMETACACHE[cache] = JSON.stringify(lnd);
+            }
+            else {
+                lnd = JSON.parse(BCRCMETACACHE[cache]);
+            }
+            return lnd;
+        };
+        BCRMUtils.prototype.ExtractLinkData = function (rrdata) {
+            var retval = {};
+            var ln;
+            var props;
+            var pc;
+            var cc;
+            var fn;
+            retval["Link"] = {};
+            ln = retval["Link"];
+            props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
+            pc = props.length;
+            for (p in props) {
+                ln[p] = props[p];
+            }
+            return retval;
+        };
+
+        BCRMUtils.prototype.RemoveLinkOverlay = function () {
+            $("[bcrm-bc]").css("border", "inherit");
+            $("[id^='bcrm_bc_info']").remove();
+        };
+
+        BCRMUtils.prototype.LinkOverlay = function () {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var am, bo, bod, ae, bc, link, lt, pnt, it, ln;
+            var bclist = [];
+
+            am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+            bo = SiebelApp.S_App.GetActiveBusObj().GetName();
+            for (a in am) {
+                bclist.push(am[a].GetBusComp().GetName());
+            }
+            //get BO Data
+            bod = ut.GetBOData(bo, bclist);
+
+            //2nd pass: read BO data and apply to applets
+            for (a2 in am) {
+                var isprimary = false;
+                var bcn = am[a2].GetBusComp().GetName();
+                var id = am[a2].GetId();
+                ae = ut.GetAppletElem(am[a2]);
+                ae.attr("bcrm-bc", bcn);
+                if (bod["Primary Business Component"] == bcn) {
+                    isprimary = true;
+                    ae.attr("bcrm-is-primary", "true");
+                    ae.css("border", "6px solid red");
+                }
+                else {
+                    ae.css("border", "3px solid red");
+                }
+                var box = $("<div id='bcrm_bc_info_" + id + "' style='border: 2px solid red; background:#eee; font-size:1.2em; width:fit-content; padding: 2px; margin:auto; border-radius:8px'>");
+                box.text((isprimary ? "Primary " : "") + "Business Component: " + bcn);
+                //Links
+                if (!isprimary) {
+                    for (b in bod["Business Object Components"]) {
+                        if (b == bcn) {
+                            bc = bod["Business Object Components"][b];
+                            if (typeof (bc["LinkProperties"]) !== "undefined") {
+                                link = bc["LinkProperties"];
+                                it = link["Inter Table"];
+                                lt = it == "" ? "1:M" : "M:M";
+                                pnt = link["Parent Business Component"];
+                                ln = link["Name"];
+                                box.html(box.text() + "<br>Link: " + ln + "<br>Type: " + lt + (it == "" ? "" : "(" + it + ")") + "<br>Parent BC: " + pnt);
+                            }
+                        }
+                    }
+                    ae.prepend(box);
+                }
+                else {
+                    ae.append(box);
+                }
+            }
+        };
         BCRMUtils.prototype.ExtractAppletData = function (rrdata) {
             var retval = {};
             var ap;
@@ -2667,10 +2833,18 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             fn = cs[cn].GetFieldName();
                             if (fn != "") {
                                 fd = fm[fn];
-                                fdt = fd.GetDataType(); //get the data type (text, bool, etc)
-                                fln = fd.GetLength(); //get the field length (30, 100, etc)
-                                frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
-                                fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
+                                if (typeof (fd) !== "undefined") {
+                                    fdt = fd.GetDataType(); //get the data type (text, bool, etc)
+                                    fln = fd.GetLength(); //get the field length (30, 100, etc)
+                                    frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
+                                    fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
+                                }
+                                else{
+                                    fdt = "";
+                                    fln = "";
+                                    frq = "";
+                                    fcl = "";
+                                }
 
                                 if (typeof (bcd["Fields"][fn]) !== "undefined") {
 
@@ -4069,22 +4243,22 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
                         "grid-auto-flow": "dense",
                         "row-gap": "4px",
                         "margin-left": "4px",
-                        "height":"none"
+                        "height": "none"
                     });
                     $(this).find("input").attr("style", "width:240px!important;");
                     $(this).find("textarea").attr("style", "width:240px!important;height:30px!important");
                     $(this).find(".bcrm-new-grid-wrap .mceGridLabel").css("text-align", "left");
-                    ae.find("#bcrm_section_container").find("h3").css("background","linear-gradient(90deg, #d2e9f5, transparent)");
+                    ae.find("#bcrm_section_container").find("h3").css("background", "linear-gradient(90deg, #d2e9f5, transparent)");
                 });
-                setTimeout(function(){
-                    ae.find("#bcrm_section_container").find("h3").each(function(i){
-                        ae.find("#bcrm_section_container").accordion("option","active",i);
+                setTimeout(function () {
+                    ae.find("#bcrm_section_container").find("h3").each(function (i) {
+                        ae.find("#bcrm_section_container").accordion("option", "active", i);
                     });
-                    ae.find("#bcrm_section_container").accordion("option","active",0);
-                    if (ae.find("#bcrm_section_container").find("h3").length == 1){
+                    ae.find("#bcrm_section_container").accordion("option", "active", 0);
+                    if (ae.find("#bcrm_section_container").find("h3").length == 1) {
                         ae.find("#bcrm_section_container").find("h3").hide();
                     }
-                },20)
+                }, 20)
             }, 20);
 
             //console.log("BCRMRWDFactory.BCRMMakeGridResponsive.Performance: " + an + " : " + (Date.now() - ts) + " ms.");
