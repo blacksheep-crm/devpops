@@ -31,8 +31,8 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 43;
-var devpops_tag = "Elihu Root";
+var devpops_version = 44;
+var devpops_tag = "Linus Carl Pauling";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -726,6 +726,14 @@ BCRMCreateDebugMenu = function () {
             },
             "acl": ["Siebel Administrator"]
         },
+        "serverstatus": {
+            "label": "Server Status",
+            "title": "Show Server Component Status via REST API (experimental)",
+            "onclick": function () {
+                $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                BCRMDisplayServer();
+            }
+        },
         "StartSARM": {
             "label": "Start SARM",
             "title": "Start SARM logging",
@@ -862,7 +870,7 @@ BCRMCreateDebugMenu = function () {
             }
         },
         "devpops": {
-            "label": "devpops 21.2.xv",
+            "label": "devpops 21.2.xxviii",
             "title": "devpops 21.2 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
             "onclick": function () {
                 $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
@@ -4726,6 +4734,8 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
 
 //Experimental/sunsetted: show unmapped fields for an applet
 //uses jquery plugin "multiselect" (see WSHelper)
+//but /workspace REST API doesn't play well when creating controls
+//leaving this here to document the multiselect plugin
 /*
 BCRMShowUnmappedFields = function (context) {
     var ut = new SiebelAppFacade.BCRMUtils();
@@ -4805,3 +4815,193 @@ BCRMShowUnmappedFields = function (context) {
     },100);
 }
 */
+
+//get server and component status through undocumented SMC REST API
+//do not try this at home!
+var BCRM_BASIC_AUTH = "";
+var BCRM_ENT="";
+var BCRM_SERVERS=[];
+var BCRM_COMPS=[];
+
+BCRMGetCredentials = function (next) {
+    var dlg = $("<div id='bcrm_cred_dlg' style='display:grid;'>");
+    var user = $("<input id='username' type='text' placeholder='User Name'>");
+    var pw = $("<input id='password' type='password' placeholder='Password'>");
+    dlg.append(user);
+    dlg.append(pw);
+    dlg.dialog({
+        title: "Provide Credentials for Server Management",
+        width: 540,
+        height: 200,
+        buttons: {
+            Go: function(e,ui){
+                var un = $(this).find("#username").val();
+                var pw = $(this).find("#password").val();
+                BCRM_BASIC_AUTH = "Basic " + btoa(un + ":" + pw);
+                $(this).dialog("destroy");
+                if (next == "ent"){
+                    BCRMGetEnterprise();
+                }
+                if (next == "srv"){
+                    BCRMGetServers();
+                }
+                if (next == "com"){
+                    BCRMGetComponents();
+                }
+                if (next == "dis"){
+                    BCRMDisplayServer();
+                }
+            },
+            Cancel: function (e, ui) {
+                $(this).dialog("destroy");
+            }
+        }
+    });
+};
+
+BCRMGetEnterprise = function () {
+    var retval;
+    if (BCRM_BASIC_AUTH == ""){
+        BCRMGetCredentials("ent");
+    }
+    else{
+        var data = $.ajax({
+            dataType: "json",
+            url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/",
+            async: false,
+            method: "GET",
+            "headers": {
+                "Authorization": BCRM_BASIC_AUTH
+              }
+        });
+        if (data.status == 200){
+            retval = data.responseJSON.Result[0].EP_NAME;
+            BCRM_ENT = retval;
+        }
+        else{
+            retval = data.status + ":" + data.responseText;
+        }
+    }
+    return retval;
+};
+
+BCRMGetServers = function(){
+    var retval;
+    if (BCRM_BASIC_AUTH == ""){
+        BCRMGetCredentials("srv");
+    }
+    else{
+        if (BCRM_ENT == ""){
+            BCRMGetEnterprise();
+            BCRMGetServers();
+        }
+        else{
+            var data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + BCRM_ENT + "/servers",
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                  }
+            });
+            if (data.status == 200){
+                retval = data.responseJSON.Result;
+                BCRM_SERVERS = retval;
+            }
+            else{
+                retval = data.status + ":" + data.responseText;
+            }
+        }
+    }
+    return retval;
+};
+
+BCRMGetComponents = function(){
+    var retval;
+    if (BCRM_BASIC_AUTH == ""){
+        BCRMGetCredentials("com");
+    }
+    else{
+        if (BCRM_ENT == ""){
+            BCRMGetEnterprise();
+            BCRMGetComponents();
+        }
+        else{
+            var data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + BCRM_ENT + "/components",
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                  }
+            });
+            if (data.status == 200){
+                retval = data.responseJSON.Result;
+                BCRM_COMPS = retval;
+            }
+            else{
+                retval = data.status + ":" + data.responseText;
+            }
+        }
+    }
+    return retval;
+};
+
+BCRMDisplayServer = function(){
+    if (BCRM_BASIC_AUTH == ""){
+        BCRMGetCredentials("dis");
+    }
+    else{
+        if (BCRM_SERVERS.length == 0){
+            BCRMGetServers();
+        }
+        if (BCRM_COMPS.length == 0){
+            BCRMGetComponents();
+        }
+        if (BCRM_COMPS.length >= 1 && BCRM_SERVERS.length >= 1){
+            var dlg = $("<div id='bcrm_srv_dlg' style='overflow:auto;'>");
+            for (var i = 0; i < BCRM_SERVERS.length; i++){
+                var state = BCRM_SERVERS[i].SV_DISP_STATE;
+                var svname = BCRM_SERVERS[i].SBLSRVR_NAME;
+                var start = BCRM_SERVERS[i].START_TIME;
+                var sv = $("<div id='srv_" + svname +"'>" + svname + ": " + state + "</div>");
+                sv.css("font-size","1.4em");
+                switch (state){
+                    case "Running": sv.css("background","darkseagreen"); break;
+                    default: sv.css("background","coral"); break;
+                }
+                dlg.append(sv);
+                if (state == "Running"){
+                    for (var j = 0; j < BCRM_COMPS.length; j++){
+                        if (BCRM_COMPS[j].SV_NAME == svname){
+                            var cstate = BCRM_COMPS[j].CP_DISP_RUN_STATE;
+                            var tasks = BCRM_COMPS[j].CP_NUM_RUN_TASKS;
+                            var cname = BCRM_COMPS[j].CC_NAME;
+                            var max = BCRM_COMPS[j].CP_MAX_TASKS;
+                            var cm = $("<div id='cm_" + cname +"'>" + cname + ": " + cstate + " (" + tasks + " of " + max + " tasks)</div>");
+                            cm.css("margin-left","6px");
+                            switch (cstate){
+                                case "Running":
+                                case "Online": cm.css("font-weight","bold"); break;
+                            }
+                            sv.after(cm);
+                        }
+                        dlg.find(sv).after(cm);
+                    }
+                }
+            }
+            dlg.dialog({
+                title:"Server Component Status",
+                width: 800,
+                height: 600
+            });
+            //force reload
+            setTimeout(function(){
+                BCRM_SERVERS=[];
+                BCRM_COMPS=[];
+            },20000);
+        }
+    }
+}
