@@ -14,6 +14,10 @@ Debug menu in application to invoke xray (by blacksheep), tracing (by Jason MacZ
 
 Server Manager command line (srvrmgr) via browser, quick SARM on/off (user must have Siebel Administrator responsibility)
 
+"Break free" demo (Form applet re-rendering with flex/grid layout)
+
+Server and Components status display (experimental REST API access)
+
 Video (early version): https://youtu.be/pesmDPSNIvw
 
 Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
