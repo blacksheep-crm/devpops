@@ -881,8 +881,8 @@ BCRMCreateDebugMenu = function () {
     var hasresp = true;
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
     for (i in items) {
-        var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
-        var dv = $("<div title='" + items[i].title + "'>" + items[i].label + "</div>");
+        var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='height:32px;font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
+        var dv = $("<div style='height:32px;padding-bottom:6px;' title='" + items[i].title + "'>" + items[i].label + "</div>");
         if (sessionStorage.BCRMToggleCycle == i || sessionStorage.BCRMTracingCycle == i || sessionStorage.BCRMSARMCycle == i) {
             dv.addClass("ui-state-disabled");
         }
@@ -919,7 +919,7 @@ BCRMCreateDebugMenu = function () {
             }
         }
         if (items[i].showtoggle) {
-            var tog = $('<span style="float: right; margin-right: 6px;" title="Set/unset this toggle cycle as default"><input class="bcrm-toggle" style="height: 0;width: 0;visibility: hidden;" type="checkbox" id="toggle_' + i + '"><label class="bcrm-toggle-label" for="toggle_' + i + '" style="cursor: pointer;text-indent: -9999px;width: 35px;height: 15px;background: grey;display: inline-block;border-radius: 100px;position: relative;top: 12px;">Toggle</label></span>');
+            var tog = $('<span style="height:32px;float: right; margin-right: 6px;" title="Set/unset this toggle cycle as default"><input class="bcrm-toggle" style="height: 0;width: 0;visibility: hidden;" type="checkbox" id="toggle_' + i + '"><label class="bcrm-toggle-label" for="toggle_' + i + '" style="cursor: pointer;text-indent: -9999px;width: 35px;height: 15px;background: grey;display: inline-block;border-radius: 100px;position: relative;top: 12px;">Toggle</label></span>');
             $(tog).find("label").on("click", function (e, ui) {
                 e.stopImmediatePropagation();
                 var ip = $(this).attr("for");
@@ -949,7 +949,7 @@ BCRMCreateDebugMenu = function () {
             }
         }
         if (hasresp && items[i].showoptions) {
-            var opt = $('<span style="float: right; margin-right: 6px;" title="Options"><span class="miniBtnUIC"><button type="button" id="options_' + i + '" style="background: transparent;border: 0;" class="siebui-appletmenu-btn"><span>Options</span></button></span></span>');
+            var opt = $('<span style="float: right; margin-right: 6px;height:32px;" title="Options"><span style="height:32px" class="miniBtnUIC"><button type="button" id="options_' + i + '" style="background: transparent;border: 0;" class="siebui-appletmenu-btn"><span style="height:32px;">Options</span></button></span></span>');
             $(opt).find("button").on("click", function (e, ui) {
                 var id = $(this).attr("id").split("_")[1];
                 var dlg = $("<div id='bcrm_options_dlg'>");
