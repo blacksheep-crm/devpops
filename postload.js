@@ -437,7 +437,8 @@ BCRMWSEnhancer = function (pm) {
 //Create Workspace Menu
 BCRMCreateWSMenu = function (data) {
     var key, val, wsn, wss, wsl, ver;
-    var ul_main = $("<ul ul style='width:min-content;text-align:left;background:whitesmoke;' class='depth-0'></ul>");
+    //additional formatting by Jason
+    var ul_main = $("<ul ul style='width:min-content;text-align:left;background:whitesmoke;z-index:10000;' class='depth-0'></ul>");
     for (d in data) {
         wsn = d;
         wss = data[d]["Status"];
@@ -489,7 +490,14 @@ BCRMWSIconEnhancer = function () {
                     //$("#_sweclient").append(mc);
                     $($("#SiebComposerConfig").find("div")[0]).after(mc);
                     $("#bcrm_ws_menu").find("ul.depth-0").menu({
-                        position: { my: "left top", at: "right-5 top+5" }
+                        position: { my: "left top", at: "right-5 top+5" },
+                        create: function (e, ui) {
+                            var myright = $(this)[0].getClientRects()[0].right;
+                            var maxright = window.innerWidth;
+                            if (myright > maxright) {
+                                $(this).css("right", "24px");
+                            }
+                        }
                     });
                 }
                 else {
@@ -1069,7 +1077,8 @@ BCRMAddDebugButton = function () {
         if (next_to.length == 1) {
             $(next_to).parent().before(btn);
         }
-        $(btn.find("li")[0]).on("click", function (e) {
+        //add contextmenu as per Jason suggestion
+        $(btn.find("li")[0]).on("click contextmenu", function (e) {
             if ($("#bcrm_dbg_menu").length == 0) {
                 var mc = $("<div id='bcrm_dbg_menu' style='position: relative;min-width: 240px;'></div>");
                 var menu = BCRMCreateDebugMenu();
@@ -1088,6 +1097,7 @@ BCRMAddDebugButton = function () {
             else {
                 $("#bcrm_dbg_menu").remove();
             }
+            return false;
         });
     }
     //add message area
