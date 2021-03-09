@@ -22,6 +22,8 @@ Video (early version): https://youtu.be/pesmDPSNIvw
 
 Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
 
+Video update (Siebel Friday 26-FEB-2021): https://youtu.be/l0C8hhd1x0A?t=3473
+
 Installation:
 
 1. Import SIFs
