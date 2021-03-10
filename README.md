@@ -18,6 +18,8 @@ Server Manager command line (srvrmgr) via browser, quick SARM on/off (user must 
 
 Server and Components status display (experimental REST API access)
 
+NEW in 21.3.x: Ability to detach and float debug menu
+
 Video (early version): https://youtu.be/pesmDPSNIvw
 
 Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
@@ -47,7 +49,9 @@ Installation:
 
 10. Copy code from postload.js to the vanilla postload.js for a quick demo. 
 
-11. Validate the functionality and move code to custom file(s).
+11. Validate the functionality.
+
+12. Follow instructions in postload.js (ca. line 130) how to split code and register custom Open UI JS library
 
 Pre-requisites:
 
