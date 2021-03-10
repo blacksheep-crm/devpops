@@ -598,7 +598,7 @@ BCRMEditDebugMenu = function(){
             var i = $(this).attr("id");
             e.stopImmediatePropagation();
             BCRM_MENU[i].enable = v;
-            localStorage.BCRM_MENU = JSON.stringify(BCRM_MENU);
+            //localStorage.BCRM_MENU = JSON.stringify(BCRM_MENU);
         });
         $($("li#" + i).find("div")[0]).prepend(t);
     }
@@ -611,12 +611,12 @@ BCRMStopEditDebugMenu = function(){
 };
 
 var BCRM_MENU;
-if (typeof(localStorage.BCRM_MENU) === "undefined"){
+//if (typeof(localStorage.BCRM_MENU) === "undefined"){
     BCRM_MENU = {};
-}
-else{
-    BCRM_MENU = JSON.parse(localStorage.BCRM_MENU);
-}
+//}
+//else{
+//    BCRM_MENU = JSON.parse(localStorage.BCRM_MENU);
+//}
 
 BCRMCreateDebugMenu = function () {
     var togglecss = ".bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
