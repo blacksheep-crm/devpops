@@ -19,6 +19,7 @@ Server Manager command line (srvrmgr) via browser, quick SARM on/off (user must 
 Server and Components status display (experimental REST API access)
 
 NEW in 21.3.x: Ability to detach and float debug menu
+
 NEW in 21.3.x: Editable debug menu (hide/show items) with localstorage persistence
 
 Video (early version): https://youtu.be/pesmDPSNIvw
