@@ -579,152 +579,261 @@ BCRMCloseDebugMenu = function () {
     }
 };
 
+//such Personalization, much wow
+BCRMEditDebugMenu = function(){
+    var t;
+    var def = true;
+    for (i in BCRM_MENU){
+        if (!BCRM_MENU[i].enable){
+            $("li#" + i).show();
+            def = false;
+        }
+        else{
+            def = true;
+        }
+        t = $("<span class='bcrm-dbg-edit' style='margin-right:4px;'><input id='" + i + "' type='checkbox'></span>");
+        t.find("input").prop("checked",def);
+        t.find("input").on("click",function(e,ui){
+            var v = $(this).prop("checked");
+            var i = $(this).attr("id");
+            e.stopImmediatePropagation();
+            BCRM_MENU[i].enable = v;
+            localStorage.BCRM_MENU = JSON.stringify(BCRM_MENU);
+        });
+        $($("li#" + i).find("div")[0]).prepend(t);
+    }
+    $("#bcrm_dbg_menu").find("ul").css("width","270px");
+};
+
+BCRMStopEditDebugMenu = function(){
+    $("span.bcrm-dbg-edit").remove();
+    $("#bcrm_dbg_menu").find("ul").css("width","auto");
+};
+
+var BCRM_MENU;
+if (typeof(localStorage.BCRM_MENU) === "undefined"){
+    BCRM_MENU = {};
+}
+else{
+    BCRM_MENU = JSON.parse(localStorage.BCRM_MENU);
+}
+
 BCRMCreateDebugMenu = function () {
-    var togglecss = ".bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
+    var togglecss = ".bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
     var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
     if ($("style[bcrm-style]").length == 0) {
         $("head").append(st);
     }
-    var items = {
-        "ShowControls": {
-            "seq": 1,
-            "enable": true,
-            "label": "XR Show Controls",
-            "title": "X-Ray: Toggle Form Applets to display Control information in labels",
-            "onclick": function (e, ui) {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
-                    var ut = new SiebelAppFacade.BCRMUtils();
-                    ut.RemoveLinkOverlay();
-                    for (a in am) {
-                        ut.ShowControls(a);
+    if (typeof(BCRM_MENU["ShowControls"]) === "undefined"){
+        BCRM_MENU = {
+            "ShowControls": {
+                "seq": 1,
+                "enable": true,
+                "label": "XR Show Controls",
+                "title": "X-Ray: Toggle Form Applets to display Control information in labels",
+                "onclick": function (e, ui) {
+                    if (!$(this).hasClass("ui-state-disabled")) {
+                        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                        var ut = new SiebelAppFacade.BCRMUtils();
+                        ut.RemoveLinkOverlay();
+                        for (a in am) {
+                            ut.ShowControls(a);
+                        }
+                        sessionStorage.BCRMToggleCycle = "ShowControls";
+                        if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $($("li#ShowControls").find("div")[0]).addClass("ui-state-disabled");
+                            $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
+                        }
                     }
-                    sessionStorage.BCRMToggleCycle = "ShowControls";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#ShowControls").find("div")[0]).addClass("ui-state-disabled");
-                        $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
-                    }
-                }
-                return BCRMCloseDebugMenu();
-            },
-            "showtoggle": true
-        },
-        "ShowBCFields": {
-            "seq": 2,
-            "enable": true,
-            "label": "XR Show BC Fields",
-            "title": "X-Ray: Toggle Form and List Applets to display BC Field information in labels",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
-                    var ut = new SiebelAppFacade.BCRMUtils();
-                    ut.RemoveLinkOverlay();
-                    for (a in am) {
-                        ut.ShowBCFields(a);
-                    }
-                    ut.LinkOverlay();
-                    sessionStorage.BCRMToggleCycle = "ShowBCFields";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#ShowBCFields").find("div")[0]).addClass("ui-state-disabled");
-                        $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
-                    }
-                }
-                return BCRMCloseDebugMenu();
-            },
-            "showtoggle": true
-        },
-        "ShowTableColumns": {
-            "seq": 3,
-            "enable": true,
-            "label": "XR Show Columns",
-            "title": "X-Ray: Toggle Form and List Applets to display physical layer information",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
-                    var ut = new SiebelAppFacade.BCRMUtils();
-                    ut.RemoveLinkOverlay();
-                    for (a in am) {
-                        ut.ShowTableColumns(a);
-                    }
-                    sessionStorage.BCRMToggleCycle = "ShowTableColumns";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#ShowTableColumns").find("div")[0]).addClass("ui-state-disabled");
-                        $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
-                    }
-                }
-                return BCRMCloseDebugMenu();
-            },
-            "showtoggle": true
-        },
-        "Reset": {
-            "seq": 4,
-            "enable": true,
-            "label": "XR Reset Labels",
-            "title": "X-Ray: Toggle Form and List Applets to display original labels",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
-                    var ut = new SiebelAppFacade.BCRMUtils();
-                    ut.RemoveLinkOverlay();
-                    for (a in am) {
-                        ut.LabelReset(a);
-                    }
-                    sessionStorage.BCRMToggleCycle = "Reset";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#Reset").find("div")[0]).addClass("ui-state-disabled");
-                    }
-                }
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "Silent": {
-            "seq": 5,
-            "enable": true,
-            "label": "XR Silent Mode",
-            "title": "X-Ray: Complete scan, update tooltips only",
-            "onclick": function () {
-                $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
-                setTimeout(function () {
-                    if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $("#bcrm_dbg_menu").remove();
-                    }
-                    BCRMdevpopsTest("xray");
-                    $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
-                    setTimeout(function () {
-                        $("#bcrm_debug_msg").text("");
-                    }, 5000);
-                    //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
                     return BCRMCloseDebugMenu();
-                }, 200);
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "StartTracing": {
-            "seq": 6,
-            "enable": true,
-            "label": "Start Tracing",
-            "title": "Start SQL/Allocation Tracing\nKudos to Jason",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    BCRMStartLogging();
-                    sessionStorage.BCRMTracingCycle = "StartTracing";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#StopTracing").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#StartTracing").find("div")[0]).addClass("ui-state-disabled");
+                },
+                "showtoggle": true
+            },
+            "ShowBCFields": {
+                "seq": 2,
+                "enable": true,
+                "label": "XR Show BC Fields",
+                "title": "X-Ray: Toggle Form and List Applets to display BC Field information in labels",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
+                        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                        var ut = new SiebelAppFacade.BCRMUtils();
+                        ut.RemoveLinkOverlay();
+                        for (a in am) {
+                            ut.ShowBCFields(a);
+                        }
+                        ut.LinkOverlay();
+                        sessionStorage.BCRMToggleCycle = "ShowBCFields";
+                        if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#ShowBCFields").find("div")[0]).addClass("ui-state-disabled");
+                            $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
+                        }
                     }
-                    var r = BCRMCloseDebugMenu();
-                    var msg = "<span>Tracing in progress</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop'n'View" + "</button>";
-                    $("#bcrm_debug_msg").html(msg);
-                    $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                    return BCRMCloseDebugMenu();
+                },
+                "showtoggle": true
+            },
+            "ShowTableColumns": {
+                "seq": 3,
+                "enable": true,
+                "label": "XR Show Columns",
+                "title": "X-Ray: Toggle Form and List Applets to display physical layer information",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
+                        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                        var ut = new SiebelAppFacade.BCRMUtils();
+                        ut.RemoveLinkOverlay();
+                        for (a in am) {
+                            ut.ShowTableColumns(a);
+                        }
+                        sessionStorage.BCRMToggleCycle = "ShowTableColumns";
+                        if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#ShowTableColumns").find("div")[0]).addClass("ui-state-disabled");
+                            $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
+                        }
+                    }
+                    return BCRMCloseDebugMenu();
+                },
+                "showtoggle": true
+            },
+            "Reset": {
+                "seq": 4,
+                "enable": true,
+                "label": "XR Reset Labels",
+                "title": "X-Ray: Toggle Form and List Applets to display original labels",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
+                        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                        var ut = new SiebelAppFacade.BCRMUtils();
+                        ut.RemoveLinkOverlay();
+                        for (a in am) {
+                            ut.LabelReset(a);
+                        }
+                        sessionStorage.BCRMToggleCycle = "Reset";
+                        if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#Reset").find("div")[0]).addClass("ui-state-disabled");
+                        }
+                    }
+                    return BCRMCloseDebugMenu();
+                }
+            },
+            "Silent": {
+                "seq": 5,
+                "enable": true,
+                "label": "XR Silent Mode",
+                "title": "X-Ray: Complete scan, update tooltips only",
+                "onclick": function () {
+                    $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
+                    setTimeout(function () {
+                        if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $("#bcrm_dbg_menu").remove();
+                        }
+                        BCRMdevpopsTest("xray");
+                        $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
+                        setTimeout(function () {
+                            $("#bcrm_debug_msg").text("");
+                        }, 5000);
+                        //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
+                        return BCRMCloseDebugMenu();
+                    }, 200);
+                    return BCRMCloseDebugMenu();
+                }
+            },
+            "StartTracing": {
+                "seq": 6,
+                "enable": true,
+                "label": "Start Tracing",
+                "title": "Start SQL/Allocation Tracing\nKudos to Jason",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
+                        BCRMStartLogging();
+                        sessionStorage.BCRMTracingCycle = "StartTracing";
+                        if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $($("li#StopTracing").find("div")[0]).removeClass("ui-state-disabled");
+                            $($("li#StartTracing").find("div")[0]).addClass("ui-state-disabled");
+                        }
+                        var r = BCRMCloseDebugMenu();
+                        var msg = "<span>Tracing in progress</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop'n'View" + "</button>";
+                        $("#bcrm_debug_msg").html(msg);
+                        $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                            BCRMStopLogging();
+                            sessionStorage.BCRMTracingCycle = "StopTracing";
+                            if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                                $($("li#StopTracing").find("div")[0]).addClass("ui-state-disabled");
+                                $($("li#StartTracing").find("div")[0]).removeClass("ui-state-disabled");
+                            }
+                            $("#bcrm_debug_msg").text("");
+                            BCRMViewLog();
+                        });
+                        return r;
+                    }
+                    else {
+                        return BCRMCloseDebugMenu();
+                    }
+                },
+                "showoptions": true,
+                "options": {
+                    "FilePath": {
+                        "label": "File Path",
+                        "default": devpops_config.ses_home + "\\temp\\",
+                        "tip": "Enter a valid server path (without file name)",
+                        "type": "input"
+                    },
+                    "RetainFile": {
+                        "label": "Retain File",
+                        "default": "false",
+                        "tip": "Retain (true) or delete (false) trace file after retrival",
+                        "type": "select",
+                        "lov": ["true", "false"]
+                    },
+                    "TraceType": {
+                        "label": "Trace Type",
+                        "default": "SQL",
+                        "tip": "Trace Type: SQL or Allocation",
+                        "type": "select",
+                        "lov": ["SQL", "Allocation"]
+                    },
+                    "TraceEvents": {
+                        "label": "Additional Event Tracing",
+                        "default": "none",
+                        "tip": "Inject trace comments for application events.",
+                        "type": "select",
+                        "lov": ["none", "Presentation Model"]
+                    },
+                    "SlowQuery": {
+                        "label": "Slow Query Threshold (ms)",
+                        "default": "100",
+                        "tip": "Show slow query stats for queries that run longer than this.",
+                        "type": "input"
+                    }
+                }
+            },
+            "ViewTracing": {
+                "seq": 7,
+                "enable": true,
+                "label": "View Trace File",
+                "title": "View SQL/Allocation Trace File\nKudos to Jason",
+                "onclick": function () {
+                    BCRMViewLog();
+                    return BCRMCloseDebugMenu();
+                }
+            },
+            "StopTracing": {
+                "seq": 8,
+                "enable": true,
+                "label": "Stop Tracing",
+                "title": "Stop SQL/Allocation Tracing\nKudos to Jason",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
                         BCRMStopLogging();
                         sessionStorage.BCRMTracingCycle = "StopTracing";
                         if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
@@ -732,351 +841,288 @@ BCRMCreateDebugMenu = function () {
                             $($("li#StartTracing").find("div")[0]).removeClass("ui-state-disabled");
                         }
                         $("#bcrm_debug_msg").text("");
-                        BCRMViewLog();
-                    });
-                    return r;
-                }
-                else {
+                    }
                     return BCRMCloseDebugMenu();
                 }
             },
-            "showoptions": true,
-            "options": {
-                "FilePath": {
-                    "label": "File Path",
-                    "default": devpops_config.ses_home + "\\temp\\",
-                    "tip": "Enter a valid server path (without file name)",
-                    "type": "input"
-                },
-                "RetainFile": {
-                    "label": "Retain File",
-                    "default": "false",
-                    "tip": "Retain (true) or delete (false) trace file after retrival",
-                    "type": "select",
-                    "lov": ["true", "false"]
-                },
-                "TraceType": {
-                    "label": "Trace Type",
-                    "default": "SQL",
-                    "tip": "Trace Type: SQL or Allocation",
-                    "type": "select",
-                    "lov": ["SQL", "Allocation"]
-                },
-                "TraceEvents": {
-                    "label": "Additional Event Tracing",
-                    "default": "none",
-                    "tip": "Inject trace comments for application events.",
-                    "type": "select",
-                    "lov": ["none", "Presentation Model"]
-                },
-                "SlowQuery": {
-                    "label": "Slow Query Threshold (ms)",
-                    "default": "100",
-                    "tip": "Show slow query stats for queries that run longer than this.",
-                    "type": "input"
-                }
-            }
-        },
-        "ViewTracing": {
-            "seq": 7,
-            "enable": true,
-            "label": "View Trace File",
-            "title": "View SQL/Allocation Trace File\nKudos to Jason",
-            "onclick": function () {
-                BCRMViewLog();
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "StopTracing": {
-            "seq": 8,
-            "enable": true,
-            "label": "Stop Tracing",
-            "title": "Stop SQL/Allocation Tracing\nKudos to Jason",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    BCRMStopLogging();
-                    sessionStorage.BCRMTracingCycle = "StopTracing";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#StopTracing").find("div")[0]).addClass("ui-state-disabled");
-                        $($("li#StartTracing").find("div")[0]).removeClass("ui-state-disabled");
-                    }
-                    $("#bcrm_debug_msg").text("");
-                }
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "GotoView1": {
-            "seq": 9,
-            "enable": true,
-            "label": "Go to Modified Objects View",
-            "title": "View and compare object definitions (DR Only)",
-            "onclick": function () {
-                var r = BCRMCloseDebugMenu();
-                SiebelApp.S_App.GotoView("BCRM Modified Objects List View");
-                return r;
-            }
-        },
-        "ClearCaches": {
-            "seq": 10,
-            "enable": true,
-            "label": "Clear Caches",
-            "title": "Clear RTE, LOV and Responsibility Cache\n(c)xapuk.com",
-            "onclick": function () {
-                BCRMClearCaches();
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "AboutView": {
-            "seq": 11,
-            "enable": true,
-            "label": "About View",
-            "title": "Same, but on steroids ;-)\n(c)xapuk.com",
-            "onclick": function () {
-                var r = BCRMCloseDebugMenu();
-                try {
-                    BCRMSiebelAboutView();
-                }
-                catch (e) {
-                    //nothing
-                }
-                return r;
-            }
-        },
-        "ScriptEditor": {
-            "seq": 12,
-            "enable": true,
-            "label": "eScript Playground",
-            "title": "Test eScript from the comfort of your browser\n(c)xapuk.com",
-            "onclick": function () {
-                BCRMScriptEditor();
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "ExprEditor": {
-            "seq": 13,
-            "enable": true,
-            "label": "Expression Playground",
-            "title": "Test Siebel Query Language Expressions from the comfort of your browser\n(c)xapuk.com",
-            "onclick": function () {
-                var r = BCRMCloseDebugMenu();
-                try {
-                    BCRMExprEditor();
-                }
-                catch (e) {
-                    //nothing
-                }
-                return r;
-            }
-        },
-        "srvrmgr": {
-            "seq": 14,
-            "enable": true,
-            "label": "Server Manager",
-            "title": "Run Siebel Server Manager Commands (experimental)",
-            "onclick": function () {
-                $("body").css("cursor", "wait");
-                BCRMSrvrMgr();
-                $("body").css("cursor", "");
-                return BCRMCloseDebugMenu();
-            },
-            "acl": ["Siebel Administrator"]
-        },
-        "serverstatus": {
-            "seq": 15,
-            "enable": true,
-            "label": "Server Status",
-            "title": "Show Server Component Status via REST API (experimental)",
-            "onclick": function () {
-                var r = BCRMCloseDebugMenu();
-                BCRMDisplayServer();
-                return r;
-            }
-        },
-        "StartSARM": {
-            "seq": 16,
-            "enable": true,
-            "label": "Start SARM",
-            "title": "Start SARM logging",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    BCRMSARMOn();
-                    sessionStorage.BCRMSARMCycle = "StartSARM";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#StartSARM").find("div")[0]).addClass("ui-state-disabled");
-                        $($("li#StopSARM").find("div")[0]).removeClass("ui-state-disabled");
-                    }
+            "GotoView1": {
+                "seq": 9,
+                "enable": true,
+                "label": "Go to Modified Objects View",
+                "title": "View and compare object definitions (DR Only)",
+                "onclick": function () {
                     var r = BCRMCloseDebugMenu();
-                    var msg = "<span id='bcrm_sarm_msg'>Logging SARM data for 300 seconds</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop Now" + "</button>";
-                    $("#bcrm_debug_msg").html(msg);
-                    $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                    SiebelApp.S_App.GotoView("BCRM Modified Objects List View");
+                    return r;
+                }
+            },
+            "ClearCaches": {
+                "seq": 10,
+                "enable": true,
+                "label": "Clear Caches",
+                "title": "Clear RTE, LOV and Responsibility Cache\n(c)xapuk.com",
+                "onclick": function () {
+                    BCRMClearCaches();
+                    return BCRMCloseDebugMenu();
+                }
+            },
+            "AboutView": {
+                "seq": 11,
+                "enable": true,
+                "label": "About View",
+                "title": "Same, but on steroids ;-)\n(c)xapuk.com",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    try {
+                        BCRMSiebelAboutView();
+                    }
+                    catch (e) {
+                        //nothing
+                    }
+                    return r;
+                }
+            },
+            "ScriptEditor": {
+                "seq": 12,
+                "enable": true,
+                "label": "eScript Playground",
+                "title": "Test eScript from the comfort of your browser\n(c)xapuk.com",
+                "onclick": function () {
+                    BCRMScriptEditor();
+                    return BCRMCloseDebugMenu();
+                }
+            },
+            "ExprEditor": {
+                "seq": 13,
+                "enable": true,
+                "label": "Expression Playground",
+                "title": "Test Siebel Query Language Expressions from the comfort of your browser\n(c)xapuk.com",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    try {
+                        BCRMExprEditor();
+                    }
+                    catch (e) {
+                        //nothing
+                    }
+                    return r;
+                }
+            },
+            "srvrmgr": {
+                "seq": 14,
+                "enable": true,
+                "label": "Server Manager",
+                "title": "Run Siebel Server Manager Commands (experimental)",
+                "onclick": function () {
+                    $("body").css("cursor", "wait");
+                    BCRMSrvrMgr();
+                    $("body").css("cursor", "");
+                    return BCRMCloseDebugMenu();
+                },
+                "acl": ["Siebel Administrator"]
+            },
+            "serverstatus": {
+                "seq": 15,
+                "enable": true,
+                "label": "Server Status",
+                "title": "Show Server Component Status via REST API (experimental)",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMDisplayServer();
+                    return r;
+                }
+            },
+            "StartSARM": {
+                "seq": 16,
+                "enable": true,
+                "label": "Start SARM",
+                "title": "Start SARM logging",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
+                        BCRMSARMOn();
+                        sessionStorage.BCRMSARMCycle = "StartSARM";
+                        if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                            $($("li#StartSARM").find("div")[0]).addClass("ui-state-disabled");
+                            $($("li#StopSARM").find("div")[0]).removeClass("ui-state-disabled");
+                        }
+                        var r = BCRMCloseDebugMenu();
+                        var msg = "<span id='bcrm_sarm_msg'>Logging SARM data for 300 seconds</span><button  style='margin-left: 10px;background: #97cff3;border: 0px;cursor: pointer;border-radius: 10px;'>" + "Stop Now" + "</button>";
+                        $("#bcrm_debug_msg").html(msg);
+                        $("#bcrm_debug_msg").find("button").on("click", function (e) {
+                            BCRMSARMOff();
+                            sessionStorage.BCRMSARMCycle = "StopSARM";
+                            if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                                $($("li#StartSARM").find("div")[0]).removeClass("ui-state-disabled");
+                                $($("li#StopSARM").find("div")[0]).addClass("ui-state-disabled");
+                            }
+                            clearInterval(sarmintv);
+                            $("#bcrm_debug_msg").text("");
+                        });
+                        return r;
+                    }
+                    else {
+                        return BCRMCloseDebugMenu();
+                    }
+                },
+                "acl": ["Siebel Administrator"],
+                "showoptions": true,
+                "options": {
+                    "FilePath": {
+                        "label": "File Path",
+                        "default": devpops_config.ses_home + "\\temp",
+                        "tip": "Enter a valid server path (without file name)",
+                        "type": "input"
+                    },
+                    "Component": {
+                        "label": "Component Alias",
+                        "default": "sccobjmgr_enu",
+                        "tip": "Select component alias",
+                        "type": "select",
+                        "lov": ["sccobjmgr_enu", "eaiobjmgr_enu", "sseobjmgr_enu", "ecommunicationsobjmgr_enu", "wfprocmgr", "xmlpreportserver"]
+                    },
+                    "Server": {
+                        "label": "Siebel Server",
+                        "default": "server01",
+                        "tip": "Select Siebel Server",
+                        "type": "select",
+                        "lov": ["server01", "server02"]
+                    },
+                    "Duration": {
+                        "label": "Duration (min 60 seconds)",
+                        "default": "300",
+                        "tip": "Stop SARM logging after time has elapsed",
+                        "type": "number",
+                        "min": 60
+                    }
+                }
+            },
+            "StopSARM": {
+                "seq": 17,
+                "enable": true,
+                "label": "Stop SARM",
+                "title": "Stop SARM logging",
+                "onclick": function () {
+                    if (!$(this).hasClass("ui-state-disabled")) {
                         BCRMSARMOff();
+                        clearInterval(sarmintv);
                         sessionStorage.BCRMSARMCycle = "StopSARM";
                         if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
                             $($("li#StartSARM").find("div")[0]).removeClass("ui-state-disabled");
                             $($("li#StopSARM").find("div")[0]).addClass("ui-state-disabled");
                         }
-                        clearInterval(sarmintv);
                         $("#bcrm_debug_msg").text("");
-                    });
+                    }
+                    return BCRMCloseDebugMenu();
+                },
+                "acl": ["Siebel Administrator"]
+            },
+            "ShowSARM": {
+                "seq": 18,
+                "enable": true,
+                "label": "Show SARM Stats",
+                "title": "Very limited demo, knock yourself out",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMShowSARM();
+                    return r;
+                },
+                "showoptions": true,
+                "options": {
+                    "GroupBy": {
+                        "label": "Group By",
+                        "default": "area",
+                        "tip": "Aggregation level",
+                        "type": "select",
+                        "lov": ["area", "subarea", "workflow"]
+                    },
+                    "Type": {
+                        "label": "Output Type",
+                        "default": "chart",
+                        "tip": "Output type",
+                        "type": "select",
+                        "lov": ["chart", "classic"]
+                    },
+                    "StartTime": {
+                        "label": "Start Time",
+                        //default time range: last 10 minutes
+                        "default": BCRMSARMTimeStamp(new Date(new Date() - 600000)),
+                        "tip": "Start Time Filter",
+                        "type": "input"
+                    },
+                    "EndTime": {
+                        "label": "End Time",
+                        "default": BCRMSARMTimeStamp(new Date()),
+                        "tip": "End Time Filter",
+                        "type": "input"
+                    }
+    
+                },
+                "acl": ["Siebel Administrator"]
+            },
+            "freeform": {
+                "seq": 19,
+                "enable": true,
+                "label": "Break free!",
+                "title": "Liberate form applets from table layout. Enjoy...",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                    var ut = new SiebelAppFacade.BCRMUtils();
+                    for (a in am) {
+                        if (ut.GetAppletType(a) == "form") {
+                            rwd.BCRMMakeGridResponsive(a);
+                        }
+                    }
                     return r;
                 }
-                else {
+            },
+            "SiebelHub": {
+                "seq": 20,
+                "enable": true,
+                "label": "Siebel Hub",
+                "title": "Get your Siebel kicks on da hub with a random page (might require login).",
+                "onclick": function () {
+                    var hub = [
+                        "https://www.siebelhub.com/main/siebel-crm-training/siebel-20-21-workshop",
+                        "https://www.siebelhub.com/main/siebel-crm-training",
+                        "https://www.siebelhub.com/main/bsl",
+                        "https://www.siebelhub.com/main/books-media/siebel-crm-timeline",
+                        "https://www.siebelhub.com/main/product-category/siebel_20_21_workshop/overview/update-summaries",
+                        "https://www.siebelhub.com/main/product/siebel-crm-20-21-blue-book",
+                        "https://www.youtube.com/playlist?list=PL8ytufPqZPFHWvrqqZVRmRELuqOJoyKKY",
+                        "https://www.youtube.com/playlist?list=PL8ytufPqZPFEyhv4Nj5ZghltdfxvV5esI",
+                        "https://www.siebelhub.com/main/blog",
+                        "https://www.siebelhub.com/main/2021/01/learn-siebel-crm-21-with-the-siebel-hub.html"
+                    ];
+                    window.open(hub[Math.floor((Math.random() * hub.length))]);
                     return BCRMCloseDebugMenu();
                 }
             },
-            "acl": ["Siebel Administrator"],
-            "showoptions": true,
-            "options": {
-                "FilePath": {
-                    "label": "File Path",
-                    "default": devpops_config.ses_home + "\\temp",
-                    "tip": "Enter a valid server path (without file name)",
-                    "type": "input"
-                },
-                "Component": {
-                    "label": "Component Alias",
-                    "default": "sccobjmgr_enu",
-                    "tip": "Select component alias",
-                    "type": "select",
-                    "lov": ["sccobjmgr_enu", "eaiobjmgr_enu", "sseobjmgr_enu", "ecommunicationsobjmgr_enu", "wfprocmgr", "xmlpreportserver"]
-                },
-                "Server": {
-                    "label": "Siebel Server",
-                    "default": "server01",
-                    "tip": "Select Siebel Server",
-                    "type": "select",
-                    "lov": ["server01", "server02"]
-                },
-                "Duration": {
-                    "label": "Duration (min 60 seconds)",
-                    "default": "300",
-                    "tip": "Stop SARM logging after time has elapsed",
-                    "type": "number",
-                    "min": 60
+            "devpops": {
+                "seq": 21,
+                "enable": true,
+                "label": "devpops 21.3.x",
+                "title": "devpops 21.3 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
+                "onclick": function () {
+                    window.open("https://github.com/blacksheep-crm/devpops");
+                    return BCRMCloseDebugMenu();
                 }
             }
-        },
-        "StopSARM": {
-            "seq": 17,
-            "enable": true,
-            "label": "Stop SARM",
-            "title": "Stop SARM logging",
-            "onclick": function () {
-                if (!$(this).hasClass("ui-state-disabled")) {
-                    BCRMSARMOff();
-                    clearInterval(sarmintv);
-                    sessionStorage.BCRMSARMCycle = "StopSARM";
-                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                        $($("li#StartSARM").find("div")[0]).removeClass("ui-state-disabled");
-                        $($("li#StopSARM").find("div")[0]).addClass("ui-state-disabled");
-                    }
-                    $("#bcrm_debug_msg").text("");
-                }
-                return BCRMCloseDebugMenu();
-            },
-            "acl": ["Siebel Administrator"]
-        },
-        "ShowSARM": {
-            "seq": 18,
-            "enable": true,
-            "label": "Show SARM Stats",
-            "title": "Very limited demo, knock yourself out",
-            "onclick": function () {
-                var r = BCRMCloseDebugMenu();
-                BCRMShowSARM();
-                return r;
-            },
-            "showoptions": true,
-            "options": {
-                "GroupBy": {
-                    "label": "Group By",
-                    "default": "area",
-                    "tip": "Aggregation level",
-                    "type": "select",
-                    "lov": ["area", "subarea", "workflow"]
-                },
-                "Type": {
-                    "label": "Output Type",
-                    "default": "chart",
-                    "tip": "Output type",
-                    "type": "select",
-                    "lov": ["chart", "classic"]
-                },
-                "StartTime": {
-                    "label": "Start Time",
-                    //default time range: last 10 minutes
-                    "default": BCRMSARMTimeStamp(new Date(new Date() - 600000)),
-                    "tip": "Start Time Filter",
-                    "type": "input"
-                },
-                "EndTime": {
-                    "label": "End Time",
-                    "default": BCRMSARMTimeStamp(new Date()),
-                    "tip": "End Time Filter",
-                    "type": "input"
-                }
-
-            },
-            "acl": ["Siebel Administrator"]
-        },
-        "freeform": {
-            "seq": 19,
-            "enable": true,
-            "label": "Break free!",
-            "title": "Liberate form applets from table layout. Enjoy...",
-            "onclick": function () {
-                var r = BCRMCloseDebugMenu();
-                var rwd = new SiebelAppFacade.BCRMRWDFactory();
-                var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
-                var ut = new SiebelAppFacade.BCRMUtils();
-                for (a in am) {
-                    if (ut.GetAppletType(a) == "form") {
-                        rwd.BCRMMakeGridResponsive(a);
-                    }
-                }
-                return r;
-            }
-        },
-        "SiebelHub": {
-            "seq": 20,
-            "enable": true,
-            "label": "Siebel Hub",
-            "title": "Get your Siebel kicks on da hub with a random page (might require login).",
-            "onclick": function () {
-                var hub = [
-                    "https://www.siebelhub.com/main/siebel-crm-training/siebel-20-21-workshop",
-                    "https://www.siebelhub.com/main/siebel-crm-training",
-                    "https://www.siebelhub.com/main/bsl",
-                    "https://www.siebelhub.com/main/books-media/siebel-crm-timeline",
-                    "https://www.siebelhub.com/main/product-category/siebel_20_21_workshop/overview/update-summaries",
-                    "https://www.siebelhub.com/main/product/siebel-crm-20-21-blue-book",
-                    "https://www.youtube.com/playlist?list=PL8ytufPqZPFHWvrqqZVRmRELuqOJoyKKY",
-                    "https://www.youtube.com/playlist?list=PL8ytufPqZPFEyhv4Nj5ZghltdfxvV5esI",
-                    "https://www.siebelhub.com/main/blog",
-                    "https://www.siebelhub.com/main/2021/01/learn-siebel-crm-21-with-the-siebel-hub.html"
-                ];
-                window.open(hub[Math.floor((Math.random() * hub.length))]);
-                return BCRMCloseDebugMenu();
-            }
-        },
-        "devpops": {
-            "seq": 21,
-            "enable": true,
-            "label": "devpops 21.3.x",
-            "title": "devpops 21.3 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
-            "onclick": function () {
-                window.open("https://github.com/blacksheep-crm/devpops");
-                return BCRMCloseDebugMenu();
-            }
-        }
-    };
+        };
+    }
+    
     var hasresp = true;
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
+
     //create small toolbar on top of menu
-    //detach, rotate, config (enable/disable items, sequence items)
+    //detach (done), rotate (TODO), config (enable/disable items (done), sequence items (TODO))
     var mtb = $("<li id='bcrm_dbg_tb' style='height:36px;padding:0 0 2px 4px;background:#808080'>");
     var dtch = $('<span id="bcrm_dtch" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Undock"><a class="bcrm-dock-toggle-pin" style="color:white;"></span>');
     var bcls = $('<span id="bcrm_bcls" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Close"><a class="bcrm-dock-close" style="color:white;"></span>');
+    var bed = $('<span id="bcrm_bed" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Edit"><a class="bcrm-dock-edit" style="color:white;"></span>');
+    var beds = $('<span id="bcrm_beds" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Save"><a class="bcrm-dock-save" style="color:white;"></span>');
+    
     dtch.on("click", function (e, ui) {
         $("#bcrm_dbg_menu").draggable();
         $("#bcrm_dbg_tb").css("cursor", "move");
@@ -1091,13 +1137,33 @@ BCRMCreateDebugMenu = function () {
     bcls.on("click", function (e, ui) {
         $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
     });
+    bed.on("click",function(){
+        BCRMEditDebugMenu();
+        $("#bcrm_beds").show();
+        $(this).hide();
+        return false;
+    });
+    beds.on("click",function(){
+        BCRMStopEditDebugMenu();
+        $("#bcrm_bed").show();
+        $(this).hide();
+        for (i in BCRM_MENU){
+            if (!BCRM_MENU[i].enable){
+                $("li#" + i).hide();
+            }
+        }
+        return false;
+    });
     mtb.append(dtch);
     mtb.append(bcls);
+    mtb.append(bed);
+    mtb.append(beds);
+
     //main loop to create menu
-    for (i in items) {
-        if (items[i].enable) {
+    for (i in BCRM_MENU) {
+        if (true) {
             var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='height:32px;font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
-            var dv = $("<div style='height:32px;padding-bottom:6px;' title='" + items[i].title + "'>" + items[i].label + "</div>");
+            var dv = $("<div style='height:32px;padding-bottom:6px;' title='" + BCRM_MENU[i].title + "'>" + BCRM_MENU[i].label + "</div>");
             if (sessionStorage.BCRMToggleCycle == i || sessionStorage.BCRMTracingCycle == i || sessionStorage.BCRMSARMCycle == i) {
                 dv.addClass("ui-state-disabled");
             }
@@ -1111,7 +1177,7 @@ BCRMCreateDebugMenu = function () {
                 dv.addClass("ui-state-disabled");
             }
 
-            dv.on("click", items[i].onclick);
+            dv.on("click", BCRM_MENU[i].onclick);
 
             if (i == "devpops") {
                 if (devpops_uv > devpops_version) {
@@ -1119,11 +1185,11 @@ BCRMCreateDebugMenu = function () {
                     dv.attr("title", "Updates available!\n" + dv.attr("title"));
                 }
             }
-            if (items[i].acl) {
+            if (BCRM_MENU[i].acl) {
                 var resps = BCRMGetResps();
                 hasresp = false;
-                for (var x = 0; x < items[i].acl.length; x++) {
-                    if (resps.indexOf(items[i].acl[x]) > -1) {
+                for (var x = 0; x < BCRM_MENU[i].acl.length; x++) {
+                    if (resps.indexOf(BCRM_MENU[i].acl[x]) > -1) {
                         hasresp = true;
                         break;
                     }
@@ -1133,7 +1199,7 @@ BCRMCreateDebugMenu = function () {
                     dv.attr("title", "Access denied due to missing responsibilities\n" + dv.attr("title"));
                 }
             }
-            if (items[i].showtoggle) {
+            if (BCRM_MENU[i].showtoggle) {
                 var tog = $('<span style="height:32px;float: right; margin-right: 6px;" title="Set/unset this toggle cycle as default"><input class="bcrm-toggle" style="height: 0;width: 0;visibility: hidden;" type="checkbox" id="toggle_' + i + '"><label class="bcrm-toggle-label" for="toggle_' + i + '" style="cursor: pointer;text-indent: -9999px;width: 35px;height: 15px;background: grey;display: inline-block;border-radius: 100px;position: relative;top: 12px;">Toggle</label></span>');
                 $(tog).find("label").on("click", function (e, ui) {
                     e.stopImmediatePropagation();
@@ -1163,7 +1229,7 @@ BCRMCreateDebugMenu = function () {
                     }, 50)
                 }
             }
-            if (hasresp && items[i].showoptions) {
+            if (hasresp && BCRM_MENU[i].showoptions) {
                 var opt = $('<span style="float: right; margin-right: 6px;height:32px;" title="Options"><span style="height:32px" class="miniBtnUIC"><button type="button" id="options_' + i + '" style="background: transparent;border: 0;" class="siebui-appletmenu-btn"><span style="height:32px;">Options</span></button></span></span>');
                 $(opt).find("button").on("click", function (e, ui) {
                     var id = $(this).attr("id").split("_")[1];
@@ -1289,6 +1355,9 @@ BCRMCreateDebugMenu = function () {
             }
             li.append(dv);
             li.appendTo(ul_main);
+            if (!BCRM_MENU[i].enable){
+                li.hide();
+            }
         }
     }
     ul_main.prepend(mtb);
