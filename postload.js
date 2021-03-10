@@ -135,7 +135,7 @@ catch(e){
 
 /*************************************************************************************************************************************
  * CODE SEPARATION
- * Everything below this comment can be copied to a separate, custom JS file.
+ * Everything below this comment can be moved to a separate, custom JS file.
  * Example:
  * Keep content above this comment in vanilla postload.js
  * Move content below this comment to <siebelwebroot>/scripts/siebel/custom/devpops.js
