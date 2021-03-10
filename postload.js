@@ -598,7 +598,13 @@ BCRMEditDebugMenu = function(){
             var i = $(this).attr("id");
             e.stopImmediatePropagation();
             BCRM_MENU[i].enable = v;
-            //localStorage.BCRM_MENU = JSON.stringify(BCRM_MENU);
+            var ls = "BCRM_MENU_ENABLE_" + i;
+            if (v){
+                localStorage.setItem(ls,"true");
+            }
+            else{
+                localStorage.setItem(ls,"false");
+            }
         });
         $($("li#" + i).find("div")[0]).prepend(t);
     }
@@ -611,12 +617,7 @@ BCRMStopEditDebugMenu = function(){
 };
 
 var BCRM_MENU;
-//if (typeof(localStorage.BCRM_MENU) === "undefined"){
-    BCRM_MENU = {};
-//}
-//else{
-//    BCRM_MENU = JSON.parse(localStorage.BCRM_MENU);
-//}
+BCRM_MENU = {};
 
 BCRMCreateDebugMenu = function () {
     var togglecss = ".bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
@@ -628,7 +629,7 @@ BCRMCreateDebugMenu = function () {
         BCRM_MENU = {
             "ShowControls": {
                 "seq": 1,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowControls") == "false" ? false : true,
                 "label": "XR Show Controls",
                 "title": "X-Ray: Toggle Form Applets to display Control information in labels",
                 "onclick": function (e, ui) {
@@ -653,7 +654,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ShowBCFields": {
                 "seq": 2,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowBCFields") == "false" ? false : true,
                 "label": "XR Show BC Fields",
                 "title": "X-Ray: Toggle Form and List Applets to display BC Field information in labels",
                 "onclick": function () {
@@ -679,7 +680,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ShowTableColumns": {
                 "seq": 3,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowTableColumns") == "false" ? false : true,
                 "label": "XR Show Columns",
                 "title": "X-Ray: Toggle Form and List Applets to display physical layer information",
                 "onclick": function () {
@@ -704,7 +705,7 @@ BCRMCreateDebugMenu = function () {
             },
             "Reset": {
                 "seq": 4,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_Reset") == "false" ? false : true,
                 "label": "XR Reset Labels",
                 "title": "X-Ray: Toggle Form and List Applets to display original labels",
                 "onclick": function () {
@@ -728,7 +729,7 @@ BCRMCreateDebugMenu = function () {
             },
             "Silent": {
                 "seq": 5,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_Silent") == "false" ? false : true,
                 "label": "XR Silent Mode",
                 "title": "X-Ray: Complete scan, update tooltips only",
                 "onclick": function () {
@@ -750,7 +751,7 @@ BCRMCreateDebugMenu = function () {
             },
             "StartTracing": {
                 "seq": 6,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_StartTracing") == "false" ? false : true,
                 "label": "Start Tracing",
                 "title": "Start SQL/Allocation Tracing\nKudos to Jason",
                 "onclick": function () {
@@ -819,7 +820,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ViewTracing": {
                 "seq": 7,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ViewTracing") == "false" ? false : true,
                 "label": "View Trace File",
                 "title": "View SQL/Allocation Trace File\nKudos to Jason",
                 "onclick": function () {
@@ -829,7 +830,7 @@ BCRMCreateDebugMenu = function () {
             },
             "StopTracing": {
                 "seq": 8,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_StopTracing") == "false" ? false : true,
                 "label": "Stop Tracing",
                 "title": "Stop SQL/Allocation Tracing\nKudos to Jason",
                 "onclick": function () {
@@ -847,7 +848,7 @@ BCRMCreateDebugMenu = function () {
             },
             "GotoView1": {
                 "seq": 9,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_GotoView1") == "false" ? false : true,
                 "label": "Go to Modified Objects View",
                 "title": "View and compare object definitions (DR Only)",
                 "onclick": function () {
@@ -858,7 +859,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ClearCaches": {
                 "seq": 10,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ClearCaches") == "false" ? false : true,
                 "label": "Clear Caches",
                 "title": "Clear RTE, LOV and Responsibility Cache\n(c)xapuk.com",
                 "onclick": function () {
@@ -868,7 +869,7 @@ BCRMCreateDebugMenu = function () {
             },
             "AboutView": {
                 "seq": 11,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_AboutView") == "false" ? false : true,
                 "label": "About View",
                 "title": "Same, but on steroids ;-)\n(c)xapuk.com",
                 "onclick": function () {
@@ -884,7 +885,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ScriptEditor": {
                 "seq": 12,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ScriptEditor") == "false" ? false : true,
                 "label": "eScript Playground",
                 "title": "Test eScript from the comfort of your browser\n(c)xapuk.com",
                 "onclick": function () {
@@ -894,7 +895,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ExprEditor": {
                 "seq": 13,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ExprEditor") == "false" ? false : true,
                 "label": "Expression Playground",
                 "title": "Test Siebel Query Language Expressions from the comfort of your browser\n(c)xapuk.com",
                 "onclick": function () {
@@ -910,7 +911,7 @@ BCRMCreateDebugMenu = function () {
             },
             "srvrmgr": {
                 "seq": 14,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_srvrmgr") == "false" ? false : true,
                 "label": "Server Manager",
                 "title": "Run Siebel Server Manager Commands (experimental)",
                 "onclick": function () {
@@ -923,7 +924,7 @@ BCRMCreateDebugMenu = function () {
             },
             "serverstatus": {
                 "seq": 15,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_serverstatus") == "false" ? false : true,
                 "label": "Server Status",
                 "title": "Show Server Component Status via REST API (experimental)",
                 "onclick": function () {
@@ -934,7 +935,7 @@ BCRMCreateDebugMenu = function () {
             },
             "StartSARM": {
                 "seq": 16,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_StartSARM") == "false" ? false : true,
                 "label": "Start SARM",
                 "title": "Start SARM logging",
                 "onclick": function () {
@@ -998,7 +999,7 @@ BCRMCreateDebugMenu = function () {
             },
             "StopSARM": {
                 "seq": 17,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_StopSARM") == "false" ? false : true,
                 "label": "Stop SARM",
                 "title": "Stop SARM logging",
                 "onclick": function () {
@@ -1018,7 +1019,7 @@ BCRMCreateDebugMenu = function () {
             },
             "ShowSARM": {
                 "seq": 18,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowSARM") == "false" ? false : true,
                 "label": "Show SARM Stats",
                 "title": "Very limited demo, knock yourself out",
                 "onclick": function () {
@@ -1061,7 +1062,7 @@ BCRMCreateDebugMenu = function () {
             },
             "freeform": {
                 "seq": 19,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_freeform") == "false" ? false : true,
                 "label": "Break free!",
                 "title": "Liberate form applets from table layout. Enjoy...",
                 "onclick": function () {
@@ -1079,7 +1080,7 @@ BCRMCreateDebugMenu = function () {
             },
             "SiebelHub": {
                 "seq": 20,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_SiebelHub") == "false" ? false : true,
                 "label": "Siebel Hub",
                 "title": "Get your Siebel kicks on da hub with a random page (might require login).",
                 "onclick": function () {
@@ -1101,7 +1102,7 @@ BCRMCreateDebugMenu = function () {
             },
             "devpops": {
                 "seq": 21,
-                "enable": true,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_devpops") == "false" ? false : true,
                 "label": "devpops 21.3.x",
                 "title": "devpops 21.3 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
                 "onclick": function () {
