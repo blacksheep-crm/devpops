@@ -151,8 +151,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_version = 45;
-var devpops_tag = "Val Logsdon Fitch";
+var devpops_dver = "21.3.xi";
+var devpops_version = 46;
+var devpops_tag = "J.C.R. Licklider";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -580,52 +581,104 @@ BCRMCloseDebugMenu = function () {
 };
 
 //such Personalization, much wow
-BCRMEditDebugMenu = function(){
+BCRMEditDebugMenu = function () {
     var t;
     var def = true;
-    for (i in BCRM_MENU){
-        if (!BCRM_MENU[i].enable){
+    for (i in BCRM_MENU) {
+        if (!BCRM_MENU[i].enable) {
             $("li#" + i).show();
             def = false;
         }
-        else{
+        else {
             def = true;
         }
         t = $("<span class='bcrm-dbg-edit' style='margin-right:4px;'><input id='" + i + "' type='checkbox'></span>");
-        t.find("input").prop("checked",def);
-        t.find("input").on("click",function(e,ui){
+        t.find("input").prop("checked", def);
+        t.find("input").on("click", function (e, ui) {
             var v = $(this).prop("checked");
             var i = $(this).attr("id");
             e.stopImmediatePropagation();
             BCRM_MENU[i].enable = v;
             var ls = "BCRM_MENU_ENABLE_" + i;
-            if (v){
-                localStorage.setItem(ls,"true");
+            if (v) {
+                localStorage.setItem(ls, "true");
             }
-            else{
-                localStorage.setItem(ls,"false");
+            else {
+                localStorage.setItem(ls, "false");
             }
         });
         $($("li#" + i).find("div")[0]).prepend(t);
     }
-    $("#bcrm_dbg_menu").find("ul").css("width","270px");
+    $("#bcrm_dbg_menu").find("ul").css("width", "270px");
 };
 
-BCRMStopEditDebugMenu = function(){
+BCRMStopEditDebugMenu = function () {
     $("span.bcrm-dbg-edit").remove();
-    $("#bcrm_dbg_menu").find("ul").css("width","auto");
+    $("#bcrm_dbg_menu").find("ul").css("width", "auto");
+    $("#bcrm_bed").show();
+    $("#bcrm_beds").hide();
+    for (i in BCRM_MENU) {
+        if (!BCRM_MENU[i].enable) {
+            $("li#" + i).hide();
+        }
+    }
+};
+
+BCRMButtonizeDebugMenu = function () {
+    var m;
+    var adjust = false;
+    BCRMStopEditDebugMenu();
+    if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+        adjust = true;
+        $("#bcrm_dbg_menu").draggable();
+        $("#bcrm_dbg_tb").css("cursor", "move");
+        $("#bcrm_bcls").show();
+    }
+    $("#bcrm_dtch").hide();
+    $("#bcrm_bed").hide();
+    $("#bcrm_rot").hide();
+
+    for (i in BCRM_MENU) {
+        m = BCRM_MENU[i].seq;
+        var dv = $($("li#" + i).find("div")[0])
+        dv.text(m);
+        dv.attr("title",BCRM_MENU[i].label + "\n" + dv.attr("title"));
+        $("li#" + i).find("span").remove();
+        if (typeof(BCRM_MENU[i].img) !== "undefined"){
+            var imgurl = BCRM_MENU[i].img;
+            dv.text("");
+            var ost = dv.attr("style");
+            var nst = ost + " " + "background-image:url(" + imgurl + ")!important;"
+            nst = nst + "background-size:cover!important;";
+            dv.attr("style",nst);
+            dv.css("height","36px");
+            dv.css("width","36px");
+            dv.css("margin-top","1px");
+            dv.css("padding-bottom","0px");
+        }
+    }
+    $("#bcrm_dbg_menu ul").css("display", "flex");
+    $("#bcrm_dbg_menu ul").find("li").width(40);
+    $("#bcrm_dbg_menu ul").find("li").css("text-align", "center");
+    if (adjust){
+        var r = $("#bcrm_dbg_menu ul")[0].getBoundingClientRect().right;
+        var w = window.innerWidth;
+        var newl = -1*(r-w);
+        $("#bcrm_dbg_menu ul").css("left",newl.toString() + "px");
+    }
+    $("#bcrm_dbg_menu ul").addClass("bcrm-tb");
 };
 
 var BCRM_MENU;
 BCRM_MENU = {};
 
 BCRMCreateDebugMenu = function () {
-    var togglecss = ".bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
+    var togglecss = ".bcrm-dock-rot:before{content:'\\e94a';font-family:'oracle';} #bcrm_dbg_menu ul.bcrm-tb li.bcrm-dbg-item div.ui-state-disabled {background-size: cover!important;mix-blend-mode: soft-light;} .bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
     var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
     if ($("style[bcrm-style]").length == 0) {
         $("head").append(st);
     }
-    if (typeof(BCRM_MENU["ShowControls"]) === "undefined"){
+    if (typeof (BCRM_MENU["ShowControls"]) === "undefined") {
         BCRM_MENU = {
             "ShowControls": {
                 "seq": 1,
@@ -650,7 +703,8 @@ BCRMCreateDebugMenu = function () {
                     }
                     return BCRMCloseDebugMenu();
                 },
-                "showtoggle": true
+                "showtoggle": true,
+                "img":"images/grid_matte_webpagesearch.png"
             },
             "ShowBCFields": {
                 "seq": 2,
@@ -676,7 +730,8 @@ BCRMCreateDebugMenu = function () {
                     }
                     return BCRMCloseDebugMenu();
                 },
-                "showtoggle": true
+                "showtoggle": true,
+                "img":"images/grid_matte_barcode.png"
             },
             "ShowTableColumns": {
                 "seq": 3,
@@ -701,7 +756,8 @@ BCRMCreateDebugMenu = function () {
                     }
                     return BCRMCloseDebugMenu();
                 },
-                "showtoggle": true
+                "showtoggle": true,
+                "img":"images/grid_matte_book.png"
             },
             "Reset": {
                 "seq": 4,
@@ -725,7 +781,8 @@ BCRMCreateDebugMenu = function () {
                         }
                     }
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_cycle_rtl.png"
             },
             "Silent": {
                 "seq": 5,
@@ -747,7 +804,8 @@ BCRMCreateDebugMenu = function () {
                         return BCRMCloseDebugMenu();
                     }, 200);
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_ship.png"
             },
             "StartTracing": {
                 "seq": 6,
@@ -816,7 +874,8 @@ BCRMCreateDebugMenu = function () {
                         "tip": "Show slow query stats for queries that run longer than this.",
                         "type": "input"
                     }
-                }
+                },
+                "img":"images/grid_matte_decline_rtl.png"
             },
             "ViewTracing": {
                 "seq": 7,
@@ -826,7 +885,8 @@ BCRMCreateDebugMenu = function () {
                 "onclick": function () {
                     BCRMViewLog();
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_financialinformation.png"
             },
             "StopTracing": {
                 "seq": 8,
@@ -844,7 +904,8 @@ BCRMCreateDebugMenu = function () {
                         $("#bcrm_debug_msg").text("");
                     }
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_forklift.png"
             },
             "GotoView1": {
                 "seq": 9,
@@ -855,7 +916,8 @@ BCRMCreateDebugMenu = function () {
                     var r = BCRMCloseDebugMenu();
                     SiebelApp.S_App.GotoView("BCRM Modified Objects List View");
                     return r;
-                }
+                },
+                "img":"images/grid_matte_persongrid.png"
             },
             "ClearCaches": {
                 "seq": 10,
@@ -865,7 +927,8 @@ BCRMCreateDebugMenu = function () {
                 "onclick": function () {
                     BCRMClearCaches();
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_crystalball.png"
             },
             "AboutView": {
                 "seq": 11,
@@ -881,7 +944,8 @@ BCRMCreateDebugMenu = function () {
                         //nothing
                     }
                     return r;
-                }
+                },
+                "img":"images/grid_matte_message.png"
             },
             "ScriptEditor": {
                 "seq": 12,
@@ -891,7 +955,8 @@ BCRMCreateDebugMenu = function () {
                 "onclick": function () {
                     BCRMScriptEditor();
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_scroll_rtl.png"
             },
             "ExprEditor": {
                 "seq": 13,
@@ -907,7 +972,8 @@ BCRMCreateDebugMenu = function () {
                         //nothing
                     }
                     return r;
-                }
+                },
+                "img":"images/grid_matte_scales.png"
             },
             "srvrmgr": {
                 "seq": 14,
@@ -920,7 +986,8 @@ BCRMCreateDebugMenu = function () {
                     $("body").css("cursor", "");
                     return BCRMCloseDebugMenu();
                 },
-                "acl": ["Siebel Administrator"]
+                "acl": ["Siebel Administrator"],
+                "img":"images/grid_matte_plan.png"
             },
             "serverstatus": {
                 "seq": 15,
@@ -931,7 +998,8 @@ BCRMCreateDebugMenu = function () {
                     var r = BCRMCloseDebugMenu();
                     BCRMDisplayServer();
                     return r;
-                }
+                },
+                "img":"images/grid_matte_piechart.png"
             },
             "StartSARM": {
                 "seq": 16,
@@ -995,7 +1063,8 @@ BCRMCreateDebugMenu = function () {
                         "type": "number",
                         "min": 60
                     }
-                }
+                },
+                "img":"images/grid_matte_video.png"
             },
             "StopSARM": {
                 "seq": 17,
@@ -1015,7 +1084,8 @@ BCRMCreateDebugMenu = function () {
                     }
                     return BCRMCloseDebugMenu();
                 },
-                "acl": ["Siebel Administrator"]
+                "acl": ["Siebel Administrator"],
+                "img":"images/grid_matte_trophy.png"
             },
             "ShowSARM": {
                 "seq": 18,
@@ -1056,9 +1126,10 @@ BCRMCreateDebugMenu = function () {
                         "tip": "End Time Filter",
                         "type": "input"
                     }
-    
+
                 },
-                "acl": ["Siebel Administrator"]
+                "acl": ["Siebel Administrator"],
+                "img":"images/grid_matte_gantt.png"
             },
             "freeform": {
                 "seq": 19,
@@ -1076,7 +1147,8 @@ BCRMCreateDebugMenu = function () {
                         }
                     }
                     return r;
-                }
+                },
+                "img":"images/grid_matte_formwrench.png"
             },
             "SiebelHub": {
                 "seq": 20,
@@ -1098,21 +1170,23 @@ BCRMCreateDebugMenu = function () {
                     ];
                     window.open(hub[Math.floor((Math.random() * hub.length))]);
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_megaphone.png"
             },
             "devpops": {
                 "seq": 21,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_devpops") == "false" ? false : true,
-                "label": "devpops 21.3.x",
-                "title": "devpops 21.3 (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
+                "label": "devpops " + devpops_dver,
+                "title": "devpops " + devpops_dver + " (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
                 "onclick": function () {
                     window.open("https://github.com/blacksheep-crm/devpops");
                     return BCRMCloseDebugMenu();
-                }
+                },
+                "img":"images/grid_matte_puzzle.png"
             }
         };
     }
-    
+
     var hasresp = true;
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
 
@@ -1123,7 +1197,7 @@ BCRMCreateDebugMenu = function () {
     var bcls = $('<span id="bcrm_bcls" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Close"><a class="bcrm-dock-close" style="color:white;"></span>');
     var bed = $('<span id="bcrm_bed" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Edit"><a class="bcrm-dock-edit" style="color:white;"></span>');
     var beds = $('<span id="bcrm_beds" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Save"><a class="bcrm-dock-save" style="color:white;"></span>');
-    
+    var rot = $('<span id="bcrm_rot" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Rotate"><a class="bcrm-dock-rot" style="color:white;"></span>');
     dtch.on("click", function (e, ui) {
         $("#bcrm_dbg_menu").draggable();
         $("#bcrm_dbg_tb").css("cursor", "move");
@@ -1138,27 +1212,25 @@ BCRMCreateDebugMenu = function () {
     bcls.on("click", function (e, ui) {
         $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
     });
-    bed.on("click",function(){
+    bed.on("click", function () {
         BCRMEditDebugMenu();
         $("#bcrm_beds").show();
         $(this).hide();
         return false;
     });
-    beds.on("click",function(){
+    beds.on("click", function () {
         BCRMStopEditDebugMenu();
-        $("#bcrm_bed").show();
-        $(this).hide();
-        for (i in BCRM_MENU){
-            if (!BCRM_MENU[i].enable){
-                $("li#" + i).hide();
-            }
-        }
+        return false;
+    });
+    rot.on("click", function(){
+        BCRMButtonizeDebugMenu();
         return false;
     });
     mtb.append(dtch);
     mtb.append(bcls);
     mtb.append(bed);
     mtb.append(beds);
+    mtb.append(rot);
 
     //main loop to create menu
     for (i in BCRM_MENU) {
@@ -1235,9 +1307,9 @@ BCRMCreateDebugMenu = function () {
                 $(opt).find("button").on("click", function (e, ui) {
                     var id = $(this).attr("id").split("_")[1];
                     var dlg = $("<div id='bcrm_options_dlg'>");
-                    for (o in items[id].options) {
+                    for (o in BCRM_MENU[id].options) {
                         var sn = "BCRM_OPT_" + id + "_" + o;
-                        var opt = items[id].options[o];
+                        var opt = BCRM_MENU[id].options[o];
                         var oc = $("<div id='oc_" + o + "'>");
                         var lc = $("<div id='lc_" + o + "'>");
                         var ic;
@@ -1279,7 +1351,7 @@ BCRMCreateDebugMenu = function () {
                         dlg.append(oc);
                     }
                     dlg.dialog({
-                        title: items[id].label + " Options",
+                        title: BCRM_MENU[id].label + " Options",
                         buttons: {
                             "Save & Go": function () {
                                 $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -1356,7 +1428,7 @@ BCRMCreateDebugMenu = function () {
             }
             li.append(dv);
             li.appendTo(ul_main);
-            if (!BCRM_MENU[i].enable){
+            if (!BCRM_MENU[i].enable) {
                 li.hide();
             }
         }
