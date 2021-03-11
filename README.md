@@ -2,7 +2,15 @@
 
 # STRICTLY EDUCATIONAL. DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS!
 
-Features:
+# What's New?
+
+NEW in 21.3:
+
+Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
+
+Editable debug menu (hide/show items) with localstorage persistence
+
+# Features
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -18,9 +26,7 @@ Server Manager command line (srvrmgr) via browser, quick SARM on/off (user must 
 
 Server and Components status display (experimental REST API access)
 
-NEW in 21.3.x: Ability to detach and float debug menu
-
-NEW in 21.3.x: Editable debug menu (hide/show items) with localstorage persistence
+# Videos
 
 Video (early version): https://youtu.be/pesmDPSNIvw
 
@@ -28,7 +34,7 @@ Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?
 
 Video update (Siebel Friday 26-FEB-2021): https://youtu.be/l0C8hhd1x0A?t=3473
 
-Installation:
+# Installation:
 
 1. Import SIFs
 
@@ -55,7 +61,7 @@ Installation:
 
 12. Follow instructions in postload.js (ca. line 130) how to split code and register custom Open UI JS library
 
-Pre-requisites:
+# Pre-Requisites
 
 Siebel Inbound REST API enabled for anonymous authentication or Basic Authentication
 
