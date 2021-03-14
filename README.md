@@ -6,6 +6,8 @@
 
 NEW in 21.3:
 
+User Guide: https://github.com/blacksheep-crm/devpops/blob/main/devpops_21_3_xiv.pdf
+
 Business Service Runner (meep meep)
 
 Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
