@@ -2,9 +2,7 @@
 
 # STRICTLY EDUCATIONAL. DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS!
 
-# What's New?
-
-NEW in 21.3:
+# What's New in 21.3?
 
 User Guide: https://github.com/blacksheep-crm/devpops/blob/main/devpops_21_3_xiv.pdf
 
@@ -14,7 +12,7 @@ Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
 
 Editable debug menu (hide/show items) with localstorage persistence
 
-# Features
+# Other Features
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
