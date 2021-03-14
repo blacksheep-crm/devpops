@@ -151,9 +151,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.3.xi";
-var devpops_version = 46;
-var devpops_tag = "J.C.R. Licklider";
+var devpops_dver = "21.3.xiv";
+var devpops_version = 47;
+var devpops_tag = "Albert Einstein";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -642,29 +642,29 @@ BCRMButtonizeDebugMenu = function () {
         m = BCRM_MENU[i].seq;
         var dv = $($("li#" + i).find("div")[0])
         dv.text(m);
-        dv.attr("title",BCRM_MENU[i].label + "\n" + dv.attr("title"));
+        dv.attr("title", BCRM_MENU[i].label + "\n" + dv.attr("title"));
         $("li#" + i).find("span").remove();
-        if (typeof(BCRM_MENU[i].img) !== "undefined"){
+        if (typeof (BCRM_MENU[i].img) !== "undefined") {
             var imgurl = BCRM_MENU[i].img;
             dv.text("");
             var ost = dv.attr("style");
             var nst = ost + " " + "background-image:url(" + imgurl + ")!important;"
             nst = nst + "background-size:cover!important;";
-            dv.attr("style",nst);
-            dv.css("height","36px");
-            dv.css("width","36px");
-            dv.css("margin-top","1px");
-            dv.css("padding-bottom","0px");
+            dv.attr("style", nst);
+            dv.css("height", "36px");
+            dv.css("width", "36px");
+            dv.css("margin-top", "1px");
+            dv.css("padding-bottom", "0px");
         }
     }
     $("#bcrm_dbg_menu ul").css("display", "flex");
     $("#bcrm_dbg_menu ul").find("li").width(40);
     $("#bcrm_dbg_menu ul").find("li").css("text-align", "center");
-    if (adjust){
+    if (adjust) {
         var r = $("#bcrm_dbg_menu ul")[0].getBoundingClientRect().right;
         var w = window.innerWidth;
-        var newl = -1*(r-w);
-        $("#bcrm_dbg_menu ul").css("left",newl.toString() + "px");
+        var newl = -1 * (r - w);
+        $("#bcrm_dbg_menu ul").css("left", newl.toString() + "px");
     }
     $("#bcrm_dbg_menu ul").addClass("bcrm-tb");
 };
@@ -704,7 +704,7 @@ BCRMCreateDebugMenu = function () {
                     return BCRMCloseDebugMenu();
                 },
                 "showtoggle": true,
-                "img":"images/grid_matte_webpagesearch.png"
+                "img": "images/grid_matte_webpagesearch.png"
             },
             "ShowBCFields": {
                 "seq": 2,
@@ -731,7 +731,7 @@ BCRMCreateDebugMenu = function () {
                     return BCRMCloseDebugMenu();
                 },
                 "showtoggle": true,
-                "img":"images/grid_matte_barcode.png"
+                "img": "images/grid_matte_barcode.png"
             },
             "ShowTableColumns": {
                 "seq": 3,
@@ -757,7 +757,7 @@ BCRMCreateDebugMenu = function () {
                     return BCRMCloseDebugMenu();
                 },
                 "showtoggle": true,
-                "img":"images/grid_matte_book.png"
+                "img": "images/grid_matte_book.png"
             },
             "Reset": {
                 "seq": 4,
@@ -782,7 +782,7 @@ BCRMCreateDebugMenu = function () {
                     }
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_cycle_rtl.png"
+                "img": "images/grid_matte_cycle_rtl.png"
             },
             "Silent": {
                 "seq": 5,
@@ -805,7 +805,7 @@ BCRMCreateDebugMenu = function () {
                     }, 200);
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_ship.png"
+                "img": "images/grid_matte_ship.png"
             },
             "StartTracing": {
                 "seq": 6,
@@ -875,7 +875,7 @@ BCRMCreateDebugMenu = function () {
                         "type": "input"
                     }
                 },
-                "img":"images/grid_matte_decline_rtl.png"
+                "img": "images/grid_matte_decline_rtl.png"
             },
             "ViewTracing": {
                 "seq": 7,
@@ -886,7 +886,7 @@ BCRMCreateDebugMenu = function () {
                     BCRMViewLog();
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_financialinformation.png"
+                "img": "images/grid_matte_financialinformation.png"
             },
             "StopTracing": {
                 "seq": 8,
@@ -905,7 +905,18 @@ BCRMCreateDebugMenu = function () {
                     }
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_forklift.png"
+                "img": "images/grid_matte_forklift.png"
+            },
+            "BSRunner": {
+                "seq": 21,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_BSRunner") == "false" ? false : true,
+                "label": "Service Runner",
+                "title": "meep meep",
+                "onclick": function () {
+                    BCRMBusinessServiceRunner();
+                    return BCRMCloseDebugMenu();
+                },
+                "img": "images/grid_matte_generic.png"
             },
             "GotoView1": {
                 "seq": 9,
@@ -917,7 +928,7 @@ BCRMCreateDebugMenu = function () {
                     SiebelApp.S_App.GotoView("BCRM Modified Objects List View");
                     return r;
                 },
-                "img":"images/grid_matte_persongrid.png"
+                "img": "images/grid_matte_persongrid.png"
             },
             "ClearCaches": {
                 "seq": 10,
@@ -928,7 +939,7 @@ BCRMCreateDebugMenu = function () {
                     BCRMClearCaches();
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_crystalball.png"
+                "img": "images/grid_matte_crystalball.png"
             },
             "AboutView": {
                 "seq": 11,
@@ -945,7 +956,7 @@ BCRMCreateDebugMenu = function () {
                     }
                     return r;
                 },
-                "img":"images/grid_matte_message.png"
+                "img": "images/grid_matte_message.png"
             },
             "ScriptEditor": {
                 "seq": 12,
@@ -956,7 +967,7 @@ BCRMCreateDebugMenu = function () {
                     BCRMScriptEditor();
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_scroll_rtl.png"
+                "img": "images/grid_matte_scroll_rtl.png"
             },
             "ExprEditor": {
                 "seq": 13,
@@ -973,7 +984,7 @@ BCRMCreateDebugMenu = function () {
                     }
                     return r;
                 },
-                "img":"images/grid_matte_scales.png"
+                "img": "images/grid_matte_scales.png"
             },
             "srvrmgr": {
                 "seq": 14,
@@ -987,7 +998,7 @@ BCRMCreateDebugMenu = function () {
                     return BCRMCloseDebugMenu();
                 },
                 "acl": ["Siebel Administrator"],
-                "img":"images/grid_matte_plan.png"
+                "img": "images/grid_matte_plan.png"
             },
             "serverstatus": {
                 "seq": 15,
@@ -999,7 +1010,7 @@ BCRMCreateDebugMenu = function () {
                     BCRMDisplayServer();
                     return r;
                 },
-                "img":"images/grid_matte_piechart.png"
+                "img": "images/grid_matte_piechart.png"
             },
             "StartSARM": {
                 "seq": 16,
@@ -1064,7 +1075,7 @@ BCRMCreateDebugMenu = function () {
                         "min": 60
                     }
                 },
-                "img":"images/grid_matte_video.png"
+                "img": "images/grid_matte_video.png"
             },
             "StopSARM": {
                 "seq": 17,
@@ -1085,7 +1096,7 @@ BCRMCreateDebugMenu = function () {
                     return BCRMCloseDebugMenu();
                 },
                 "acl": ["Siebel Administrator"],
-                "img":"images/grid_matte_trophy.png"
+                "img": "images/grid_matte_trophy.png"
             },
             "ShowSARM": {
                 "seq": 18,
@@ -1129,7 +1140,7 @@ BCRMCreateDebugMenu = function () {
 
                 },
                 "acl": ["Siebel Administrator"],
-                "img":"images/grid_matte_gantt.png"
+                "img": "images/grid_matte_gantt.png"
             },
             "freeform": {
                 "seq": 19,
@@ -1148,7 +1159,7 @@ BCRMCreateDebugMenu = function () {
                     }
                     return r;
                 },
-                "img":"images/grid_matte_formwrench.png"
+                "img": "images/grid_matte_formwrench.png"
             },
             "SiebelHub": {
                 "seq": 20,
@@ -1171,7 +1182,7 @@ BCRMCreateDebugMenu = function () {
                     window.open(hub[Math.floor((Math.random() * hub.length))]);
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_megaphone.png"
+                "img": "images/grid_matte_megaphone.png"
             },
             "devpops": {
                 "seq": 21,
@@ -1182,7 +1193,7 @@ BCRMCreateDebugMenu = function () {
                     window.open("https://github.com/blacksheep-crm/devpops");
                     return BCRMCloseDebugMenu();
                 },
-                "img":"images/grid_matte_puzzle.png"
+                "img": "images/grid_matte_puzzle.png"
             }
         };
     }
@@ -1222,7 +1233,7 @@ BCRMCreateDebugMenu = function () {
         BCRMStopEditDebugMenu();
         return false;
     });
-    rot.on("click", function(){
+    rot.on("click", function () {
         BCRMButtonizeDebugMenu();
         return false;
     });
@@ -2946,6 +2957,93 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return bcd;
         };
 
+        //wrapper to get "formatted" BS data
+        BCRMUtils.prototype.GetBSData = function (bsn) {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var rrdata, bsdata, bsd;
+            //use variable as client-side cache to avoid multiple queries for the same object
+            //tried sesssionstorage but reaches quota
+            var cache = "BCRM_RR_CACHE_BC_" + bsn;
+            if (typeof (BCRCMETACACHE[cache]) === "undefined") {
+                rrdata = ut.GetRRData("Business Service", bsn);
+                bsdata = ut.ExtractBSData(rrdata);
+                bsd = bsdata["Business Service"];
+                BCRCMETACACHE[cache] = JSON.stringify(bsd);
+            }
+            else {
+                bsd = JSON.parse(BCRCMETACACHE[cache]);
+            }
+            return bsd;
+        };
+
+        BCRMUtils.prototype.ExtractBSData = function (rrdata) {
+            var retval = {};
+            var bs;
+            var props, gprops;
+            var cc;
+            var gc;
+            var ffn;
+            var fn;
+            retval["Business Service"] = {};
+            bs = retval["Business Service"];
+            props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
+            for (p in props) {
+                bs[p] = props[p];
+            }
+            bs["Business Service Method"] = {};
+            cc = rrdata.GetChild(0).childArray;
+            for (c in cc) {
+                if (cc[c].type == "Business Service Method") {
+                    props = cc[c].GetChildByType("Properties").propArray;
+                    fn = props["Name"];
+                    bs["Business Service Method"][fn] = {};
+                    for (p in props) {
+                        bs["Business Service Method"][fn][p] = props[p];
+                    }
+
+                    bs["Business Service Method"][fn]["Business Service Method Arg"] = {};
+                    gc = cc[c].childArray;
+                    for (g in gc) {
+                        if (gc[g].type == "Business Service Method Arg") {
+                            gprops = gc[g].GetChildByType("Properties").propArray;
+                            ffn = gprops["Name"];
+                            bs["Business Service Method"][fn]["Business Service Method Arg"][ffn] = {};
+                            for (gp in gprops) {
+                                bs["Business Service Method"][fn]["Business Service Method Arg"][ffn][gp] = gprops[gp];
+                            }
+                        }
+                    }
+                }
+            }
+            return retval;
+        };
+
+        BCRMUtils.prototype.GetBusinessServiceList = function () {
+            var sv = SiebelApp.S_App.GetService("FWK Runtime");
+            var ips = SiebelApp.S_App.NewPropertySet();
+            var ops = sv.InvokeMethod("GetBusinessServiceList", ips);
+            var props = ops.GetChildByType("ResultSet").propArray;
+            var t = [];
+            var retval = [];
+            for (p in props) {
+                t.push([p, props[p]]);
+            }
+            t.sort(function (a, b) {
+                if (a[0] < b[0]) { return -1; }
+                if (a[0] > b[0]) { return 1; }
+                return 0;
+            });
+            for (var i = 0; i < t.length; i++) {
+                if (t[i][1] == t[i][0]) {
+                    retval.push(t[i][1]);
+                }
+                else {
+                    retval.push(t[i][1] + "-[" + t[i][0] + "]");
+                }
+            }
+            return retval;
+        };
+
         //wrapper to get "formatted" BO data
         BCRMUtils.prototype.GetBOData = function (bon, bclist) {
             var ut = new SiebelAppFacade.BCRMUtils();
@@ -3033,9 +3131,6 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var retval = {};
             var ln;
             var props;
-            var pc;
-            var cc;
-            var fn;
             retval["Link"] = {};
             ln = retval["Link"];
             props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
@@ -4277,9 +4372,19 @@ BCRMSARMOn = function () {
 
 //Demo: disable SARM
 BCRMSARMOff = function () {
-    var comp = "sccobjmgr_enu";
-    var server = "server01";
-
+    var comp, server;
+    if (typeof (localStorage.BCRM_OPT_StartSARM_Server) !== "undefined") {
+        server = localStorage.BCRM_OPT_StartSARM_Server;
+    }
+    else {
+        server = "server01";
+    }
+    if (typeof (localStorage.BCRM_OPT_StartSARM_Component) !== "undefined") {
+        comp = localStorage.BCRM_OPT_StartSARM_Component;
+    }
+    else {
+        comp = "sccobjmgr_enu";
+    }
     var cmd = "";
     cmd += "delete parameter override for server " + server + " component " + comp + " param sarmperiod" + "\n";
     cmd += "delete parameter override for server " + server + " component " + comp + " param sarmlogdirectory" + "\n";
@@ -5384,4 +5489,358 @@ BCRMDisplayServer = function () {
             }, 20000);
         }
     }
+}
+
+//Business Service meep meep
+//Run Business Services faster than ever
+BCRMGetIOList = function(){
+    var sv = SiebelApp.S_App.GetService("FWK Runtime");
+    var ip = SiebelApp.S_App.NewPropertySet();
+    var op = sv.InvokeMethod("GetIOList",ip).GetChildByType("ResultSet");
+    var r = [];
+    for (p in op.propArray){
+        r.push(op.propArray[p]);
+    }
+    return r;
+};
+
+BCRMGetBSMethod = function (sn) {
+    var ut = new SiebelAppFacade.BCRMUtils();
+    var bsd = ut.GetBSData(sn);
+    var ms = bsd["Business Service Method"];
+    return ms;
+};
+
+BCRMMeepReset = function (preset) {
+    $("#bcrm_service").val("");
+    $("#bcrm_method").val("");
+    $("#bcrm_method").parent().hide();
+    $("#bcrm_outt").val("");
+    $("#bcrm_outt").hide();
+    $("#bcrm_outps").val("");
+    $("#bcrm_outps").hide();
+    $("input[id^='bcrm_ip']").each(function (x) {
+        $(this).parent().remove();
+    });
+    if (!preset) {
+        $("#bcrm_preset").val("void");
+    }
+};
+
+var last_meep = "";
+BCRMInvokeServiceMethod = function (p) {
+    var sExpr = "var svc = TheApplication().GetService(\"" + p.service + "\");\n";
+    sExpr += "var ips = TheApplication().NewPropertySet();\n";
+    sExpr += "var ops = TheApplication().NewPropertySet();\n";
+    sExpr += "var bsWFUtils = TheApplication().GetService(\"Workflow Utilities\");\n";
+    sExpr += "var psIn = TheApplication().NewPropertySet();\n";
+    sExpr += "var psOut = TheApplication().NewPropertySet();\n";
+    sExpr += "var retval;\n";
+
+    for (prop in p.inputs) {
+        if (p.inputs[prop].indexOf("@") == 0){
+            sExpr += "psIn.SetValue(\"" + p.inputs[prop] + "\");\n"
+            sExpr += "bsWFUtils.InvokeMethod(\"TextToPropSet\", psIn, psOut);\n";
+            sExpr += "ips.AddChild(psOut.Copy());\n";
+            sExpr += "psIn.Reset();\n";
+            sExpr += "psOut.Reset();\n";
+        }
+        else if (prop == "<Value>") {
+            sExpr += "ips.SetValue('" + p.inputs[prop] + "');\n";
+        }
+        else if (prop == "<Type>") {
+            sExpr += "ips.SetType(\"" + p.inputs[prop] + "\");\n";
+        }
+        else {
+            sExpr += "ips.SetProperty(\"" + prop + "\",\"" + p.inputs[prop] + "\");\n";
+        }
+    }
+
+    sExpr += "svc.InvokeMethod(\"" + p.method + "\",ips,ops);\n";
+    //sExpr += "log(ops);"
+    
+    sExpr += "psIn = ops.Copy();\n";
+    sExpr += "bsWFUtils.InvokeMethod(\"PropSetToText\", psIn, psOut);\n";
+    sExpr += "retval = psOut.GetValue();\n";
+    sExpr += "log(ops);\n";
+    sExpr += "svc = null;\n";
+    sExpr += "ips = null;\n";
+    sExpr += "ops = null;\n";
+    sExpr += "bsWFUtils = null;\n";
+    sExpr += "psIn = null;\n";
+    sExpr += "psOut = null;\n";
+    sExpr += "return retval;";
+    var service = SiebelApp.S_App.GetService("FWK Runtime");
+    var ps = SiebelApp.S_App.NewPropertySet();
+    ps.SetProperty("Expr", sExpr);
+    var outputSet = service.InvokeMethod("EvalScript", ps);
+    last_meep = outputSet.GetChildByType("ResultSet").GetProperty("v");
+    return outputSet;
+};
+
+
+BCRMBusinessServiceRunner = function () {
+    var ut = new SiebelAppFacade.BCRMUtils();
+    var bs = ut.GetBusinessServiceList();
+    var ms;
+    var sn;
+    var dlg = $('<div style="overflow:auto;"><div style="width: 200px;float:left;"><label for="bcrm_service">Business Service (Type to search):</label></div><input style="width:300px;" id="bcrm_service"></div>');
+    var pre = $('<div style="display:none;padding-bottom: 4px;border-bottom: 1px solid;margin-bottom: 4px;"><div style="width: 200px;float:left;"><label for="bcrm_presets">Load Preset:</label></div><select  style="width:300px;" id="bcrm_preset"></select></div>');
+    var mt = $('<div style="display:none;margin-top:6px;margin-bottom:6px;"><div style="width: 200px;float:left;"><label for="bcrm_method">Method:</label></div><input  style="width:300px;" id="bcrm_method"></div>');
+    var outt = $("<textarea style='display:none;width:750px;height:300px;overflow:auto;margin-top:10px;' id='bcrm_outt'></textarea>");
+    var outps = $("<textarea style='display:none;width:750px;height:80px;overflow:auto;margin-top:10px;' id='bcrm_outps'></textarea>");
+    var preset_found = false;
+    var pss;
+    dlg.prepend(pre);
+    dlg.append(mt);
+    dlg.append(outt);
+    dlg.append(outps);
+    for (l in localStorage) {
+        if (l.indexOf("BCRM_MEEP") == 0) {
+            preset_found = true;
+            pss = dlg.find("#bcrm_preset");
+            pss.append("<option value='" + l.split("BCRM_MEEP_")[1] + "'>" + l.split("BCRM_MEEP_")[1] + "</option>");
+        }
+    }
+    if (preset_found) {
+        pss = dlg.find("#bcrm_preset");
+        pss.prepend("<option value='void' selected='selected'>" + "Please select..." + "</option>");
+        pss.on("change", function () {
+            if ($(this).val() != "void") {
+                BCRMMeepReset(true);
+                var ln = "BCRM_MEEP_" + $(this).val();
+                var p = JSON.parse(localStorage.getItem(ln));
+                $("#bcrm_service").val(p.service);
+                $("#bcrm_method").parent().show();
+                $("#bcrm_method").val(p.method);
+                var args = p.inputs;
+                for (a in args) {
+                    var tip = $('<div style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">:</label></div><input style="width:300px;"></div>');
+                    tip.find("input").attr("id", "bcrm_ip_" + a);
+                    tip.find("label").text(a + ":");
+                    tip.find("input").val(args[a]);
+                    $("#bcrm_method").parent().after(tip);
+                }
+            }
+        });
+        dlg.find("#bcrm_preset").parent().show();
+    }
+    dlg.dialog({
+        width: 800,
+        height: 700,
+        buttons: {
+            "New": function () {
+                BCRMMeepReset();
+            },
+            "Use Last Output": function(){
+                var lastps = SiebelApp.S_App.NewPropertySet();
+                var pval = "";
+                var ta;
+                var decoded = false;
+                decoded = lastps.DecodeFromString(last_meep);
+                if (!decoded){
+                    //could be type 4 (base64 encoded value)
+                    ta = last_meep.split("*");
+                    lastps.SetValue(atob(ta.pop()));
+                }
+                $("input[id^='bcrm_ip']").each(function (x) {
+                    var prop = $(this).attr("id").split("_")[2];
+                    var dt = $(this).attr("placeholder");
+                    if (dt.indexOf("Property") == 0){
+                        if (typeof(lastps.GetProperty(prop)) !== "undefined"){
+                            pval = lastps.GetProperty(prop);
+                            if (pval != ""){
+                                $(this).val(pval);
+                            }
+                        }
+                    }
+                    if (dt.indexOf("Child") == 0){
+                        if (lastps.GetChildByType(prop) != null){
+                            var cps = lastps.GetChildByType(prop);
+                            cps = cps.EncodeAsStringOld();
+                            $(this).val(cps);
+                        }
+                    }
+                    if (dt.indexOf("Value") == 0){
+                        $(this).val(lastps.GetValue());
+                    }
+                    if (dt.indexOf("Type") == 0){
+                        $(this).val(lastps.GetType());
+                    }
+                });
+            },
+            "Run": function () {
+                var ts, elps;
+                var preset = {};
+                var sn = "";
+                var mn = "";
+                var i = {};
+                var prop;
+                var t = $("#bcrm_service").val();
+                if (t.indexOf("-[") > -1) {
+                    sn = t.split("-[")[1]
+                    sn = sn.substring(0, sn.length - 1);
+                }
+                else {
+                    sn = t;
+                }
+
+                mn = $("#bcrm_method").val();
+                $("input[id^='bcrm_ip']").each(function (x) {
+                    if ($(this).val() != "") {
+                        prop = $(this).attr("id").split("_")[2];
+                        i[prop] = $(this).val();
+                    }
+                });
+                preset.service = sn;
+                preset.method = mn;
+                preset.inputs = i;
+
+                ts = Date.now();
+                var outputSet = BCRMInvokeServiceMethod(preset);
+                elps = Date.now() - ts;
+                $("#bcrm_outt").show();
+                $("#bcrm_outt").val("Time elapsed (ms):" + elps.toString() + "\n" + outputSet.GetChildByType("ResultSet").GetProperty("Result"));
+                $("#bcrm_outps").show();
+                $("#bcrm_outps").val(outputSet.GetChildByType("ResultSet").GetProperty("v"));
+            },
+            "Save As": function () {
+                var preset = {};
+                var sv = $("#bcrm_service").val();
+                var m = $("#bcrm_method").val();
+                var f = "";
+                var i = {};
+                var r = true;
+                $("input[id^='bcrm_ip']").each(function (x) {
+                    if ($(this).val() != "") {
+                        var prop = $(this).attr("id").split("_")[2];
+                        i[prop] = $(this).val();
+                        if (f == "") {
+                            f = prop.substring(0, 3) + "_" + $(this).val().substring(0, 3);
+                        }
+                    }
+                });
+                preset.service = sv;
+                preset.method = m;
+                preset.inputs = i;
+                var pdef = sv + "_" + m + "_" + f;
+                if (sv == "Workflow Process Manager") {
+                    pdef = "WF_" + $("#bcrm_ip_ProcessName").val();
+                }
+                pdef += "_" + Math.floor(Math.random() * 9999).toString();
+                var pname = SiebelApp.Utils.Prompt("Save Preset as...", pdef);
+                var ln = "BCRM_MEEP_" + pname;
+                if (localStorage.getItem(ln) != null) {
+                    r = SiebelApp.Utils.Confirm("Preset already exists.\nPress OK to replace.\nPress Cancel to abort.");
+                }
+                if (r && localStorage.getItem(ln) == null) {
+                    localStorage.setItem(ln, JSON.stringify(preset));
+                    pss = $("#bcrm_preset");
+                    pss.append("<option value='" + pname + "'>" + pname + "</option>");
+                }
+            },
+            "Copy PropSet": function(){
+                var tempta = $("<textarea id='bcrm_temp_ta'>");
+                tempta.val($("#bcrm_outps").val());
+                tempta.appendTo("body");
+                tempta.focus();
+                tempta[0].select();
+                document.execCommand('copy');
+                tempta.remove();
+            },
+            "Close": function () {
+                $(this).dialog("destroy");
+            }
+        },
+        title: "Business Service Runner (meep meep)",
+        open: function () {
+            setTimeout(function () {
+                $("#bcrm_service").autocomplete({
+                    source: bs,
+                    select: function (e, ui) {
+                        var t = ui.item.value;
+                        if (t.indexOf("-[") > -1) {
+                            sn = t.split("-[")[1]
+                            sn = sn.substring(0, sn.length - 1);
+                        }
+                        else {
+                            sn = t;
+                        }
+                        ms = BCRMGetBSMethod(sn);
+                        var ma = [];
+                        for (m in ms) {
+                            ma.push(m);
+                        }
+                        $("#bcrm_method").parent().show();
+                        $("#bcrm_method").autocomplete({
+                            source: ma,
+                            minLength: 0,
+                            select: function (e, ui) {
+                                $("input[id^='bcrm_ip']").each(function (x) {
+                                    $(this).parent().remove();
+                                });
+                                var t = ui.item.value;
+                                var ip = [];
+                                var args = ms[t]["Business Service Method Arg"];
+                                for (a in args) {
+                                    if (args[a]["Type"].indexOf("Input") > -1) {
+                                        //ip.push(a);
+                                        var tip = $('<div style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">:</label></div><input style="width:300px;"></div>');
+                                        var inpc = tip.find("input");
+                                        var src = [];
+                                        var asel = false;
+                                        inpc.attr("id", "bcrm_ip_" + a);
+                                        tip.find("label").text(a + ":");
+                                        if (args[a]["Optional"] == "N") {
+                                            tip.find("label").text(a + ":*");
+                                            inpc.css("background", "#f5bcbc");
+                                        }
+                                        if (args[a]["Data Type"] == "Hierarchy" && args[a]["Storage Type"] == "Hierarchy") {
+                                            inpc.attr("placeholder", "Child PropSet");
+                                        }
+                                        else {
+                                            inpc.attr("placeholder", args[a]["Storage Type"] + ":" + args[a]["Data Type"]);
+                                        }
+                                        if (args[a]["Picklist"].indexOf("Integration Object") > -1){
+                                            src = BCRMGetIOList();
+                                            asel = true;
+                                        }
+                                        if (args[a]["Picklist"].indexOf("Boolean") > -1){
+                                            src = ["true","false"];
+                                            asel = true;
+                                        }
+                                        if (asel){
+                                            inpc.autocomplete({
+                                                source: src,
+                                                minLength: 0,
+                                                open: function () {
+                                                    $(this).autocomplete('widget').zIndex(10000);
+                                                }
+                                            });
+                                            inpc.focus(function(){
+                                                $(this).autocomplete('search', $(this).val());
+                                            });
+                                            inpc.click(function () {
+                                                $(this).autocomplete('search', "");
+                                            });
+                                        }
+                                        $("#bcrm_method").parent().after(tip);
+                                    }
+                                }
+                            }
+                        });
+                        $("#bcrm_method").focus(function () {
+                            $(this).autocomplete('search', $(this).val());
+                        });
+                        $("#bcrm_method").click(function () {
+                            $(this).autocomplete('search', "");
+                        });
+                    }
+                });
+            }, 200)
+        },
+        close: function () {
+            $(this).dialog("destroy");
+        }
+    });
 }
