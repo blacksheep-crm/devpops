@@ -6,6 +6,8 @@
 
 NEW in 21.3:
 
+Business Service Runner (meep meep)
+
 Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
 
 Editable debug menu (hide/show items) with localstorage persistence
@@ -34,7 +36,7 @@ Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?
 
 Video update (Siebel Friday 26-FEB-2021): https://youtu.be/l0C8hhd1x0A?t=3473
 
-# Installation:
+# Installation
 
 1. Import SIFs
 
