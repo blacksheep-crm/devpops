@@ -8,9 +8,15 @@ User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Business Service Runner (meep meep)
 
+21.3.xvii: add custom properties and delete presets, export escript
+
 Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
 
+21.3.xvii: right-click in toolbar mode shows toggle/options
+
 Editable debug menu (hide/show items) with localstorage persistence
+
+21.3.xvii: Override function for debug menu, modify and add items
 
 # Other Features
 
