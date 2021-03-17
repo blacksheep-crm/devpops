@@ -145,15 +145,47 @@ catch (e) {
 //blacksheep devpops
 //EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
 
+BCRMCustomizeDebugMenu = function () {
+    //put your menu customizations here
+    //visit the BCRMCreateDebugMenu method to see pre-defined menu items
+    //Example:
+    /*
+    //set override flag for menu item always
+    BCRM_MENU["Silent"].override = true;
+    //override properties, e.g. disable menu
+    BCRM_MENU["Silent"].enable = false;
+
+    //custom label
+    BCRM_MENU["ShowBCFields"].override = true;
+    BCRM_MENU["ShowBCFields"].label = "BC Layer";
+    */
+
+    //new item (copy one from BCRMCreateDebugMenu function and modify)
+    /*
+    BCRM_MENU["GotoView2"] = {
+        "seq": 101,
+        "enable": localStorage.getItem("BCRM_MENU_ENABLE_GotoView2") == "false" ? false : true,
+        "label": "Change Position",
+        "title": "Go to Change Position View",
+        "onclick": function () {
+            var r = BCRMCloseDebugMenu();
+            SiebelApp.S_App.GotoView("Change Position View");
+            return r;
+        },
+        "img": "images/grid_matte_boxes.png"
+    };
+    */
+};
+
 //globals
 var defs = [];
 var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.3.xiv";
-var devpops_version = 47;
-var devpops_tag = "Albert Einstein";
+var devpops_dver = "21.3.xvii";
+var devpops_version = 48;
+var devpops_tag = "Nat King Cole";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -585,7 +617,7 @@ BCRMEditDebugMenu = function () {
     var t;
     var def = true;
     for (i in BCRM_MENU) {
-        if (!BCRM_MENU[i].enable) {
+        if (!BCRM_MENU[i].enable && !BCRM_MENU[i].override) {
             $("li#" + i).show();
             def = false;
         }
@@ -637,16 +669,27 @@ BCRMButtonizeDebugMenu = function () {
     $("#bcrm_dtch").hide();
     $("#bcrm_bed").hide();
     $("#bcrm_rot").hide();
+    $("#bcrm_ug").hide();
 
     for (i in BCRM_MENU) {
         m = BCRM_MENU[i].seq;
-        var dv = $($("li#" + i).find("div")[0])
-        dv.text(m);
+        var dv = $($("li#" + i).find("div")[0]);
+        var tsp = null;
+        //dv.text(m);
         dv.attr("title", BCRM_MENU[i].label + "\n" + dv.attr("title"));
-        $("li#" + i).find("span").remove();
+        $("li#" + i).find("span").hide();
         if (typeof (BCRM_MENU[i].img) !== "undefined") {
             var imgurl = BCRM_MENU[i].img;
+            if (dv.find("span").length >= 1){
+                tsp = $(dv.find("span")[0]).detach();
+            }
+            else{
+                tsp = null;
+            }
             dv.text("");
+            if (tsp != null){
+                dv.append(tsp);
+            }
             var ost = dv.attr("style");
             var nst = ost + " " + "background-image:url(" + imgurl + ")!important;"
             nst = nst + "background-size:cover!important;";
@@ -656,6 +699,23 @@ BCRMButtonizeDebugMenu = function () {
             dv.css("margin-top", "1px");
             dv.css("padding-bottom", "0px");
         }
+        $("li#" + i).on("contextmenu",function(){
+            if ($(this).find("button[id^='options']").length > 0){
+                $(this).find("button[id^='options']").click();
+            }
+            else{
+                $(this).find("span").show();
+                $(this).find("span").addClass("bcrm-autohide");
+                $(this).find("span").attr("style","background: #29303f;padding: 2px 4px 2px 4px;position: relative;top: 31px;border-bottom-left-radius: 10px;border-bottom-right-radius: 10px;left: -3px;");
+                $(this).find("input[type='checkbox']").hide();
+                
+                setTimeout(function(){
+                    $(".bcrm-autohide").hide();
+                    $(".bcrm-autohide").removeClass("bcrm-autohide");
+                },5000);
+            }
+            return false;
+        })
     }
     $("#bcrm_dbg_menu ul").css("display", "flex");
     $("#bcrm_dbg_menu ul").find("li").width(40);
@@ -673,7 +733,7 @@ var BCRM_MENU;
 BCRM_MENU = {};
 
 BCRMCreateDebugMenu = function () {
-    var togglecss = ".bcrm-dock-rot:before{content:'\\e94a';font-family:'oracle';} #bcrm_dbg_menu ul.bcrm-tb li.bcrm-dbg-item div.ui-state-disabled {background-size: cover!important;mix-blend-mode: soft-light;} .bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
+    var togglecss = ".bcrm-dock-ug:before{content:'\\f004';font-family:'oracle';} .bcrm-dock-rot:before{content:'\\e94a';font-family:'oracle';} #bcrm_dbg_menu ul.bcrm-tb li.bcrm-dbg-item div.ui-state-disabled {background-size: cover!important;mix-blend-mode: soft-light;} .bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
     var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
     if ($("style[bcrm-style]").length == 0) {
         $("head").append(st);
@@ -1198,6 +1258,8 @@ BCRMCreateDebugMenu = function () {
         };
     }
 
+    BCRMCustomizeDebugMenu();
+
     var hasresp = true;
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
 
@@ -1207,6 +1269,7 @@ BCRMCreateDebugMenu = function () {
     var dtch = $('<span id="bcrm_dtch" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Undock"><a class="bcrm-dock-toggle-pin" style="color:white;"></span>');
     var bcls = $('<span id="bcrm_bcls" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Close"><a class="bcrm-dock-close" style="color:white;"></span>');
     var bed = $('<span id="bcrm_bed" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Edit"><a class="bcrm-dock-edit" style="color:white;"></span>');
+    var ug = $('<span id="bcrm_ug" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Help: User Guide"><a class="bcrm-dock-ug" style="color:white;"></span>');
     var beds = $('<span id="bcrm_beds" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Save"><a class="bcrm-dock-save" style="color:white;"></span>');
     var rot = $('<span id="bcrm_rot" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Rotate"><a class="bcrm-dock-rot" style="color:white;"></span>');
     dtch.on("click", function (e, ui) {
@@ -1237,11 +1300,16 @@ BCRMCreateDebugMenu = function () {
         BCRMButtonizeDebugMenu();
         return false;
     });
+    ug.on("click",function(){
+        window.open("https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf", "_blank");
+        return false;
+    })
     mtb.append(dtch);
     mtb.append(bcls);
     mtb.append(bed);
     mtb.append(beds);
     mtb.append(rot);
+    mtb.append(ug);
 
     //main loop to create menu
     for (i in BCRM_MENU) {
@@ -5493,12 +5561,12 @@ BCRMDisplayServer = function () {
 
 //Business Service meep meep
 //Run Business Services faster than ever
-BCRMGetIOList = function(){
+BCRMGetIOList = function () {
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
     var ip = SiebelApp.S_App.NewPropertySet();
-    var op = sv.InvokeMethod("GetIOList",ip).GetChildByType("ResultSet");
+    var op = sv.InvokeMethod("GetIOList", ip).GetChildByType("ResultSet");
     var r = [];
-    for (p in op.propArray){
+    for (p in op.propArray) {
         r.push(op.propArray[p]);
     }
     return r;
@@ -5519,7 +5587,11 @@ BCRMMeepReset = function (preset) {
     $("#bcrm_outt").hide();
     $("#bcrm_outps").val("");
     $("#bcrm_outps").hide();
+    $("#bcrm_add_prop").hide();
     $("input[id^='bcrm_ip']").each(function (x) {
+        $(this).parent().remove();
+    });
+    $("input.bcrm-cp-val").each(function (x) {
         $(this).parent().remove();
     });
     if (!preset) {
@@ -5528,7 +5600,8 @@ BCRMMeepReset = function (preset) {
 };
 
 var last_meep = "";
-BCRMInvokeServiceMethod = function (p) {
+BCRMInvokeServiceMethod = function (p, print) {
+    var retval;
     var sExpr = "var svc = TheApplication().GetService(\"" + p.service + "\");\n";
     sExpr += "var ips = TheApplication().NewPropertySet();\n";
     sExpr += "var ops = TheApplication().NewPropertySet();\n";
@@ -5538,7 +5611,7 @@ BCRMInvokeServiceMethod = function (p) {
     sExpr += "var retval;\n";
 
     for (prop in p.inputs) {
-        if (p.inputs[prop].indexOf("@") == 0){
+        if (p.inputs[prop].indexOf("@") == 0) {
             sExpr += "psIn.SetValue(\"" + p.inputs[prop] + "\");\n"
             sExpr += "bsWFUtils.InvokeMethod(\"TextToPropSet\", psIn, psOut);\n";
             sExpr += "ips.AddChild(psOut.Copy());\n";
@@ -5557,8 +5630,6 @@ BCRMInvokeServiceMethod = function (p) {
     }
 
     sExpr += "svc.InvokeMethod(\"" + p.method + "\",ips,ops);\n";
-    //sExpr += "log(ops);"
-    
     sExpr += "psIn = ops.Copy();\n";
     sExpr += "bsWFUtils.InvokeMethod(\"PropSetToText\", psIn, psOut);\n";
     sExpr += "retval = psOut.GetValue();\n";
@@ -5575,24 +5646,102 @@ BCRMInvokeServiceMethod = function (p) {
     ps.SetProperty("Expr", sExpr);
     var outputSet = service.InvokeMethod("EvalScript", ps);
     last_meep = outputSet.GetChildByType("ResultSet").GetProperty("v");
-    return outputSet;
+    if (print){
+        retval = sExpr;
+    }
+    else{
+        retval = outputSet;
+    }
+    return retval;
 };
 
+BCRMCreatePreset = function(){
+    var preset = {};
+    var sn = "";
+    var mn = "";
+    var i = {};
+    var prop;
+    var t = $("#bcrm_service").val();
+    if (t.indexOf("-[") > -1) {
+        sn = t.split("-[")[1]
+        sn = sn.substring(0, sn.length - 1);
+    }
+    else {
+        sn = t;
+    }
+    mn = $("#bcrm_method").val();
+    $("input[id^='bcrm_ip']").each(function (x) {
+        if ($(this).val() != "") {
+            prop = $(this).attr("id").split("_")[2];
+            i[prop] = $(this).val();
+        }
+    });
+    preset.service = sn;
+    preset.method = mn;
+    preset.inputs = i;
+    return preset;
+};
 
+//main dialog
 BCRMBusinessServiceRunner = function () {
     var ut = new SiebelAppFacade.BCRMUtils();
     var bs = ut.GetBusinessServiceList();
     var ms;
     var sn;
     var dlg = $('<div style="overflow:auto;"><div style="width: 200px;float:left;"><label for="bcrm_service">Business Service (Type to search):</label></div><input style="width:300px;" id="bcrm_service"></div>');
-    var pre = $('<div style="display:none;padding-bottom: 4px;border-bottom: 1px solid;margin-bottom: 4px;"><div style="width: 200px;float:left;"><label for="bcrm_presets">Load Preset:</label></div><select  style="width:300px;" id="bcrm_preset"></select></div>');
+    var pre = $('<div style="display:none;padding-bottom: 4px;border-bottom: 1px solid;margin-bottom: 4px;"><div style="width: 200px;float:left;"><label for="bcrm_presets">Load Preset:</label></div><select  style="width:300px;" id="bcrm_preset"></select><button style="margin-left:16px;" title="Delete current preset" id="bcrm_del_preset">Delete</button></div>');
     var mt = $('<div style="display:none;margin-top:6px;margin-bottom:6px;"><div style="width: 200px;float:left;"><label for="bcrm_method">Method:</label></div><input  style="width:300px;" id="bcrm_method"></div>');
     var outt = $("<textarea style='display:none;width:750px;height:300px;overflow:auto;margin-top:10px;' id='bcrm_outt'></textarea>");
     var outps = $("<textarea style='display:none;width:750px;height:80px;overflow:auto;margin-top:10px;' id='bcrm_outps'></textarea>");
+    var addp = $("<button style='display:none;margin-top:6px;' id='bcrm_add_prop'>Add Custom Property</button>");
+    addp.on("click", function () {
+        var tip = $('<div style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">CLICK_ME</label></div><input class="bcrm-cp-val" style="width:300px;"><select></select></div>');
+        tip.find("label").on("click", function () {
+            var ltext = $("<input id='bcrm_newlabel' placeholder='Property Name'>");
+            ltext.on("blur", function () {
+                if ($(this).val() != "") {
+                    var lbl = $(this).parent().find("label");
+                    var int = lbl.parent().parent().find("input.bcrm-cp-val");
+                    lbl.text($(this).val() + ":");
+                    int.attr("id", "bcrm_ip_" + $(this).val());
+                    int.attr("placeholder", "Property:String");
+                }
+                else {
+                    $(this).parent().find("label").text("CLICK_ME");
+                }
+                $(this).parent().find("label").show();
+                $(this).hide();
+            });
+            $(this).after(ltext);
+            $(this).hide();
+            ltext.focus();
+        });
+        var sl = tip.find("select");
+        sl.append("<option val='Property:String' selected='selected'>Property:String</option>");
+        sl.append("<option val='Property:Number'>Property:Number</option>");
+        sl.append("<option val='Value:String'>Value:String</option>");
+        sl.append("<option val='Type:String'>Type:String</option>");
+        sl.append("<option val='Child PropSet'>Child PropSet</option>");
+        sl.on("change", function () {
+            var lbl = $(this).parent().find("label");
+            var int = $(this).parent().find("input.bcrm-cp-val");
+            int.attr("placeholder", $(this).val());
+            if ($(this).val().indexOf("Value") == 0) {
+                lbl.text("<Value>");
+                int.attr("id", "bcrm_ip_<Value>");
+            }
+            if ($(this).val().indexOf("Type") == 0) {
+                lbl.text("<Type>");
+                int.attr("id", "bcrm_ip_<Type>");
+            }
+        });
+        $("#bcrm_method").parent().after(tip);
+    });
     var preset_found = false;
     var pss;
     dlg.prepend(pre);
     dlg.append(mt);
+    dlg.append(addp);
     dlg.append(outt);
     dlg.append(outps);
     for (l in localStorage) {
@@ -5613,6 +5762,7 @@ BCRMBusinessServiceRunner = function () {
                 $("#bcrm_service").val(p.service);
                 $("#bcrm_method").parent().show();
                 $("#bcrm_method").val(p.method);
+                $("#bcrm_add_prop").show();
                 var args = p.inputs;
                 for (a in args) {
                     var tip = $('<div style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">:</label></div><input style="width:300px;"></div>');
@@ -5621,6 +5771,17 @@ BCRMBusinessServiceRunner = function () {
                     tip.find("input").val(args[a]);
                     $("#bcrm_method").parent().after(tip);
                 }
+            }
+        });
+        var delbtn = pss.parent().find("button");
+        delbtn.on("click",function(){
+            var pss = $(this).parent().find("#bcrm_preset");
+            if (pss.val() != "void"){
+                var v = pss.val();
+                var ln = "BCRM_MEEP_" + v;
+                localStorage.removeItem(ln);
+                pss.val("void");
+                pss.find("option[value='" + v +"']").remove();
             }
         });
         dlg.find("#bcrm_preset").parent().show();
@@ -5632,13 +5793,13 @@ BCRMBusinessServiceRunner = function () {
             "New": function () {
                 BCRMMeepReset();
             },
-            "Use Last Output": function(){
+            "Use Last Output": function () {
                 var lastps = SiebelApp.S_App.NewPropertySet();
                 var pval = "";
                 var ta;
                 var decoded = false;
                 decoded = lastps.DecodeFromString(last_meep);
-                if (!decoded){
+                if (!decoded) {
                     //could be type 4 (base64 encoded value)
                     ta = last_meep.split("*");
                     lastps.SetValue(atob(ta.pop()));
@@ -5646,56 +5807,32 @@ BCRMBusinessServiceRunner = function () {
                 $("input[id^='bcrm_ip']").each(function (x) {
                     var prop = $(this).attr("id").split("_")[2];
                     var dt = $(this).attr("placeholder");
-                    if (dt.indexOf("Property") == 0){
-                        if (typeof(lastps.GetProperty(prop)) !== "undefined"){
+                    if (dt.indexOf("Property") == 0) {
+                        if (typeof (lastps.GetProperty(prop)) !== "undefined") {
                             pval = lastps.GetProperty(prop);
-                            if (pval != ""){
+                            if (pval != "") {
                                 $(this).val(pval);
                             }
                         }
                     }
-                    if (dt.indexOf("Child") == 0){
-                        if (lastps.GetChildByType(prop) != null){
+                    if (dt.indexOf("Child") == 0) {
+                        if (lastps.GetChildByType(prop) != null) {
                             var cps = lastps.GetChildByType(prop);
                             cps = cps.EncodeAsStringOld();
                             $(this).val(cps);
                         }
                     }
-                    if (dt.indexOf("Value") == 0){
+                    if (dt.indexOf("Value") == 0) {
                         $(this).val(lastps.GetValue());
                     }
-                    if (dt.indexOf("Type") == 0){
+                    if (dt.indexOf("Type") == 0) {
                         $(this).val(lastps.GetType());
                     }
                 });
             },
             "Run": function () {
                 var ts, elps;
-                var preset = {};
-                var sn = "";
-                var mn = "";
-                var i = {};
-                var prop;
-                var t = $("#bcrm_service").val();
-                if (t.indexOf("-[") > -1) {
-                    sn = t.split("-[")[1]
-                    sn = sn.substring(0, sn.length - 1);
-                }
-                else {
-                    sn = t;
-                }
-
-                mn = $("#bcrm_method").val();
-                $("input[id^='bcrm_ip']").each(function (x) {
-                    if ($(this).val() != "") {
-                        prop = $(this).attr("id").split("_")[2];
-                        i[prop] = $(this).val();
-                    }
-                });
-                preset.service = sn;
-                preset.method = mn;
-                preset.inputs = i;
-
+                var preset = BCRMCreatePreset();
                 ts = Date.now();
                 var outputSet = BCRMInvokeServiceMethod(preset);
                 elps = Date.now() - ts;
@@ -5710,7 +5847,7 @@ BCRMBusinessServiceRunner = function () {
                 var m = $("#bcrm_method").val();
                 var f = "";
                 var i = {};
-                var r = true;
+                
                 $("input[id^='bcrm_ip']").each(function (x) {
                     if ($(this).val() != "") {
                         var prop = $(this).attr("id").split("_")[2];
@@ -5723,7 +5860,9 @@ BCRMBusinessServiceRunner = function () {
                 preset.service = sv;
                 preset.method = m;
                 preset.inputs = i;
+                var r = true;
                 var pdef = sv + "_" + m + "_" + f;
+
                 if (sv == "Workflow Process Manager") {
                     pdef = "WF_" + $("#bcrm_ip_ProcessName").val();
                 }
@@ -5738,8 +5877,11 @@ BCRMBusinessServiceRunner = function () {
                     pss = $("#bcrm_preset");
                     pss.append("<option value='" + pname + "'>" + pname + "</option>");
                 }
+                if (r && localStorage.getItem(ln) != null) {
+                    localStorage.setItem(ln, JSON.stringify(preset));
+                }
             },
-            "Copy PropSet": function(){
+            "Copy PropSet": function () {
                 var tempta = $("<textarea id='bcrm_temp_ta'>");
                 tempta.val($("#bcrm_outps").val());
                 tempta.appendTo("body");
@@ -5747,6 +5889,30 @@ BCRMBusinessServiceRunner = function () {
                 tempta[0].select();
                 document.execCommand('copy');
                 tempta.remove();
+            },
+            "Export eScript": function() {
+                var preset = BCRMCreatePreset();
+                var es = BCRMInvokeServiceMethod(preset,true);
+                var tempta = $("<textarea style='width:92%;margin-left:10px;overflow:auto;' id='bcrm_temp_ta'>");
+                tempta.val(es);
+                tempta.appendTo("body");
+                tempta.focus();
+                tempta[0].select();
+                document.execCommand('copy');
+                tempta.dialog({
+                    title:"eScript copied to clipboard",
+                    buttons:{
+                        "Close": function () {
+                            $(this).dialog("destroy");
+                            $("#bcrm_temp_ta").remove();
+                        }
+                    },
+                    width: 900,
+                    height: 500,
+                    open: function(){
+                        $("#bcrm_temp_ta").css("width","92%");
+                    }
+                });
             },
             "Close": function () {
                 $(this).dialog("destroy");
@@ -5772,6 +5938,7 @@ BCRMBusinessServiceRunner = function () {
                             ma.push(m);
                         }
                         $("#bcrm_method").parent().show();
+                        $("#bcrm_add_prop").show();
                         $("#bcrm_method").autocomplete({
                             source: ma,
                             minLength: 0,
@@ -5801,15 +5968,15 @@ BCRMBusinessServiceRunner = function () {
                                         else {
                                             inpc.attr("placeholder", args[a]["Storage Type"] + ":" + args[a]["Data Type"]);
                                         }
-                                        if (args[a]["Picklist"].indexOf("Integration Object") > -1){
+                                        if (args[a]["Picklist"].indexOf("Integration Object") > -1) {
                                             src = BCRMGetIOList();
                                             asel = true;
                                         }
-                                        if (args[a]["Picklist"].indexOf("Boolean") > -1){
-                                            src = ["true","false"];
+                                        if (args[a]["Picklist"].indexOf("Boolean") > -1) {
+                                            src = ["true", "false"];
                                             asel = true;
                                         }
-                                        if (asel){
+                                        if (asel) {
                                             inpc.autocomplete({
                                                 source: src,
                                                 minLength: 0,
@@ -5817,7 +5984,7 @@ BCRMBusinessServiceRunner = function () {
                                                     $(this).autocomplete('widget').zIndex(10000);
                                                 }
                                             });
-                                            inpc.focus(function(){
+                                            inpc.focus(function () {
                                                 $(this).autocomplete('search', $(this).val());
                                             });
                                             inpc.click(function () {
