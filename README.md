@@ -4,7 +4,7 @@
 
 # What's New in 21.3?
 
-User Guide: https://github.com/blacksheep-crm/devpops/blob/main/devpops_21_3_xiv.pdf
+User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Business Service Runner (meep meep)
 
