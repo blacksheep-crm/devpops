@@ -145,6 +145,9 @@ catch (e) {
 //blacksheep devpops
 //EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
 
+//TODO: Double-click on WS Banner to reload
+//TODO: Fix WS Banner after login (should not show or show default WS) 
+
 BCRMCustomizeDebugMenu = function () {
     //put your menu customizations here
     //visit the BCRMCreateDebugMenu method to see pre-defined menu items
@@ -183,9 +186,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.3.xvii";
-var devpops_version = 48;
-var devpops_tag = "Nat King Cole";
+var devpops_dver = "21.3.xxi";
+var devpops_version = 49;
+var devpops_tag = "Gary Oldman";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
@@ -680,14 +683,14 @@ BCRMButtonizeDebugMenu = function () {
         $("li#" + i).find("span").hide();
         if (typeof (BCRM_MENU[i].img) !== "undefined") {
             var imgurl = BCRM_MENU[i].img;
-            if (dv.find("span").length >= 1){
+            if (dv.find("span").length >= 1) {
                 tsp = $(dv.find("span")[0]).detach();
             }
-            else{
+            else {
                 tsp = null;
             }
             dv.text("");
-            if (tsp != null){
+            if (tsp != null) {
                 dv.append(tsp);
             }
             var ost = dv.attr("style");
@@ -699,20 +702,20 @@ BCRMButtonizeDebugMenu = function () {
             dv.css("margin-top", "1px");
             dv.css("padding-bottom", "0px");
         }
-        $("li#" + i).on("contextmenu",function(){
-            if ($(this).find("button[id^='options']").length > 0){
+        $("li#" + i).on("contextmenu", function () {
+            if ($(this).find("button[id^='options']").length > 0) {
                 $(this).find("button[id^='options']").click();
             }
-            else{
+            else {
                 $(this).find("span").show();
                 $(this).find("span").addClass("bcrm-autohide");
-                $(this).find("span").attr("style","background: #29303f;padding: 2px 4px 2px 4px;position: relative;top: 31px;border-bottom-left-radius: 10px;border-bottom-right-radius: 10px;left: -3px;");
+                $(this).find("span").attr("style", "background: #29303f;padding: 2px 4px 2px 4px;position: relative;top: 31px;border-bottom-left-radius: 10px;border-bottom-right-radius: 10px;left: -3px;");
                 $(this).find("input[type='checkbox']").hide();
-                
-                setTimeout(function(){
+
+                setTimeout(function () {
                     $(".bcrm-autohide").hide();
                     $(".bcrm-autohide").removeClass("bcrm-autohide");
-                },5000);
+                }, 5000);
             }
             return false;
         })
@@ -1300,7 +1303,7 @@ BCRMCreateDebugMenu = function () {
         BCRMButtonizeDebugMenu();
         return false;
     });
-    ug.on("click",function(){
+    ug.on("click", function () {
         window.open("https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf", "_blank");
         return false;
     })
@@ -5572,6 +5575,21 @@ BCRMGetIOList = function () {
     return r;
 };
 
+
+BCRMGetWFList = function () {
+    var sv = SiebelApp.S_App.GetService("FWK Runtime");
+    var ip = SiebelApp.S_App.NewPropertySet();
+    var op = sv.InvokeMethod("getWFList", ip).GetChildByType("ResultSet");
+    var r = [];
+    for (p in op.propArray) {
+        if (p != "CleanEmptyElements") {
+            r.push(p);
+        }
+    }
+    r.sort();
+    return r;
+};
+
 BCRMGetBSMethod = function (sn) {
     var ut = new SiebelAppFacade.BCRMUtils();
     var bsd = ut.GetBSData(sn);
@@ -5646,16 +5664,16 @@ BCRMInvokeServiceMethod = function (p, print) {
     ps.SetProperty("Expr", sExpr);
     var outputSet = service.InvokeMethod("EvalScript", ps);
     last_meep = outputSet.GetChildByType("ResultSet").GetProperty("v");
-    if (print){
+    if (print) {
         retval = sExpr;
     }
-    else{
+    else {
         retval = outputSet;
     }
     return retval;
 };
 
-BCRMCreatePreset = function(){
+BCRMCreatePreset = function () {
     var preset = {};
     var sn = "";
     var mn = "";
@@ -5682,8 +5700,151 @@ BCRMCreatePreset = function(){
     return preset;
 };
 
+BCRMCreateWFPreset = function () {
+    var p = {
+        "service": "Workflow Process Manager",
+        "method": "RunProcess",
+        "inputs": {
+            "ProcessName": "<Select Workflow Process>",
+            "RowId": SiebelApp.S_App.GetActiveView().GetActiveApplet().GetBusComp().GetFieldValue("Id")
+        }
+    };
+    localStorage.setItem("BCRM_MEEP_Run Workflow", JSON.stringify(p));
+}
+
+BCRMGetWFProps = function (wn) {
+    //get DR first, if not found get RR
+    var retval;
+    var sv = SiebelApp.S_App.GetService("FWK Runtime");
+    var ips = SiebelApp.S_App.NewPropertySet();
+    ips.SetProperty("Process Name", wn);
+    var drprops = sv.InvokeMethod("getDRWFProps", ips).GetChildByType("ResultSet");
+    var drcount = 0;
+    drcount = drprops.GetChildCount();
+    if (drcount > 0) {
+        retval = drprops;
+    }
+    else {
+        //not found in DR, we are likely running in RR, so we must dance
+        try {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var wd, ops;
+            wd = ut.GetRRData("Workflow", wn);
+            //Workflow data is base64 encoded XML
+            var b64xml = wd.GetChild(0).GetChild(0).GetProperty("Workflow Mode");
+            var xml = atob(b64xml);
+            var props = xml.split("<ListOfRepositoryWfProcessProp\n>")[1];
+            props = props.split("</ListOfRepositoryWfProcessProp\n>")[0];
+            props = '<?xml version="1.0" encoding="UTF-16"?>' + "<ListOfRepositoryWfProcessProp\n>" + props + "</ListOfRepositoryWfProcessProp\n>";
+            props = props.replaceAll("\n", "");
+            var preset = {
+                "service": "XML Converter",
+                "method": "XMLToPropSet",
+                "inputs": { "<Value>": props }
+            };
+            var r = BCRMInvokeServiceMethod(preset);
+            var opst = r.GetChildByType("ResultSet").GetProperty("v");
+            ops = SiebelApp.S_App.NewPropertySet();
+            ops.DecodeFromString(opst);
+            var outputs = SiebelApp.S_App.NewPropertySet();
+            var cps;
+            var pn, cm, dt, defs, inout, inact;
+            var dtmap = { "VARCHAR": "String", "NUMBER": "Number" };
+            var ign = ["Error Code", "Object Id", "Siebel Operation Object Id", "Error Message", "Process Instance Id", "CleanEmptyElements"];
+            if (typeof (ops) !== "undefined") {
+                for (p in ops.childArray) {
+                    if (typeof (ops.childArray[p].childArray) !== "undefined") {
+                        pn = ops.childArray[p].childArray[12].value;
+                        inout = ops.childArray[p].childArray[9].value;
+                        inact = ops.childArray[p].childArray[10].value;
+                        if (ign.indexOf(pn) == -1 && inout.indexOf("IN") == 0 && inact != "Y") {
+                            cps = SiebelApp.S_App.NewPropertySet();
+                            cm = ops.childArray[p].childArray[2].value;
+                            dt = ops.childArray[p].childArray[4].value;
+                            defs = ops.childArray[p].childArray[7].value;
+                            cps.SetProperty("InOut", inout == "INOUT" ? "In/Out" : "In");
+                            cps.SetProperty("Inactive", inact);
+                            cps.SetProperty("Comments", cm);
+                            cps.SetProperty("Data Type", dtmap[dt]);
+                            cps.SetProperty("Default String", defs);
+                            cps.SetProperty("Name", pn);
+                            outputs.AddChild(cps);
+                        }
+                    }
+                }
+                retval = outputs;
+            }
+        }
+        catch (e) {
+            alert("Could not find definition of '" + wn + "' in Runtime Repository.");
+        }
+    }
+    return retval;
+};
+
+//Enhance for Workflows
+BCRMWorkflowRunner = function () {
+    var brf = $('<button style="margin-left:16px;" title="Reload Row Id from active record" id="bcrm_del_preset">Reload</button>');
+    brf.on("click", function () {
+        $("input#bcrm_ip_RowId").val(SiebelApp.S_App.GetActiveView().GetActiveApplet().GetBusComp().GetFieldValue("Id"));
+    });
+    var inpc = $("input#bcrm_ip_ProcessName");
+    $("input#bcrm_ip_RowId").parent().find("label").after(brf);
+    var temp = $("input#bcrm_ip_RowId").parent().detach();
+    inpc.parent().after(temp);
+    inpc.parent().css("background", "lightblue");
+    inpc.parent().css("font-weight", "bold");
+    inpc.autocomplete({
+        source: BCRMGetWFList(),
+        minLength: 0,
+        open: function () {
+            $(this).autocomplete('widget').css("z-index", "10000");
+        },
+        select: function (e, ui) {
+            //cleanup
+            $(".bcrm-process-prop").remove();
+            var pn, dt, defs, cm;
+            var wn = ui.item.value;
+            var ign = ["Error Code", "Object Id", "Siebel Operation Object Id", "Error Message", "Process Instance Id", "CleanEmptyElements"];
+            var props = BCRMGetWFProps(wn);
+            if (typeof (props) !== "undefined") {
+                for (p in props.childArray) {
+                    if (p != "CleanEmptyElements") {
+                        pn = props.childArray[p].GetProperty("Name");
+                        if (ign.indexOf(pn) == -1) {
+                            cm = props.childArray[p].GetProperty("Comments");
+                            dt = props.childArray[p].GetProperty("Data Type");
+                            defs = props.childArray[p].GetProperty("Default String");
+                            var tip = $('<div class="bcrm-process-prop" style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">' + pn + ':</label></div><input id="' + 'bcrm_ip_' + pn + '" style="width:300px;"></div>');
+                            tip.find("input").attr("placeholder", "Property:" + dt);
+                            if (cm != "") {
+                                tip.find("input").attr("title", cm);
+                            }
+                            if (dt == "String" && defs != "") {
+                                tip.find("input").val(defs);
+                            }
+                            $("#bcrm_ip_RowId").parent().after(tip);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    inpc.focus(function () {
+        $(this).autocomplete('search', $(this).val());
+    });
+    inpc.click(function () {
+        $(this).autocomplete('search', "");
+    });
+};
+
+BCRMTitle = function(el,text){
+    //el.text(text);
+};
+
 //main dialog
 BCRMBusinessServiceRunner = function () {
+    BCRMCreateWFPreset();
     var ut = new SiebelAppFacade.BCRMUtils();
     var bs = ut.GetBusinessServiceList();
     var ms;
@@ -5735,7 +5896,7 @@ BCRMBusinessServiceRunner = function () {
                 int.attr("id", "bcrm_ip_<Type>");
             }
         });
-        $("#bcrm_method").parent().after(tip);
+        $("input[id^='bcrm_ip']").last().parent().after(tip);
     });
     var preset_found = false;
     var pss;
@@ -5772,16 +5933,19 @@ BCRMBusinessServiceRunner = function () {
                     $("#bcrm_method").parent().after(tip);
                 }
             }
+            if ($(this).val() == "Run Workflow") {
+                BCRMWorkflowRunner();
+            }
         });
         var delbtn = pss.parent().find("button");
-        delbtn.on("click",function(){
+        delbtn.on("click", function () {
             var pss = $(this).parent().find("#bcrm_preset");
-            if (pss.val() != "void"){
+            if (pss.val() != "void") {
                 var v = pss.val();
                 var ln = "BCRM_MEEP_" + v;
                 localStorage.removeItem(ln);
                 pss.val("void");
-                pss.find("option[value='" + v +"']").remove();
+                pss.find("option[value='" + v + "']").remove();
             }
         });
         dlg.find("#bcrm_preset").parent().show();
@@ -5831,6 +5995,8 @@ BCRMBusinessServiceRunner = function () {
                 });
             },
             "Run": function () {
+                var title = $(this).parent().find(".ui-dialog-title");
+                var tt = title.text();
                 var ts, elps;
                 var preset = BCRMCreatePreset();
                 ts = Date.now();
@@ -5840,6 +6006,10 @@ BCRMBusinessServiceRunner = function () {
                 $("#bcrm_outt").val("Time elapsed (ms):" + elps.toString() + "\n" + outputSet.GetChildByType("ResultSet").GetProperty("Result"));
                 $("#bcrm_outps").show();
                 $("#bcrm_outps").val(outputSet.GetChildByType("ResultSet").GetProperty("v"));
+                $("#bcrm_outps")[0].scrollIntoView();
+                setTimeout(function(){
+                    BCRMTitle(title,tt);
+                },200);
             },
             "Save As": function () {
                 var preset = {};
@@ -5847,7 +6017,7 @@ BCRMBusinessServiceRunner = function () {
                 var m = $("#bcrm_method").val();
                 var f = "";
                 var i = {};
-                
+
                 $("input[id^='bcrm_ip']").each(function (x) {
                     if ($(this).val() != "") {
                         var prop = $(this).attr("id").split("_")[2];
@@ -5890,9 +6060,9 @@ BCRMBusinessServiceRunner = function () {
                 document.execCommand('copy');
                 tempta.remove();
             },
-            "Export eScript": function() {
+            "Export eScript": function () {
                 var preset = BCRMCreatePreset();
-                var es = BCRMInvokeServiceMethod(preset,true);
+                var es = BCRMInvokeServiceMethod(preset, true);
                 var tempta = $("<textarea style='width:92%;margin-left:10px;overflow:auto;' id='bcrm_temp_ta'>");
                 tempta.val(es);
                 tempta.appendTo("body");
@@ -5900,8 +6070,8 @@ BCRMBusinessServiceRunner = function () {
                 tempta[0].select();
                 document.execCommand('copy');
                 tempta.dialog({
-                    title:"eScript copied to clipboard",
-                    buttons:{
+                    title: "eScript copied to clipboard",
+                    buttons: {
                         "Close": function () {
                             $(this).dialog("destroy");
                             $("#bcrm_temp_ta").remove();
@@ -5909,8 +6079,8 @@ BCRMBusinessServiceRunner = function () {
                     },
                     width: 900,
                     height: 500,
-                    open: function(){
-                        $("#bcrm_temp_ta").css("width","92%");
+                    open: function () {
+                        $("#bcrm_temp_ta").css("width", "92%");
                     }
                 });
             },
@@ -5920,6 +6090,15 @@ BCRMBusinessServiceRunner = function () {
         },
         title: "Business Service Runner (meep meep)",
         open: function () {
+            $(this).parent().find(".ui-dialog-buttonset").find("button").each(function(x){
+                if($(this).text() == "Run"){
+                    $(this).css({"cursor":"pointer","font-size":"4em", "position":"relative", "bottom":"600px", "left": "420px", "float": "left", "background": "#385427", "color": "white", "border-radius": "10px"});
+                    //$(this).draggable();
+                    $(this).on("click",function(){
+                        BCRMTitle($(this).parent().parent().parent().find(".ui-dialog-title"),"Running...");
+                    });
+                }
+            });
             setTimeout(function () {
                 $("#bcrm_service").autocomplete({
                     source: bs,
@@ -5981,7 +6160,7 @@ BCRMBusinessServiceRunner = function () {
                                                 source: src,
                                                 minLength: 0,
                                                 open: function () {
-                                                    $(this).autocomplete('widget').zIndex(10000);
+                                                    $(this).autocomplete('widget').css("z-index", "10000");
                                                 }
                                             });
                                             inpc.focus(function () {
@@ -5994,6 +6173,10 @@ BCRMBusinessServiceRunner = function () {
                                         $("#bcrm_method").parent().after(tip);
                                     }
                                 }
+                                if ($("#bcrm_service").val() == "Workflow Process Manager" && t == "RunProcess") {
+                                    BCRMWorkflowRunner();
+                                }
+
                             }
                         });
                         $("#bcrm_method").focus(function () {
