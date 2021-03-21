@@ -12,6 +12,8 @@ Business Service Runner (meep meep)
 
 21.3.xvii: add custom properties and delete presets, export escript
 
+21.3.xxi: Workflow Runner (requires 20.7 or higher). Autocomplete workflow list and WF Properties
+
 Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
 
 21.3.xvii: right-click in toolbar mode shows toggle/options
