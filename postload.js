@@ -189,7 +189,7 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.3.xvii";
+var devpops_dver = "21.3.xxvii";
 var devpops_version = 50;
 var devpops_tag = "Wilhelm Conrad Röntgen";
 var devpops_uv = 0;
@@ -6415,4 +6415,4 @@ BCRMGetWSContext = function () {
     }
 };
 
-SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this)
+SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
