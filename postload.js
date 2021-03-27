@@ -145,8 +145,11 @@ catch (e) {
 //blacksheep devpops
 //EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
 
-//TODO: Double-click on WS Banner to reload
-//TODO: Fix WS Banner after login (should not show or show default WS) 
+//TODO: Debug Menu sequence
+//Issue: Fast inspect does not appear to support inspecting new Views.
+//Done: Auto-refresh cache when new view is detected (Check for Screen object type in workspace, most likely had a screen view update)
+//Fast Inspect loses the context of the record whereas the traditional method does not. (SWE Params?)
+//Almost done: use history.back as it seems to be the most stable for now
 
 BCRMCustomizeDebugMenu = function () {
     //put your menu customizations here
@@ -186,12 +189,16 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.3.xxi";
-var devpops_version = 49;
-var devpops_tag = "Gary Oldman";
+var devpops_dver = "21.3.xvii";
+var devpops_version = 50;
+var devpops_tag = "Wilhelm Conrad Röntgen";
 var devpops_uv = 0;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
+var BCRM_SIEBEL_VERSION = "";
+var BCRM_SIEBEL_V = {};
+var BCRM_WORKSPACE = {};
+var FWK_VERSION = 0;
 
 //module configuration, most defaults and other stuff can be controlled from here
 var devpops_config = {
@@ -293,6 +300,12 @@ BCRMWSUpdateWSBanner = function (ws, ver, status) {
     $("div.applicationMenu").parent().find("#bcrm_wsui_name").remove();
     var c = BCRMWSGenerateWSBanner(ws, ver, status, "banner");
     $("div.applicationMenu").after(c);
+    if (!(BCRM_WORKSPACE.WS == sessionStorage.BCRMCurrentWorkspace && BCRM_WORKSPACE.VER == sessionStorage.BCRMCurrentWorkspaceVersion)) {
+        c.on("dblclick", function () {
+            BCRMWSFastInspect(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+        });
+        c.attr("title", c.attr("title") + "\nDouble-click to reload");
+    }
 };
 
 //workspace-helper
@@ -307,8 +320,10 @@ BCRMWSFastInspectHandler = function (cell) {
 
 //workspace-helper
 //fast inspect main function (calls server side BS)
+
 BCRMWSFastInspect = function (ws, ver, status) {
     var vn = SiebelApp.S_App.GetActiveView().GetName();
+    var loc = location;
     var vreload = true;
     if (vn == "Business Service Test View") {
         vreload = false;
@@ -332,16 +347,59 @@ BCRMWSFastInspect = function (ws, ver, status) {
             sessionStorage.BCRMCurrentWorkspaceVersion = ver;
             sessionStorage.BCRMCurrentWorkspaceStatus = status;
             if (vreload) {
-                SiebelApp.S_App.GotoView(vn);
+                //check for Screen update, which indicates a likely new view
+                try {
+                    var url = location.origin + "/siebel/v1.0/data/BCRM Modified Object/BCRM Modified Object?uniformresponse=Y&searchspec=[Object Type]=\"Screen\" AND [Workspace Name]=\"" + sessionStorage.BCRMCurrentWorkspace + "\"";
+                    var cd = $.ajax({
+                        dataType: "json",
+                        url: url,
+                        async: false
+                    });
+                    if (cd.responseJSON.items && cd.responseJSON.items.length > 0) {
+                        sessionStorage.BCRMReloadCache = "Y";
+                    }
+                }
+                catch (e) {
+                    //do nothing
+                }
+                //gotoview does not keep context, error when trying to add query parms
+                //SiebelApp.S_App.GotoView(vn,null,loc.search);
+                //SiebelApp.S_App.GotoView(vn);
+                //history seems to do the trick, but some views might not be in history
+                history.back();
+                //simple location reload causes errors
+                //location.href = hr;
             }
             else {
                 location.reload();
             }
             BCRMWSUpdateWSBanner(ws, ver, status);
+            //check for screen updates
         }
     }, 300);
 };
 
+//Auto cache refresh
+BCRMReloadCache = function () {
+    try {
+        if (sessionStorage.BCRMReloadCache == "Y") {
+            $("#bcrm_debug_msg").text("Stand by for cache refresh");
+            $("#bcrm_debug_msg").css("color", "red");
+            $("#bcrm_debug_msg").css("font-weight", "bold");
+            $("#maskoverlay").show();
+            setTimeout(function () {
+                BCRMClearCaches(true);
+                sessionStorage.BCRMReloadCache = "N";
+                setTimeout(function () {
+                    $("#bcrm_debug_msg").text("");
+                }, 3000);
+            }, 500);
+        }
+    }
+    catch (e) {
+        //do nothing
+    }
+}
 //workspace-helper
 //read workspace data for modified object list applet
 BCRMWSGetObjectDef = function (cell) {
@@ -1196,7 +1254,7 @@ BCRMCreateDebugMenu = function () {
                     },
                     "EndTime": {
                         "label": "End Time",
-                        "default": BCRMSARMTimeStamp(new Date()),
+                        "default": BCRMSARMTimeStamp(new Date(new Date() + 600000)),
                         "tip": "End Time Filter",
                         "type": "input"
                     }
@@ -1251,7 +1309,7 @@ BCRMCreateDebugMenu = function () {
                 "seq": 21,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_devpops") == "false" ? false : true,
                 "label": "devpops " + devpops_dver,
-                "title": "devpops " + devpops_dver + " (" + devpops_tag + ")\nLearn more about blacksheep-crm devpops and contribute on github.",
+                "title": "devpops " + devpops_dver + " (" + devpops_tag + ")\nSiebel Version: " + BCRM_SIEBEL_VERSION + "\nLearn more about blacksheep-crm devpops and contribute on github.",
                 "onclick": function () {
                     window.open("https://github.com/blacksheep-crm/devpops");
                     return BCRMCloseDebugMenu();
@@ -1267,7 +1325,7 @@ BCRMCreateDebugMenu = function () {
     var ul_main = $("<ul ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
 
     //create small toolbar on top of menu
-    //detach (done), rotate (TODO), config (enable/disable items (done), sequence items (TODO))
+    //detach (done), rotate (done), config (enable/disable items (done), sequence items (TODO))
     var mtb = $("<li id='bcrm_dbg_tb' style='height:36px;padding:0 0 2px 4px;background:#808080'>");
     var dtch = $('<span id="bcrm_dtch" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Undock"><a class="bcrm-dock-toggle-pin" style="color:white;"></span>');
     var bcls = $('<span id="bcrm_bcls" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Close"><a class="bcrm-dock-close" style="color:white;"></span>');
@@ -2539,7 +2597,133 @@ BCRMCheckVersion = function () {
         devpops_vcheck = true;
         devpops_uv = vd.responseJSON;
     }
+    //check FWK version
+    if (FWK_VERSION == 0) {
+        FWK_VERSION = BCRMGetFWKVersion();
+        if (FWK_VERSION < devpops_version) {
+            SiebelApp.Utils.Alert("FWK Runtime business service is out of date.\nInstall latest FWK Runtime version to avoid devpops malfunction.");
+        }
+    }
 }
+
+//open popup
+BCRMOpenPopup = function (applet, mode) {
+    //mode: 1=list, 2=form
+    var sv = SiebelApp.S_App.GetService("FWK Runtime");
+    var ip = SiebelApp.S_App.NewPropertySet();
+    ip.SetProperty("Applet Name", applet);
+    ip.SetProperty("Applet Mode", mode);
+    var op = sv.InvokeMethod("openPopup", ip);
+};
+
+//Read Tech Support Info
+BCRMGetTechSupportInfo = function () {
+    var tempcss = ".ui-widget-overlay,.ui-dialog.ui-corner-all.ui-widget.ui-widget-content.ui-front.ui-draggable.ui-resizable {display: none!important;}";
+    var st = $("<style bcrm-temp-style='yes'>" + tempcss + "</style>");
+    if ($("style[bcrm-temp-style]").length == 0) {
+        $("head").append(st);
+    }
+    BCRMOpenPopup("Technical Support Applet", "2");
+    setTimeout(function () {
+        try {
+            var pm = SiebelApp.S_App.GetActiveView().GetAppletMap()["Technical Support Applet"].GetPModel();
+            var cs = pm.Get("GetControls");
+            var cver = cs["ApplicationVersion"];
+            var crep = cs["RepositoryFile"];
+            var ws = "";
+            BCRM_SIEBEL_VERSION = pm.ExecuteMethod("GetFieldValue", cver);
+            var vt = BCRM_SIEBEL_VERSION;
+            BCRM_SIEBEL_V.y = parseInt(vt.split(".")[0]);
+            BCRM_SIEBEL_V.m = parseInt(vt.split(".")[1]);
+            ws = pm.ExecuteMethod("GetFieldValue", crep);
+            BCRM_WORKSPACE.WS = ws.split("[")[1].split("/")[0];
+            BCRM_WORKSPACE.VER = ws.split("[")[1].split("/")[1].split("]")[0];
+            BCRM_WORKSPACE.STATUS = ws.split("[")[1].split("/")[1].split("]")[1].split(" - ")[1];
+            /*
+            sessionStorage.BCRMCurrentWorkspace = BCRM_WORKSPACE.WS;
+            if (BCRM_WORKSPACE.VER == "Latest"){
+                if (isNaN(sessionStorage.BCRMCurrentWorkspaceVersion)){
+                    sessionStorage.BCRMCurrentWorkspaceVersion = BCRM_WORKSPACE.VER;
+                }
+            }
+            //sessionStorage.BCRMCurrentWorkspaceVersion = BCRM_WORKSPACE.VER;
+            sessionStorage.BCRMCurrentWorkspaceStatus = BCRM_WORKSPACE.STATUS;
+            BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+            */
+            pm.ExecuteMethod("InvokeMethod", "CloseApplet");
+        }
+        catch (e) {
+            console.log("devpops error while secretely opening the Tech Support Applet: " + e.toString());
+            $(".ui-widget-overlay").remove();
+        }
+        $("head").find("style[bcrm-temp-style]").remove();
+    }, 1000);
+};
+
+//version check
+//example input (20,7,"ge"): true if current version is greater than or equal to 20.7; false if current version is 20.6 or earlier
+BCRMSiebelVersionCheck = function (y, m, mode) {
+    //mode: lt=less than, le=less than or equal, gt=greater than, ge=greater than or equal, eq=equal
+    var curv_y = BCRM_SIEBEL_V.y;
+    var curv_m = BCRM_SIEBEL_V.m;
+    var retval = false;
+    if (mode == "ge") {
+        if (curv_y == y && curv_m >= m) {
+            retval = true;
+        }
+        if (curv_y > y) {
+            retval = true;
+        }
+    }
+    if (mode == "gt") {
+        if (curv_y == y && curv_m > m) {
+            retval = true;
+        }
+        if (curv_y > y) {
+            retval = true;
+        }
+    }
+    if (mode == "le") {
+        if (curv_y == y && curv_m <= m) {
+            retval = true;
+        }
+        if (curv_y < y) {
+            retval = true;
+        }
+    }
+    if (mode == "lt") {
+        if (curv_y == y && curv_m < m) {
+            retval = true;
+        }
+        if (curv_y < y) {
+            retval = true;
+        }
+    }
+    if (mode == "eq") {
+        if (curv_y == y && curv_m == m) {
+            retval = true;
+        }
+    }
+    return retval;
+};
+
+//FWK Runtime service version check
+BCRMGetFWKVersion = function () {
+    var retval = null;
+    var v = 0;
+    var sv = SiebelApp.S_App.GetService("FWK Runtime");
+    var ip = SiebelApp.S_App.NewPropertySet();
+    var op = sv.InvokeMethod("getFWKVersion", ip);
+    v = op.GetChildByType("ResultSet").GetProperty("FWK Version");
+    if (typeof (v) !== "undefined") {
+        retval = parseInt(v);
+    }
+    else {
+        retval = -1;
+    }
+    return retval;
+};
+
 //main postload function
 BCRMWSHelper = function () {
     try {
@@ -2578,11 +2762,6 @@ BCRMWSHelper = function () {
             //add debug button
             BCRMAddDebugButton();
 
-            //show current workspace
-            if (typeof (sessionStorage.BCRMCurrentWorkspace) !== "undefined") {
-                BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
-            }
-
             //xray handler
             for (a in am) {
                 ut.AddXrayHandler(a);
@@ -2605,6 +2784,19 @@ BCRMWSHelper = function () {
             if ($("script[src*='chart.js']").length == 0) {
                 $("head").append(cjs);
             }
+
+            //show current workspace
+            //if (typeof (sessionStorage.BCRMCurrentWorkspace) !== "undefined") {
+            if (BCRM_SIEBEL_VERSION != "") {
+                BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+            }
+
+            //get version and workspace
+            if (BCRM_SIEBEL_VERSION == "") {
+                BCRMGetTechSupportInfo();
+            }
+
+            BCRMReloadCache();
 
             //multiselect
             /*
@@ -3597,12 +3789,17 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
 //START xapuk.com utilities by Slava**********************************
 //Kudos to Slava (xapuk.com)
-BCRMClearCaches = function () {
+BCRMClearCaches = function (silent) {
     var a = SiebelApp.S_App.GetActiveView().GetActiveApplet();
     a.InvokeMethod("ClearCTEventCache");
     a.InvokeMethod("ClearLOVCache");
     a.InvokeMethod("ClearResponsibilityCache");
-    alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
+    if (silent) {
+        //silent
+    }
+    else {
+        alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
+    }
 };
 
 /* 
@@ -5784,61 +5981,67 @@ BCRMGetWFProps = function (wn) {
 
 //Enhance for Workflows
 BCRMWorkflowRunner = function () {
-    var brf = $('<button style="margin-left:16px;" title="Reload Row Id from active record" id="bcrm_del_preset">Reload</button>');
-    brf.on("click", function () {
-        $("input#bcrm_ip_RowId").val(SiebelApp.S_App.GetActiveView().GetActiveApplet().GetBusComp().GetFieldValue("Id"));
-    });
-    var inpc = $("input#bcrm_ip_ProcessName");
-    $("input#bcrm_ip_RowId").parent().find("label").after(brf);
-    var temp = $("input#bcrm_ip_RowId").parent().detach();
-    inpc.parent().after(temp);
-    inpc.parent().css("background", "lightblue");
-    inpc.parent().css("font-weight", "bold");
-    inpc.autocomplete({
-        source: BCRMGetWFList(),
-        minLength: 0,
-        open: function () {
-            $(this).autocomplete('widget').css("z-index", "10000");
-        },
-        select: function (e, ui) {
-            //cleanup
-            $(".bcrm-process-prop").remove();
-            var pn, dt, defs, cm;
-            var wn = ui.item.value;
-            var ign = ["Error Code", "Object Id", "Siebel Operation Object Id", "Error Message", "Process Instance Id", "CleanEmptyElements"];
-            var props = BCRMGetWFProps(wn);
-            if (typeof (props) !== "undefined") {
-                for (p in props.childArray) {
-                    if (p != "CleanEmptyElements") {
-                        pn = props.childArray[p].GetProperty("Name");
-                        if (ign.indexOf(pn) == -1) {
-                            cm = props.childArray[p].GetProperty("Comments");
-                            dt = props.childArray[p].GetProperty("Data Type");
-                            defs = props.childArray[p].GetProperty("Default String");
-                            var tip = $('<div class="bcrm-process-prop" style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">' + pn + ':</label></div><input id="' + 'bcrm_ip_' + pn + '" style="width:300px;"></div>');
-                            tip.find("input").attr("placeholder", "Property:" + dt);
-                            if (cm != "") {
-                                tip.find("input").attr("title", cm);
+    //only if 20.7 or later
+    if (BCRMSiebelVersionCheck(20, 7, "ge")) {
+        var brf = $('<button style="margin-left:16px;" title="Reload Row Id from active record" id="bcrm_del_preset">Reload</button>');
+        brf.on("click", function () {
+            $("input#bcrm_ip_RowId").val(SiebelApp.S_App.GetActiveView().GetActiveApplet().GetBusComp().GetFieldValue("Id"));
+        });
+        var inpc = $("input#bcrm_ip_ProcessName");
+        $("input#bcrm_ip_RowId").parent().find("label").after(brf);
+        var temp = $("input#bcrm_ip_RowId").parent().detach();
+        inpc.parent().after(temp);
+        inpc.parent().css("background", "lightblue");
+        inpc.parent().css("font-weight", "bold");
+        inpc.autocomplete({
+            source: BCRMGetWFList(),
+            minLength: 0,
+            open: function () {
+                $(this).autocomplete('widget').css("z-index", "10000");
+            },
+            select: function (e, ui) {
+                //cleanup
+                $(".bcrm-process-prop").remove();
+                var pn, dt, defs, cm;
+                var wn = ui.item.value;
+                var ign = ["Error Code", "Object Id", "Siebel Operation Object Id", "Error Message", "Process Instance Id", "CleanEmptyElements"];
+                var props = BCRMGetWFProps(wn);
+                if (typeof (props) !== "undefined") {
+                    for (p in props.childArray) {
+                        if (p != "CleanEmptyElements") {
+                            pn = props.childArray[p].GetProperty("Name");
+                            if (ign.indexOf(pn) == -1) {
+                                cm = props.childArray[p].GetProperty("Comments");
+                                dt = props.childArray[p].GetProperty("Data Type");
+                                defs = props.childArray[p].GetProperty("Default String");
+                                var tip = $('<div class="bcrm-process-prop" style="padding:2px;background:whitesmoke;"><div style="width: 200px;float:left;"><label for="bcrm_ip">' + pn + ':</label></div><input id="' + 'bcrm_ip_' + pn + '" style="width:300px;"></div>');
+                                tip.find("input").attr("placeholder", "Property:" + dt);
+                                if (cm != "") {
+                                    tip.find("input").attr("title", cm);
+                                }
+                                if (dt == "String" && defs != "") {
+                                    tip.find("input").val(defs);
+                                }
+                                $("#bcrm_ip_RowId").parent().after(tip);
                             }
-                            if (dt == "String" && defs != "") {
-                                tip.find("input").val(defs);
-                            }
-                            $("#bcrm_ip_RowId").parent().after(tip);
                         }
                     }
                 }
             }
-        }
-    });
-    inpc.focus(function () {
-        $(this).autocomplete('search', $(this).val());
-    });
-    inpc.click(function () {
-        $(this).autocomplete('search', "");
-    });
+        });
+        inpc.focus(function () {
+            $(this).autocomplete('search', $(this).val());
+        });
+        inpc.click(function () {
+            $(this).autocomplete('search', "");
+        });
+    }
+    else {
+        console.log("devpops Workflow Runner is not supported in " + BCRM_SIEBEL_V.y + "." + BCRM_SIEBEL_V.m + ". Requires 20.7 or later");
+    }
 };
 
-BCRMTitle = function(el,text){
+BCRMTitle = function (el, text) {
     //el.text(text);
 };
 
@@ -6007,9 +6210,9 @@ BCRMBusinessServiceRunner = function () {
                 $("#bcrm_outps").show();
                 $("#bcrm_outps").val(outputSet.GetChildByType("ResultSet").GetProperty("v"));
                 $("#bcrm_outps")[0].scrollIntoView();
-                setTimeout(function(){
-                    BCRMTitle(title,tt);
-                },200);
+                setTimeout(function () {
+                    BCRMTitle(title, tt);
+                }, 200);
             },
             "Save As": function () {
                 var preset = {};
@@ -6090,12 +6293,12 @@ BCRMBusinessServiceRunner = function () {
         },
         title: "Business Service Runner (meep meep)",
         open: function () {
-            $(this).parent().find(".ui-dialog-buttonset").find("button").each(function(x){
-                if($(this).text() == "Run"){
-                    $(this).css({"cursor":"pointer","font-size":"4em", "position":"relative", "bottom":"600px", "left": "420px", "float": "left", "background": "#385427", "color": "white", "border-radius": "10px"});
+            $(this).parent().find(".ui-dialog-buttonset").find("button").each(function (x) {
+                if ($(this).text() == "Run") {
+                    $(this).css({ "cursor": "pointer", "font-size": "4em", "position": "relative", "bottom": "600px", "left": "420px", "float": "left", "background": "#385427", "color": "white", "border-radius": "10px" });
                     //$(this).draggable();
-                    $(this).on("click",function(){
-                        BCRMTitle($(this).parent().parent().parent().find(".ui-dialog-title"),"Running...");
+                    $(this).on("click", function () {
+                        BCRMTitle($(this).parent().parent().parent().find(".ui-dialog-title"), "Running...");
                     });
                 }
             });
@@ -6194,3 +6397,22 @@ BCRMBusinessServiceRunner = function () {
         }
     });
 }
+
+//Workspace Banner
+//Vanilla business service to the rescue
+BCRMGetWSContext = function () {
+    try{
+        var wecp = SiebelApp.S_App.GetService("Web Engine Client Preferences");
+        var ip = SiebelApp.S_App.NewPropertySet();
+        var op = wecp.InvokeMethod("GetActiveWSContext", ip).GetChildByType("ResultSet");
+        sessionStorage.BCRMCurrentWorkspaceVersion = op.GetProperty("WSVersion");
+        sessionStorage.BCRMCurrentWorkspace = op.GetProperty("WSName");
+        sessionStorage.BCRMCurrentWorkspaceStatus = op.GetProperty("ActiveWSStatus");
+        BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+    }
+    catch(e){
+        console.log("Error in BCRMGetWSContext: " + e.toString());
+    }
+};
+
+SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this)
