@@ -8,7 +8,13 @@ User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
-21.3.xxvii;
+21.3.xxvii: Fixed workspace banner display issue
+
+21.3.xxvii: Fixed context preserve on fast inspect
+
+21.3.xxvii: Added automatic cache reload if workspace has a Screen update (most likely new View)
+
+21.3.xxvii: Added version check for FWK Runtime business service
 
 Business Service Runner (meep meep)
 
