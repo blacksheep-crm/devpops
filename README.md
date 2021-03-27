@@ -48,11 +48,13 @@ Server and Components status display (experimental REST API access)
 
 # Videos
 
-Video (early version): https://youtu.be/pesmDPSNIvw
+Video update (Siebel Friday 26-MAR-2021): https://youtu.be/ok9rEZGhKBI?t=2242
+
+Video update (Siebel Friday 26-FEB-2021): https://youtu.be/l0C8hhd1x0A?t=3473
 
 Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
 
-Video update (Siebel Friday 26-FEB-2021): https://youtu.be/l0C8hhd1x0A?t=3473
+Video (early version): https://youtu.be/pesmDPSNIvw
 
 # Installation
 
