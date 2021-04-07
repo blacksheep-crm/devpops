@@ -2,11 +2,25 @@
 
 # STRICTLY EDUCATIONAL. DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS!
 
-# What's New in 21.3?
-
 User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
+
+# What's New in 21.4?
+
+Web Tools: Register View with Responsibility from Screen Views List
+
+Web Tools: Screens Menu
+
+Persistent storage (with JSON editor)
+
+Fast Inspect Enhancements (Options, Auto Cache Refresh)
+
+Menu Persistence
+
+Break Free! Demo with Applet Layout Editor in Application (a belated easter eggo)
+
+# What's New in 21.3?
 
 21.3.xxvii: Fixed workspace banner display issue
 
@@ -81,7 +95,7 @@ Video (early version): https://youtu.be/pesmDPSNIvw
 
 11. Validate the functionality.
 
-12. Follow instructions in postload.js (ca. line 130) how to split code and register custom Open UI JS library
+12. Follow instructions in postload.js (ca. line 875) how to split code and register custom Open UI JS library
 
 # Pre-Requisites
 
