@@ -26,6 +26,7 @@ if (typeof (SiebelAppFacade.Postload) == "undefined") {
 
 //globals, keep in postload.js
 var bcrm_meta = {};
+var devpops_storage = "devpopsStorage";
 
 //get data from custom BO for Web Tools display of who else is editing an object definition
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
@@ -941,7 +942,7 @@ var BCRM_SIEBEL_VERSION = "";
 var BCRM_SIEBEL_V = {};
 var BCRM_WORKSPACE = {};
 var FWK_VERSION = 0;
-var devpops_storage = "devpopsStorage";
+
 
 //module configuration, most defaults and other stuff can be controlled from here
 var devpops_config = {
