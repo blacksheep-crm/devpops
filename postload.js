@@ -17,10 +17,10 @@ if (typeof (SiebelAppFacade.Postload) == "undefined") {
 //end of vanilla postload content
 
 //blacksheep devpops
-//EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
+//EDUCATIONAL SAMPLE!!! DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS!!!
 //copy below code to vanilla postload.js for a quick demo and validation
 //MOVE TO CUSTOM FILES BEFORE DEPLOYING
-//search for " * CODE SEPARATION" ca. line 130 for details
+//search for " * CODE SEPARATION" ca. line 875 for details
 
 //START workspace-helper*******************************************************************
 
@@ -108,12 +108,751 @@ BCRMWebToolsEnhancer = function () {
     BCRMWebToolsHighlight(pm);
 };
 
+//moved to WT code for general support
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+//Collect user credentials for use in REST calls, stored as variable BCRM_BASIC_AUTH
+var BCRM_BASIC_AUTH = "";
+BCRMGetCredentials = function (next) {
+    var dlg = $("<div id='bcrm_cred_dlg' style='display:grid;'>");
+    var user = $("<input id='username' type='text' placeholder='User Name'>");
+    var pw = $("<input id='password' type='password' placeholder='Password'>");
+    dlg.append(user);
+    dlg.append(pw);
+    dlg.dialog({
+        title: "Enter Credentials",
+        width: 540,
+        height: 200,
+        buttons: {
+            Go: function (e, ui) {
+                var un = $(this).find("#username").val();
+                var pw = $(this).find("#password").val();
+                BCRM_BASIC_AUTH = "Basic " + btoa(un + ":" + pw);
+                $(this).dialog("destroy");
+                if (next == "ent") {
+                    BCRMGetEnterprise();
+                }
+                if (next == "srv") {
+                    BCRMGetServers();
+                }
+                if (next == "com") {
+                    BCRMGetComponents();
+                }
+                if (next == "dis") {
+                    BCRMDisplayServer();
+                }
+                if (next == "addview") {
+                    BCRMAddView();
+                }
+                if (next == "upsertresp") {
+                    BCRMUpsertResp();
+                }
+                if (next == "upsertrespdlg") {
+                    BCRMUpsertRespDialog();
+                }
+            },
+            Cancel: function (e, ui) {
+                $(this).dialog("destroy");
+            }
+        }
+    });
+};
+
+//Experimental: the needs of the view
+//requires custom "Base" IOs (Base Responsibility, Base View Access)
+
+//Get List of custom responsibilities
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+var BCRM_CUSTOM_RESPS = [];
+BCRMGetRespList = function () {
+    if (true) {
+        if (BCRM_BASIC_AUTH == "") {
+            BCRMGetCredentials("getresplist");
+        }
+        else {
+            BCRM_CUSTOM_RESPS = [];
+            var url = location.origin + "/siebel/v1.0/data/Responsibility/Responsibility?uniformresponse=Y&childlinks=none&searchspec=[Id] NOT LIKE \"0*\"";
+            var qd = $.ajax({
+                dataType: "json",
+                url: url,
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                },
+            });
+            if (typeof (qd.responseJSON.items) !== "undefined") {
+                for (i in qd.responseJSON.items) {
+                    if (typeof (qd.responseJSON.items[i]["Name"]) !== "undefined")
+                        BCRM_CUSTOM_RESPS.push(qd.responseJSON.items[i]["Name"]);
+                }
+            }
+        }
+    }
+};
+
+//Add View to View List
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMAddView = function (vn) {
+    if (BCRM_BASIC_AUTH == "") {
+        sessionStorage.BCRM_NEW_VIEW = vn;
+        BCRMGetCredentials("addview");
+    }
+    else {
+        if (typeof (vn) === "undefined") {
+            vn = sessionStorage.BCRM_NEW_VIEW;
+        }
+        var url = location.origin + "/siebel/v1.0/data/View Access/Feature Access";
+        var cd = $.ajax({
+            dataType: "json",
+            url: url,
+            async: false,
+            method: "POST",
+            data: JSON.stringify({ "Name": vn }),
+            headers: {
+                "Authorization": BCRM_BASIC_AUTH,
+                "Content-Type": "application/json"
+            },
+        });
+    }
+};
+
+//Upsert Responsibility with View and current user
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMUpsertResp = function (rn, vn) {
+    var cd = {};
+    var firstauth = false;
+    if (BCRM_BASIC_AUTH == "") {
+        sessionStorage.BCRM_RESP = rn;
+        if (typeof (vn) !== "undefined") {
+            sessionStorage.BCRM_NEW_VIEW = vn;
+        }
+        cd.status = 0;
+        BCRMGetCredentials("upsertresp");
+    }
+    else {
+        if (typeof (rn) === "undefined") {
+            firstauth = true;
+            rn = sessionStorage.BCRM_RESP;
+        }
+        if (typeof (vn) === "undefined") {
+            if (typeof (sessionStorage.BCRM_NEW_VIEW) !== "undefined") {
+                vn = sessionStorage.BCRM_NEW_VIEW;
+            }
+        }
+        if (typeof (vn) !== "undefined") {
+            //add view (POST aka insert), just in case, ok if this fails (means the view is already in Views list)
+            BCRMAddView(vn);
+        }
+        //query first, need to get Id because of PUT bug in some versions
+        var rid;
+        var url = location.origin + "/siebel/v1.0/data/Responsibility/Responsibility";
+        var qd = $.ajax({
+            dataType: "json",
+            url: url + "?uniformresponse=Y&childlinks=none&fields=Name&searchspec=[Name]=\"" + rn + "\"",
+            async: false,
+            method: "GET",
+            "headers": {
+                "Authorization": BCRM_BASIC_AUTH
+            },
+        });
+        if (typeof (qd.responseJSON.items) !== "undefined") {
+            rid = qd.responseJSON.items[0]["Id"];
+        }
+        else {
+            //presume responsibility does not exist
+            rid = "dummy";
+        }
+        if (typeof (rid) !== "undefined") {
+            //Upsert
+            var data = {
+                "Id": rid,
+                "Name": rn,
+                "Description": "created by devpops",
+                "Primary Organization": "Default Organization",
+                //"ListOfFeature Access": {},
+                "ListOfUser": {
+                    "User": {
+                        "Login Name": SiebelApp.S_App.GetUserName()
+                    }
+                }
+            };
+            if (typeof (vn) !== "undefined") {
+                data["ListOfFeature Access"] = {
+                    "Feature Access": {
+                        "Name": vn
+                    }
+                };
+            }
+            cd = $.ajax({
+                dataType: "json",
+                url: url,
+                async: false,
+                method: "PUT",
+                data: JSON.stringify(data),
+                headers: {
+                    "Authorization": BCRM_BASIC_AUTH,
+                    "Content-Type": "application/json"
+                },
+            });
+            if (firstauth && typeof (cd.status) !== "undefined") {
+                if (cd.status == 200) {
+                    SiebelApp.Utils.Alert("View '" + vn + "' successfully registered with devpops Responsibility.");
+                }
+            }
+        }
+    }
+    return cd;
+};
+
+//Helper for Screen View List Applet
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMPostInvokeHandler = function (m, i, c, r) {
+    if (typeof (m) !== "undefined") {
+        if (m.indexOf("PositionOnRow") == 0) {
+            setTimeout(function () {
+                BCRMEnhanceScreenViewListApplet();
+            }, 200);
+        }
+    }
+};
+
+//Dialog to pick custom responsibility or define new one
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMUpsertRespDialog = function () {
+    var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Screen View List Applet").GetPModel();
+    var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+    var vn = r["View"];
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMGetCredentials("upsertrespdlg");
+    }
+    else {
+        BCRMGetRespList();
+        var tempcss = ".ui-dialog {z-index: 1000!important;}";
+        var st = $("<style bcrm-temp-style='yes'>" + tempcss + "</style>");
+        if ($("style[bcrm-temp-style]").length == 0) {
+            $("head").append(st);
+        }
+        var dlg = $('<div style="overflow:auto;"><div style="width: 100px;float:left;"><label for="bcrm_ip_resp">Responsibility:</label></div></div>');
+        var inpc = $('<input style="width:200px;" id="bcrm_ip_resp">');
+        inpc.autocomplete({
+            source: BCRM_CUSTOM_RESPS,
+            minLength: 0,
+            open: function () {
+                $(this).autocomplete('widget').css("z-index", "10000");
+            },
+            select: function (e, ui) {
+                localStorage.BCRM_DEFAULT_RESP = ui.item.value;
+            }
+        });
+        inpc.focus(function () {
+            $(this).autocomplete('search', $(this).val());
+        });
+        inpc.click(function () {
+            $(this).autocomplete('search', "");
+        });
+        dlg.dialog({
+            title: "Pick or Add Responsibility",
+            width: 500,
+            height: 170,
+            buttons: {
+                "Register": function () {
+                    var rn = $("#bcrm_ip_resp").val();
+                    var cd = BCRMUpsertResp(rn, vn);
+                    var s = cd.status;
+                    if (s == 200) {
+                        SiebelApp.Utils.Alert("View '" + vn + "' successfully registered with Responsibility '" + rn + "'.");
+                    }
+                    else if (s == 0) {
+                        //this is fine
+                    }
+                    else {
+                        SiebelApp.Utils.Alert("Something weird happened.\nPlease verify registration of View '" + vn + "'.");
+                    }
+                    $("style[bcrm-temp-style]").remove();
+                    $(this).dialog("destroy");
+                },
+                "Cancel": function () {
+                    $("style[bcrm-temp-style]").remove();
+                    $(this).dialog("destroy");
+                }
+            },
+            open: function () {
+                $(this).append(inpc);
+                if (typeof (localStorage.BCRM_DEFAULT_RESP) !== "undefined") {
+                    $(inpc).val(localStorage.BCRM_DEFAULT_RESP);
+                }
+            }
+        });
+    }
+}
+
+//add button for the need of the view to Screen View List Applet
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMEnhanceScreenViewListApplet = function () {
+    var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Screen View List Applet").GetPModel();
+    if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
+        pm.AttachPMBinding("ShowSelection", BCRMEnhanceScreenViewListApplet, { scope: pm, sequence: true });
+        pm.AddMethod("InvokeMethod", BCRMPostInvokeHandler, { sequence: true });
+        pm.SetProperty("BCRM_HANDLERS_ATTACHED", "true");
+    }
+    var fi = pm.Get("GetFullId");
+    var ae = $("#" + fi);
+    var bg = ae.find(".siebui-btn-grp-applet");
+    var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+    var is_active = r["Inactive"] == "N" ? true : false;
+    var vn = r["View"];
+    if (vn == "") {
+        is_active = false;
+    }
+    var btn;
+    if (ae.find("#bcrm_reg_view").length == 0) {
+        btn = $("<button id='bcrm_reg_view' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='The needs of the many outweigh the needs of the View\nAdd current View to Responsibility'>Register View</button>");
+        bg.prepend(btn);
+        btn.on("click", function () {
+            BCRMUpsertRespDialog();
+        })
+    }
+    else {
+        btn = ae.find("#bcrm_reg_view");
+    }
+    if (!is_active) {
+        btn.hide();
+    }
+    else {
+        btn.show();
+    }
+};
+
+//I hear the Screen Menu comes back in style
+
+//Get details for a screen
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetWTScreenDetail = function (screen) {
+    var url = location.origin + "/siebel/v1.0/workspace/MAIN/Screen/" + screen + "?uniformresponse=Y&childlinks=none&fields=Default View";
+    var items = [];
+    var det = {};
+    var cd = $.ajax({
+        dataType: "json",
+        url: url,
+        async: false
+    });
+    if (typeof (cd.responseJSON.items) !== "undefined") {
+        items = cd.responseJSON.items;
+        for (var i = 0; i < items.length; i++) {
+            det = {};
+            det["Default View"] = items[i]["Default View"];
+        }
+    }
+    return det;
+};
+
+//Get application screen menu items
+//Note, not filtered by responsibility (see todo section)
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetAppScreens = function (app) {
+    var retval;
+    //uses localStorage as "cache"
+    if (typeof (localStorage.BCRM_WT_SCREENS) === "undefined") {
+        var pagesize = 100;
+        var url = location.origin + "/siebel/v1.0/workspace/MAIN/Application/" + app + "/Screen Menu Item?uniformresponse=Y&childlinks=none&fields=Screen,Text - Ref Exact,Sequence&searchspec=[Inactive]=\"N\"&sortspec=Sequence:asc&PageSize=" + pagesize;
+        var items = [];
+        var scr = {};
+        var screens = {};
+        var views = [];
+        var det;
+        var cd = $.ajax({
+            dataType: "json",
+            url: url,
+            async: false
+        });
+        if (typeof (cd.responseJSON.items) !== "undefined") {
+            items = cd.responseJSON.items;
+            for (var i = 0; i < items.length; i++) {
+                var scrn = items[i]["Screen"];
+                if (scrn != "Employee ReadOnly  Screen" && scrn != "User Profile Screen") {
+                    scr = {};
+                    scr.Name = scrn;
+                    scr.Text = items[i]["Text - Ref Exact"];
+                    scr.Sequence = items[i]["Sequence"];
+                    det = BCRMGetWTScreenDetail(scrn);
+                    scr["Default View"] = det["Default View"];
+                    views = BCRMGetWTScreenViews(scrn);
+                    scr.Views = views;
+                    screens[scrn] = scr;
+                }
+            }
+        }
+        localStorage.BCRM_WT_SCREENS = JSON.stringify(screens);
+        retval = screens;
+    }
+    else {
+        retval = JSON.parse(localStorage.BCRM_WT_SCREENS);
+    }
+    return retval;
+};
+
+//Get screen views for a screen
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetWTScreenViews = function (screen) {
+    var url = location.origin + "/siebel/v1.0/workspace/MAIN/Screen/" + screen + "/Screen View?uniformresponse=Y&childlinks=none&fields=View,Menu Text - Ref Default,Sequence,Parent Category&searchspec=[Inactive]=\"N\" AND [View] IS NOT NULL&pagesize=200&sortspec=Parent Category:asc,Sequence:asc";
+    var items = [];
+    var view = {};
+    var views = [];
+    var cd = $.ajax({
+        dataType: "json",
+        url: url,
+        async: false
+    });
+    if (typeof (cd.responseJSON.items) !== "undefined") {
+        items = cd.responseJSON.items;
+        for (var i = 0; i < items.length; i++) {
+            view = {};
+            view.Name = items[i]["View"];
+            view.Text = items[i]["Menu Text - Ref Default"];
+            view.Sequence = items[i]["Sequence"];
+            view.Parent = items[i]["Parent Category"];
+            views.push(view);
+        }
+    }
+    return views;
+};
+
+//Create Screen Menu
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMCreateScreenMenu = function () {
+    var tm = $("<ul style='display:none;' class='depth-0'></ul>");
+    var vc, vi, tt, cat;
+    var cats = [];
+    var screens = BCRMGetAppScreens(SiebelApp.S_App.GetName());
+    var rscr;
+    //Recently used views
+    var rviews = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views");
+    if (typeof (rviews) !== "undefined") {
+        rscr = {
+            "Name": "Recent Views",
+            "Text": "Recent Views",
+            "Sequence": "1",
+            "Default View": ""
+        };
+        var trev = JSON.parse(rviews);
+        trev.reverse();
+        rscr.Views = trev;
+        var tscreens = {};
+        tscreens["Recent Views"] = rscr;
+        for (s in screens) {
+            tscreens[s] = screens[s];
+        }
+        screens = tscreens;
+    }
+    for (s in screens) {
+        if (typeof (screens[s]["Text"]) !== "undefined") {
+            var t = screens[s]["Text"].replaceAll("&", "");
+            var sc = $("<li class='siebui-appmenu-item ui-menu-item'><a bcrm-view='" + screens[s]["Default View"] + "' href='javascript:void(0)'>" + t + "</a></li>");
+            sc.find("a").on("click", function () {
+                var v = $(this).attr("bcrm-view");
+                if (v != "") {
+                    $("#bcrm_screen_menu").find("ul.depth-0").remove();
+                    SiebelApp.S_App.GotoView(v);
+                }
+            });
+            sc.find("a").on("mouseover", function () {
+                $(this).css("background", "#1474bf");
+            });
+            sc.find("a").on("mouseout", function () {
+                $(this).css("background", "");
+            });
+            cats = [];
+            if (screens[s]["Views"].length > 0) {
+                vc = $("<ul class='depth-1'></ul>");
+                for (vx = 0; vx < screens[s]["Views"].length; vx++) {
+                    var tv = screens[s]["Views"][vx];
+                    cat = tv["Parent"];
+                    if (cats.length == 0) {
+                        vi = $("<li class='bcrm-category' ><a style='font-weight:bold;' title='" + cat + "' href='javascript:void(0)'>" + cat + "</a></li>");
+                        vc.append(vi);
+                        cats.push(cat);
+                    }
+                    else {
+                        if (cats.indexOf(cat) == -1) {
+                            vi = $("<li class='bcrm-category'><a style='font-weight:bold;' title='" + cat + "' href='javascript:void(0)'>" + cat + "</a></li>");
+                            vc.append(vi);
+                            cats.push(cat);
+                        }
+                    }
+                    if (typeof (tv["Text"]) !== "undefined") {
+                        tt = tv["Text"].replaceAll("&", "");
+                        vi = $("<li class='siebui-appmenu-item ui-menu-item'><a style='font-size:0.95em!important;padding-left:20px!important;' title='" + tv["Name"] + "' href='javascript:void(0)'>" + tt + "</a></li>");
+                        vi.find("a").on("contextmenu", function () {
+                            var del = SiebelApp.Utils.Confirm("Click OK to delete this entry.\nClick Cancel to abort.\n\nReload might be needed after delete.");
+                            if (del) {
+                                var v = $(this).attr("title");
+                                BCRMRemoveRecentView(v);
+                            }
+                            return false;
+                        });
+                        vi.find("a").on("click", function () {
+                            var rv;
+                            var v = $(this).attr("title");
+                            if (v != "") {
+                                $("#bcrm_screen_menu").find("ul.depth-0").remove();
+                                var rviews = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views");
+                                if (typeof (rviews) === "undefined") {
+                                    rv = [];
+                                    for (s in screens) {
+                                        if (s != "Recent Views") {
+                                            for (var j = 0; j < screens[s]["Views"].length; j++) {
+                                                if (screens[s]["Views"][j]["Name"] == v) {
+                                                    rv.push(screens[s]["Views"][j]);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views", JSON.stringify(rv), "Web Tools Recent Views");
+                                }
+                                else {
+                                    rv = JSON.parse(rviews);
+                                    var found = false
+                                    for (var i = 0; i < rv.length; i++) {
+                                        if (rv[i]["Name"] == v) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        for (s in screens) {
+                                            if (s != "Recent Views") {
+                                                for (var j = 0; j < screens[s]["Views"].length; j++) {
+                                                    if (screens[s]["Views"][j]["Name"] == v) {
+                                                        rv.push(screens[s]["Views"][j]);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views", JSON.stringify(rv), "Web Tools Recent Views");
+                                    }
+                                }
+                                SiebelApp.S_App.GotoView(v);
+                            }
+                        });
+                        vi.find("a").on("mouseover", function () {
+                            $(this).css("background", "#1474bf");
+                        });
+                        vi.find("a").on("mouseout", function () {
+                            $(this).css("background", "");
+                        });
+                        vc.append(vi);
+                    }
+                }
+                sc.append(vc);
+            }
+            tm.append(sc);
+        }
+    }
+    return tm;
+};
+
+//Add Screen Menu button
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMAddWTScreenMenu = function () {
+    var m;
+    if ($("#bcrm_screen_menu").length == 0) {
+        m = $('<li title="Screen Menu brought to you by devpops\nBe gentle" id="bcrm_screen_menu" class="siebui-appmenu-item ui-menubar-item" role="presentation"><a href="javascript:void(0)" class="ui-button ui-widget ui-button-text-only ui-menubar-link" role="menuitem" aria-haspopup="true"><span class="ui-button-text">Screens</span></a></li>');
+        $(".ui-menubar").append(m);
+    }
+    var tm = BCRMCreateScreenMenu();
+    m = $("#bcrm_screen_menu");
+    m.find("a.ui-button").on("click", function () {
+        tm.toggle();
+        tm.menu({
+            items: "> :not(.bcrm-category)"
+        });
+    });
+    m.append(tm);
+};
+
+//Remove a view entry from user's recently used view list
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMRemoveRecentView = function (vn) {
+    var rviews = JSON.parse(BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views"));
+    if (typeof (rviews) !== "undefined") {
+        for (var i = 0; i < rviews.length; i++) {
+            if (rviews[i]["Name"] == vn) {
+                rviews.splice(i, 1);
+                break;
+            }
+        }
+    }
+    BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views", JSON.stringify(rviews));
+};
+
+//Next generation storage with 16k capacity and no custom table
+
+//Check if storage IO is in place
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+//dependency on Base BCRM devpops Storage IO
+BCRMStorageCheck = function () {
+    var retval = false;
+    var url = location.origin + "/siebel/v1.0/data/BCRM devpops Storage/Business Service/describe";
+    var cd;
+    if (localStorage.BCRM_STORAGE_CHECK != "true") {
+        cd = $.ajax({
+            dataType: "json",
+            url: url,
+            async: false
+        });
+        if (cd.status == 200) {
+            localStorage.BCRM_STORAGE_CHECK = "true";
+            retval = true;
+        }
+    }
+    if (localStorage.BCRM_STORAGE_CHECK == "true") {
+        retval = true;
+    }
+    return retval;
+};
+
+//Get Row Id of storage record
+//creates storage record if readonly=false
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetStorageId = function (rn, readonly) {
+    var retval;
+    if (BCRMStorageCheck() == true) {
+        //query first, need to get Id because of PUT bug in some versions
+        var rid;
+        var url = location.origin + "/siebel/v1.0/data/BCRM devpops Storage/Business Service?uniformresponse=Y";
+        var qd = $.ajax({
+            dataType: "json",
+            url: url + "&childlinks=none&fields=Name&searchspec=[Name]=\"" + rn + "\"",
+            async: false,
+            method: "GET"
+        });
+        if (typeof (qd.responseJSON.items) !== "undefined") {
+            rid = qd.responseJSON.items[0]["Id"];
+            retval = rid;
+        }
+        else {
+            //presume it does not exist
+            rid = "dummy";
+        }
+        if (!readonly) {
+            if (rid == "dummy") {
+                //Upsert
+                var data = {
+                    "Name": rn,
+                    "Comments": "EXPERIMENTAL: Used by devpops for data persistence",
+                    "Display Name": rn,
+                    "Hidden": "Y",
+                    "Cache": "N",
+                    "Inactive": "Y",
+                    "Id": rid
+                };
+                cd = $.ajax({
+                    dataType: "json",
+                    url: url,
+                    async: false,
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    data: JSON.stringify(data)
+                });
+                if (typeof (cd.responseJSON.items) !== "undefined") {
+                    rid = cd.responseJSON.items[0]["Id"];
+                    retval = rid;
+                }
+            }
+        }
+    }
+    return retval;
+};
+
+//Write item to storage, sdata must be a string (objects must be stringified when "set" and parsed after "get")
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMSetStorageItem = function (rn, sn, sdata, com) {
+    var retval = false;
+    if (BCRMStorageCheck() == true) {
+        if (typeof (com) === "undefined") {
+            com = "created by devpops";
+        }
+        var rid = BCRMGetStorageId(rn);
+        if (typeof (rid) !== "undefined") {
+            var url = location.origin + "/siebel/v1.0/data/BCRM devpops Storage/Business Service?uniformresponse=Y";
+            //Upsert
+            var data = {
+                "Name": rn,
+                "Id": rid,
+                "ListOfBusiness Service Script": {
+                    "Business Service Script": {
+                        "Name": sn,
+                        "Program Language": "JS",
+                        "Inactive": "Y",
+                        "Comments": com,
+                        "Script": sdata
+                    }
+                }
+            };
+            cd = $.ajax({
+                dataType: "json",
+                url: url,
+                async: false,
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(data)
+            });
+            if (cd.status == 200) {
+                retval = true;
+            }
+        }
+    }
+    return retval;
+};
+
+//Get value of a storage item, object data must be parsed after retrieval
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetStorageItem = function (rn, sn) {
+    var retval;
+    if (BCRMStorageCheck() == true) {
+        var rid = BCRMGetStorageId(rn, true);
+        if (typeof (rid) !== "undefined") {
+            var url = location.origin + "/siebel/v1.0/data/BCRM devpops Storage/Business Service/" + rid + "/Business Service Script?uniformresponse=Y&fields=Script&childlinks=none&searchspec=[Name]=\"" + sn + "\"";
+            cd = $.ajax({
+                dataType: "json",
+                url: url,
+                async: false,
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            if (typeof (cd.responseJSON.items) !== "undefined") {
+                retval = cd.responseJSON.items[0]["Script"];
+            }
+        }
+    }
+    return retval;
+};
+
 //main postload function for Web Tools
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWTHelper = function () {
     try {
         //enhance Web Tools
         if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
             BCRMWebToolsEnhancer();
+
+            //experimental: the need of the view
+            if (vn == "WT Repository Screen View List View") {
+                BCRMEnhanceScreenViewListApplet();
+            }
+
+            //add screen menu
+            BCRMAddWTScreenMenu();
+
             console.log("BCRM devpops extension for Siebel Web Tools loaded");
         }
     }
@@ -132,7 +871,6 @@ catch (e) {
 
 //END WSTOOLS postload.js content
 
-
 /*************************************************************************************************************************************
  * CODE SEPARATION
  * Everything below this comment can be moved to a separate, custom JS file.
@@ -146,10 +884,13 @@ catch (e) {
 //EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
 
 //TODO: Debug Menu sequence
+//Needs testing: Fix instability when switching back to MAIN WS
+//TODO: Filter view/screen list by user's responsibility
+//Done: Add param / options dialog for upsert resps
+//Done: Add admin views to Web Tools
 //Issue: Fast inspect does not appear to support inspecting new Views.
 //Done: Auto-refresh cache when new view is detected (Check for Screen object type in workspace, most likely had a screen view update)
-//Fast Inspect loses the context of the record whereas the traditional method does not. (SWE Params?)
-//Almost done: use history.back as it seems to be the most stable for now
+//Issue: Fast Inspect loses the context of the record whereas the traditional method does not. (SWE Params?)
 
 BCRMCustomizeDebugMenu = function () {
     //put your menu customizations here
@@ -189,16 +930,18 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.3.xxvii";
-var devpops_version = 50;
-var devpops_tag = "Wilhelm Conrad Röntgen";
+var devpops_dver = "21.4.vii";
+var devpops_version = 51; //50
+var devpops_tag = "Makoto Kobayashi";
 var devpops_uv = 0;
+var fwk_min_ver = 50;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
 var BCRM_SIEBEL_VERSION = "";
 var BCRM_SIEBEL_V = {};
 var BCRM_WORKSPACE = {};
 var FWK_VERSION = 0;
+var devpops_storage = "devpopsStorage";
 
 //module configuration, most defaults and other stuff can be controlled from here
 var devpops_config = {
@@ -323,26 +1066,45 @@ BCRMWSFastInspectHandler = function (cell) {
 
 BCRMWSFastInspect = function (ws, ver, status) {
     var vn = SiebelApp.S_App.GetActiveView().GetName();
+    var fio;
+    var vopt = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt");
+    if (typeof (vopt) !== "undefined") {
+        vopt = JSON.parse(vopt);
+        for (var i = 0; i < vopt.length; i++) {
+            if (vopt[i]["View"] == vn) {
+                fio = vopt[i]["fio"];
+                break;
+            }
+        }
+    }
+    if (typeof (fio) === "undefined") {
+        fio = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_gen_opt");
+    }
     var loc = location;
     var vreload = true;
     if (vn == "Business Service Test View") {
         vreload = false;
     }
     var tview = "User Profile Behavior View";
+    //tview = "WSUI Dashboard View";
+    //0331: try to fix context issue by doing gotoview1 with same view
+    if (fio == "arm") {
+        tview = vn;
+    }
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
     var ops = SiebelApp.S_App.NewPropertySet();
     ips.SetProperty("WorkspaceName", ws);
     ips.SetProperty("WorkspaceVersion", ver);
     if (vreload) {
-        SiebelApp.S_App.GotoView(tview);
+        //gotoview 1, force keep context
+        var o = "&SWECmd=GotoView&SWEView=" + tview + "&SWEKeepContext=1&SWENeedContext=false"
+        SiebelApp.S_App.GotoView(tview, "", o, null);
     }
 
     setTimeout(function () {
         ops = svc.InvokeMethod("FastInspect", ips);
-
         if (ops.GetProperty("Status") == "OK") {
-            //BCRMWSUpdateWSBanner(ws, ver, status);
             sessionStorage.BCRMCurrentWorkspace = ws;
             sessionStorage.BCRMCurrentWorkspaceVersion = ver;
             sessionStorage.BCRMCurrentWorkspaceStatus = status;
@@ -356,27 +1118,79 @@ BCRMWSFastInspect = function (ws, ver, status) {
                         async: false
                     });
                     if (cd.responseJSON.items && cd.responseJSON.items.length > 0) {
-                        sessionStorage.BCRMReloadCache = "Y";
+                        if (ws != "MAIN" && ws.indexOf("int") != 0) {
+                            sessionStorage.BCRMReloadCache = "Y";
+                        }
                     }
                 }
                 catch (e) {
                     //do nothing
                 }
-                //gotoview does not keep context, error when trying to add query parms
-                //SiebelApp.S_App.GotoView(vn,null,loc.search);
-                //SiebelApp.S_App.GotoView(vn);
-                //history seems to do the trick, but some views might not be in history
-                history.back();
-                //simple location reload causes errors
-                //location.href = hr;
+                //gotoview 2
+                if (typeof (fio) === "undefined" || fio == "rof" || fio == "arm") {
+                    var o = "&SWECmd=GotoView&SWEView=" + vn + "&SWEKeepContext=1&SWENeedContext=false"
+                    SiebelApp.S_App.GotoView(vn, "", o, null);
+                }
+                else {
+                    history.back();
+                }
             }
             else {
                 location.reload();
             }
             BCRMWSUpdateWSBanner(ws, ver, status);
-            //check for screen updates
         }
     }, 300);
+};
+
+//devpops Storage view
+BCRMGotoStorageView = function(){
+    var vn = "Business Service Script Editor View";
+    sessionStorage.BCRM_STORAGE_VIEW = "true";
+    SiebelApp.S_App.GotoView(vn);
+};
+
+//mod Storage view
+BCRMModStorageView = function(){
+    if (sessionStorage.BCRM_STORAGE_VIEW == "true"){
+        sessionStorage.BCRM_STORAGE_VIEW = "false";
+        var ut = new SiebelAppFacade.BCRMUtils();
+        var pm = SiebelApp.S_App.GetActiveView().GetApplet("Business Service Form Applet").GetPModel();
+        var ae = ut.GetAppletElem(pm);
+        var cs = pm.Get("GetControls");
+        var c = cs["Name"];
+        pm.ExecuteMethod("InvokeMethod","NewQuery");
+        pm.OnControlEvent(consts.get("PHYEVENT_CONTROL_FOCUS"), c);
+        pm.OnControlEvent(consts.get("PHYEVENT_CONTROL_BLUR"), c, devpops_storage);
+        pm.ExecuteMethod("InvokeMethod","ExecuteQuery");
+        ae.hide();
+        var lapm = SiebelApp.S_App.GetActiveView().GetApplet("Business Service Script Editor Applet").GetPModel();
+        var lae = ut.GetAppletElem(lapm);
+        lae.find(".siebui-applet-title").text("devpops Storage Items");
+        lae.parent().css("width","40%");
+        lae.parent().css("float","left");
+        var eapm = SiebelApp.S_App.GetActiveView().GetApplet("Business Service Script Editor Applet2").GetPModel();
+        var eae = ut.GetAppletElem(eapm);
+        var eapr = eapm.GetRenderer();
+        var scr = eapm.Get("GetControls")["Script"];
+        var scr_el = eapr.GetUIWrapper(scr).GetEl();
+        eae.find(".siebui-applet-title").hide();
+        eae.find(".siebui-applet-buttons").hide();
+        eae.find(".mceLabel").hide();
+        eae.find(".bcrm-rwd-layout").hide();
+        $(scr_el).css("font-family","monospace");
+
+        btn = $("<button id='bcrm_prettyprint' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Pretty Print JSON'>Pretty Print</button>");
+        btn.on("click",function(){
+            var eapm = SiebelApp.S_App.GetActiveView().GetApplet("Business Service Script Editor Applet2").GetPModel();
+            var eapr = eapm.GetRenderer();
+            var scr = eapm.Get("GetControls")["Script"];
+            var scr_el = eapr.GetUIWrapper(scr).GetEl();
+            var code = $(scr_el).val();
+            $(scr_el).val(JSON.stringify(JSON.parse($(scr_el).val()),null,4));
+        });
+        eae.find(".siebui-btn-grp-applet").prepend(btn);
+    }
 };
 
 //Auto cache refresh
@@ -397,9 +1211,10 @@ BCRMReloadCache = function () {
         }
     }
     catch (e) {
-        //do nothing
+        console.log("Error in BCRMReloadCache: " + e.toString());
     }
-}
+};
+
 //workspace-helper
 //read workspace data for modified object list applet
 BCRMWSGetObjectDef = function (cell) {
@@ -572,6 +1387,14 @@ BCRMCreateWSMenu = function (data) {
     var key, val, wsn, wss, wsl, ver;
     //additional formatting by Jason
     var ul_main = $("<ul ul style='width:min-content;text-align:left;background:whitesmoke;z-index:10000;' class='depth-0'></ul>");
+    //add toolbar
+    var mtb = $("<li id='bcrm_fi_tb' style='height:36px;padding:0 0 2px 4px;background:#808080'>");
+    var setb = $('<span id="bcrm_dtch" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="FastInspect Options"><a style="color:white;">Options</a></span>');
+    setb.find("a").on("click", function () {
+        BCRMWSFastInspectDialog();
+    });
+    mtb.append(setb);
+
     for (d in data) {
         wsn = d;
         wss = data[d]["Status"];
@@ -598,7 +1421,125 @@ BCRMCreateWSMenu = function (data) {
         BCRMWSFastInspect($(this).attr("wsn"), $(this).attr("wsv"), $(this).attr("wss"));
         $("#bcrm_ws_menu").remove();
     });
+    ul_main.prepend(mtb);
     return ul_main;
+};
+
+//Fast Inspect intro dialog
+BCRMWSFastInspectDialog = function () {
+    var dlg = $("<div id='bcrm_fi_dlg' style='overflow:auto'></div>");
+    var m = $("<div id='bcrm_fi_msg'></div>");
+    m.append("<div id='bcrm_fi_hs'>Read this information carefully.<br>devpops FastInspect allows you to open/inspect a workspace really fast but remember that<br><b>devpops is an educational sample!</b><br>If you encounter difficulties with FastInspect, try one of the options below.<br></div>");
+    m.append("<h3>Ring of Fire (Default)</h3>");
+    m.append("<div id='bcrm_fi_rof'><span><input type='radio' id='rof' name='fio' value='rof'></span>Works around potential issues by navigating to a neutral view and back again.<br>Breaks the Business Object context, but still the most stable option.<br></div>");
+    m.append("<h3>Great Balls of Fire</h3>");
+    m.append("<div id='bcrm_fi_gbo'><span><input type='radio' id='gbo' name='fio' value='gbo'></span>Uses history.back() for the return navigation.<br>Keeps BO context.<br>Works probably fine but could lead to instability and crashes.<br></div>");
+    m.append("<h3>Armageddon</h3>");
+    m.append("<div id='bcrm_fi_arm'><span><input type='radio' id='arm' name='fio' value='arm'></span>Here goes nothing.<br>Stays within the view/BO. Try this if the other options don't work.<br><hr></div>");
+    m.append("<div id='bcrm_fi_v'><span><input type='checkbox' id='bcrm_fi_v_cb'></span>Remember my choice for the current view.<br></div>");
+    m.append("<div id='bcrm_fi_x'><span><input type='checkbox' id='bcrm_fi_x_cb'></span>Do not show this again (If you make up your mind, open this dialog via the Options button in the Workspace menu).</div>");
+    dlg.append(m);
+    dlg.dialog({
+        title: "Welcome to FastInspect",
+        width: 650,
+        height: 550,
+        modal: true,
+        buttons: {
+            "Continue": function () {
+                //save values
+                var rad = $(this).find("input[name='fio']:checked").val();
+                var curv = $(this).find("#bcrm_fi_v_cb").prop("checked");
+                if (!curv) {
+                    BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_gen_opt", rad, "General option for Fast Inspect");
+                }
+                var donotshow = $(this).find("#bcrm_fi_x_cb").prop("checked");
+                if (donotshow) {
+                    localStorage.BCRM_SHOW_FI_DIALOG = "false";
+                }
+                else {
+                    localStorage.BCRM_SHOW_FI_DIALOG = "true";
+                }
+
+                if (curv) {
+                    var vn = SiebelApp.S_App.GetActiveView().GetName();
+                    var opt = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt");
+                    var vop = {};
+                    var found = false;
+                    if (typeof (opt) !== "undefined") {
+                        opt = JSON.parse(opt);
+                        for (var i = 0; i < opt.length; i++) {
+                            if (opt[i]["View"] == vn) {
+                                found = true;
+                                opt[i]["fio"] = rad;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            vop["View"] = vn;
+                            vop["fio"] = rad;
+                            opt.push(vop);
+                        }
+                    }
+                    else {
+                        opt = [];
+                        vop["View"] = vn;
+                        vop["fio"] = rad;
+                        opt.push(vop);
+                    }
+                    BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt", JSON.stringify(opt), "View-specific options for Fast Inspect");
+                }
+                else {
+                    //need to delete view if saved in storage
+                    var vn = SiebelApp.S_App.GetActiveView().GetName();
+                    var opt = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt");
+                    if (typeof (opt) !== "undefined") {
+                        opt = JSON.parse(opt);
+                        for (var i = 0; i < opt.length; i++) {
+                            if (opt[i]["View"] == vn) {
+                                opt.splice(i, 1);
+                                BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt", JSON.stringify(opt), "View-specific options for Fast Inspect");
+                                break;
+                            }
+                        }
+                    }
+                }
+                $(this).dialog("destroy");
+            },
+            "Cancel": function () {
+                $(this).dialog("destroy");
+            }
+        },
+        open: function () {
+            //default
+            $(this).find("#rof")[0].checked = true;
+            if (localStorage.BCRM_SHOW_FI_DIALOG == "false") {
+                $(this).find("#bcrm_fi_x_cb").prop("checked", true);
+            }
+            //view options
+            var hasviewopt = false;
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            var opt = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt");
+            var fio = "";
+            if (typeof (opt) !== "undefined") {
+                opt = JSON.parse(opt);
+                for (var i = 0; i < opt.length; i++) {
+                    if (opt[i]["View"] == vn) {
+                        hasviewopt = true;
+                        fio = opt[i]["fio"];
+                        $(this).find("#" + fio)[0].checked = true;
+                        $(this).find("#bcrm_fi_v_cb").prop("checked", true);
+                        break;
+                    }
+                }
+            }
+            if (!hasviewopt) {
+                fio = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_gen_opt");
+                if (typeof (fio) != "undefined") {
+                    $(this).find("#" + fio)[0].checked = true;
+                }
+            }
+        }
+    });
 };
 
 //workspace-helper
@@ -617,6 +1558,10 @@ BCRMWSIconEnhancer = function () {
             $("#SiebComposerConfig").on("contextmenu", function (e) {
                 var ws = BCRMGetWorkspaceList();
                 if ($("#bcrm_ws_menu").length == 0) {
+                    if (typeof (localStorage.BCRM_SHOW_FI_DIALOG) === "undefined" || localStorage.BCRM_SHOW_FI_DIALOG != "false") {
+                        BCRMWSFastInspectDialog();
+                    }
+
                     var mc = $("<div id='bcrm_ws_menu'></div>");
                     var menu = BCRMCreateWSMenu(ws);
                     mc.append(menu);
@@ -723,7 +1668,11 @@ BCRMButtonizeDebugMenu = function () {
     BCRMStopEditDebugMenu();
     if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
         adjust = true;
-        $("#bcrm_dbg_menu").draggable();
+        $("#bcrm_dbg_menu").draggable({
+            stop: function (e,ui){
+                localStorage.BCRM_MENU_POS = JSON.stringify(ui.offset);
+            }
+        });
         $("#bcrm_dbg_tb").css("cursor", "move");
         $("#bcrm_bcls").show();
     }
@@ -788,6 +1737,7 @@ BCRMButtonizeDebugMenu = function () {
         $("#bcrm_dbg_menu ul").css("left", newl.toString() + "px");
     }
     $("#bcrm_dbg_menu ul").addClass("bcrm-tb");
+    localStorage.BCRM_MENU_STATE = "toolbar";
 };
 
 var BCRM_MENU;
@@ -1051,6 +2001,18 @@ BCRMCreateDebugMenu = function () {
                 },
                 "img": "images/grid_matte_persongrid.png"
             },
+            "GotoView2": {
+                "seq": 22,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_GotoView2") == "false" ? false : true,
+                "label": "devpops Storage",
+                "title": "View/edit devpops persistent storage",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMGotoStorageView();
+                    return r;
+                },
+                "img": "images/grid_matte_pricetag.png"
+            },
             "ClearCaches": {
                 "seq": 10,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_ClearCaches") == "false" ? false : true,
@@ -1248,13 +2210,13 @@ BCRMCreateDebugMenu = function () {
                     "StartTime": {
                         "label": "Start Time",
                         //default time range: last 10 minutes
-                        "default": BCRMSARMTimeStamp(new Date(new Date() - 600000)),
+                        "default": BCRMSARMTimeStamp(new Date(Date.now() - 600000)),
                         "tip": "Start Time Filter",
                         "type": "input"
                     },
                     "EndTime": {
                         "label": "End Time",
-                        "default": BCRMSARMTimeStamp(new Date(new Date() + 600000)),
+                        "default": BCRMSARMTimeStamp(new Date(Date.now() + 600000)),
                         "tip": "End Time Filter",
                         "type": "input"
                     }
@@ -1280,6 +2242,7 @@ BCRMCreateDebugMenu = function () {
                     }
                     return r;
                 },
+                "showtoggle": true,
                 "img": "images/grid_matte_formwrench.png"
             },
             "SiebelHub": {
@@ -1334,7 +2297,12 @@ BCRMCreateDebugMenu = function () {
     var beds = $('<span id="bcrm_beds" style="cursor:pointer;display:none;height:32px;float: right; margin-right: 6px;" title="Save"><a class="bcrm-dock-save" style="color:white;"></span>');
     var rot = $('<span id="bcrm_rot" style="cursor:pointer;height:32px;float: right; margin-right: 6px;" title="Rotate"><a class="bcrm-dock-rot" style="color:white;"></span>');
     dtch.on("click", function (e, ui) {
-        $("#bcrm_dbg_menu").draggable();
+        $("#bcrm_dbg_menu").draggable({
+            stop: function (e,ui){
+                localStorage.BCRM_MENU_POS = JSON.stringify(ui.offset);
+            }
+        });
+        localStorage.BCRM_MENU_STATE = "detach";
         $("#bcrm_dbg_tb").css("cursor", "move");
         $("#bcrm_dbg_tb").append("<span id='bcrm_drag' style='font-size:0.8em;'>drag me</span>");
         setTimeout(function () {
@@ -1345,6 +2313,8 @@ BCRMCreateDebugMenu = function () {
         return false;
     });
     bcls.on("click", function (e, ui) {
+        localStorage.BCRM_MENU_STATE = "";
+        localStorage.removeItem("BCRM_MENU_POS");
         $("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
     });
     bed.on("click", function () {
@@ -1414,32 +2384,61 @@ BCRMCreateDebugMenu = function () {
             }
             if (BCRM_MENU[i].showtoggle) {
                 var tog = $('<span style="height:32px;float: right; margin-right: 6px;" title="Set/unset this toggle cycle as default"><input class="bcrm-toggle" style="height: 0;width: 0;visibility: hidden;" type="checkbox" id="toggle_' + i + '"><label class="bcrm-toggle-label" for="toggle_' + i + '" style="cursor: pointer;text-indent: -9999px;width: 35px;height: 15px;background: grey;display: inline-block;border-radius: 100px;position: relative;top: 12px;">Toggle</label></span>');
-                $(tog).find("label").on("click", function (e, ui) {
-                    e.stopImmediatePropagation();
-                    var ip = $(this).attr("for");
-                    $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
-                    var checked = $("input#" + ip).prop("checked");
-                    if (checked) {
-                        sessionStorage.BCRM_TOGGLE_DEFAULT = ip.split("_")[1];
-                        $("input.bcrm-toggle").each(function (x) {
-                            if ($(this).attr("id") != ip && $(this).prop("checked")) {
-                                $(this).prop("checked", false);
-                            }
-                        });
-                        $("#bcrm_debug_msg").text("X-Ray default set to: " + ip.split("_")[1]);
-                    }
-                    else {
-                        sessionStorage.BCRM_TOGGLE_DEFAULT = "";
-                        $("#bcrm_debug_msg").text("");
-                    }
-                    return false;
-                });
+                if (i == "freeform") {
+                    $(tog).find("label").on("click", function (e, ui) {
+                        e.stopImmediatePropagation();
+                        var ip = $(this).attr("for");
+                        $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
+                        var checked = $("input#" + ip).prop("checked");
+                        if (checked) {
+                            sessionStorage.BCRM_BREAK_FREE = "true";
+                            $("#bcrm_debug_msg").text("Break Free Demo set as default");
+                        }
+                        else {
+                            sessionStorage.BCRM_BREAK_FREE = "false";
+                            $("#bcrm_debug_msg").text("");
+                        }
+                        return false;
+                    });
+                }
+                else {
+                    $(tog).find("label").on("click", function (e, ui) {
+                        e.stopImmediatePropagation();
+                        var ip = $(this).attr("for");
+                        $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
+                        var checked = $("input#" + ip).prop("checked");
+                        if (checked) {
+                            sessionStorage.BCRM_TOGGLE_DEFAULT = ip.split("_")[1];
+                            $("input.bcrm-toggle").not("#toggle_freeform").each(function (x) {
+                                if ($(this).attr("id") != ip && $(this).prop("checked")) {
+                                    $(this).prop("checked", false);
+                                }
+                            });
+                            $("#bcrm_debug_msg").text("X-Ray default set to: " + ip.split("_")[1]);
+                        }
+                        else {
+                            sessionStorage.BCRM_TOGGLE_DEFAULT = "";
+                            $("#bcrm_debug_msg").text("");
+                        }
+                        return false;
+                    });
+                }
                 dv.append(tog);
-                if (sessionStorage.BCRM_TOGGLE_DEFAULT == i) {
-                    tog.find("input").attr("bcrm-checked", "true");
-                    setTimeout(function () {
-                        $("input[bcrm-checked='true']").prop("checked", true);
-                    }, 50)
+                if (i == "freeform") {
+                    if (sessionStorage.BCRM_BREAK_FREE == "true") {
+                        tog.find("input").attr("bcrm-bf-checked", "true");
+                        setTimeout(function () {
+                            $("input[bcrm-bf-checked='true']").prop("checked", true);
+                        }, 50)
+                    }
+                }
+                else {
+                    if (sessionStorage.BCRM_TOGGLE_DEFAULT == i) {
+                        tog.find("input").attr("bcrm-checked", "true");
+                        setTimeout(function () {
+                            $("input[bcrm-checked='true']").prop("checked", true);
+                        }, 50)
+                    }
                 }
             }
             if (hasresp && BCRM_MENU[i].showoptions) {
@@ -1468,18 +2467,24 @@ BCRMCreateDebugMenu = function () {
                                 ic.append($("<option value='" + opt.lov[i] + "'>" + opt.lov[i] + "</option>"));
                             }
                         }
-                        if (localStorage.getItem(sn) !== null) {
-                            if (id == "ShowSARM") {
-                                if (o == "StartTime" || o == "EndTime") {
-                                    ic.val(opt.default);
-                                }
-                                else {
-                                    ic.val(localStorage.getItem(sn));
-                                }
+                        if (id == "ShowSARM") {
+                            if (o == "StartTime") {
+                                //ic.val(opt.default);
+                                ic.val(BCRMSARMTimeStamp(new Date(Date.now() - 600000)));
                             }
-                            else {
+                            else if (o == "EndTime") {
+                                //ic.val(opt.default);
+                                ic.val(BCRMSARMTimeStamp(new Date(Date.now() + 600000)));
+                            }
+                            else if (localStorage.getItem(sn) !== null) {
                                 ic.val(localStorage.getItem(sn));
                             }
+                            else {
+                                ic.val(opt.default);
+                            }
+                        }
+                        else if (localStorage.getItem(sn) !== null) {
+                            ic.val(localStorage.getItem(sn));
                         }
                         else {
                             ic.val(opt.default);
@@ -1608,6 +2613,29 @@ BCRMAddDebugButton = function () {
             }
             return false;
         });
+        //restore state
+        if (localStorage.BCRM_MENU_STATE == "toolbar"){
+            $(btn.find("li")[0]).click();
+            setTimeout(function(){
+                $("#bcrm_rot").click();
+                setTimeout(function(){
+                    if (typeof(localStorage.BCRM_MENU_POS) !== "undefined"){
+                        $("#bcrm_dbg_menu").offset(JSON.parse(localStorage.BCRM_MENU_POS));
+                    }
+                },10);
+            },30);
+        }
+        if (localStorage.BCRM_MENU_STATE == "detach"){
+            $(btn.find("li")[0]).click();
+            setTimeout(function(){
+                $("#bcrm_dtch").click();
+                setTimeout(function(){
+                    if (typeof(localStorage.BCRM_MENU_POS) !== "undefined"){
+                        $("#bcrm_dbg_menu").offset(JSON.parse(localStorage.BCRM_MENU_POS));
+                    }
+                },10);
+            },30);
+        }
     }
     //add message area
     if ($("#bcrm_debug_msg").length == 0) {
@@ -2587,6 +3615,23 @@ BCRMApplyDefaultXray = function () {
     }
 };
 
+//break free postload helper
+BCRMApplyDefaultBreakFree = function () {
+    var ut = new SiebelAppFacade.BCRMUtils();
+    var rwd = new SiebelAppFacade.BCRMRWDFactory();
+    var t = sessionStorage.BCRM_BREAK_FREE;
+    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    if (typeof (t) !== "undefined") {
+        if (t == "true") {
+            for (a in am) {
+                if (ut.GetAppletType(a) == "form") {
+                    rwd.BCRMMakeGridResponsive(a);
+                }
+            }
+        }
+    }
+}
+//version checker
 BCRMCheckVersion = function () {
     if (!devpops_vcheck) {
         var vd = $.ajax({
@@ -2600,7 +3645,7 @@ BCRMCheckVersion = function () {
     //check FWK version
     if (FWK_VERSION == 0) {
         FWK_VERSION = BCRMGetFWKVersion();
-        if (FWK_VERSION < devpops_version) {
+        if (FWK_VERSION < fwk_min_ver) {
             SiebelApp.Utils.Alert("FWK Runtime business service is out of date.\nInstall latest FWK Runtime version to avoid devpops malfunction.");
         }
     }
@@ -2656,6 +3701,7 @@ BCRMGetTechSupportInfo = function () {
             console.log("devpops error while secretely opening the Tech Support Applet: " + e.toString());
             $(".ui-widget-overlay").remove();
         }
+        $(".ui-widget-overlay").remove();
         $("head").find("style[bcrm-temp-style]").remove();
     }, 1000);
 };
@@ -2748,12 +3794,6 @@ BCRMWSHelper = function () {
             BCRMWSEnhancer(pm);
         }
 
-        //enhance Web Tools
-        /*
-        if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
-            BCRMWebToolsEnhancer();
-        }
-        */
         //enhance application
         if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools") {
             //add right click handler to Dashboard icon
@@ -2796,8 +3836,16 @@ BCRMWSHelper = function () {
                 BCRMGetTechSupportInfo();
             }
 
+            //reload cache if necessary
             BCRMReloadCache();
 
+            //default break free demo
+            BCRMApplyDefaultBreakFree();
+
+            //devpops storage view mod
+            if (vn == "Business Service Script Editor View"){
+                BCRMModStorageView();
+            }
             //multiselect
             /*
             var mjs = $('<script src="scripts/siebel/custom/ui.multiselect.js"></script>');
@@ -3790,16 +4838,22 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 //START xapuk.com utilities by Slava**********************************
 //Kudos to Slava (xapuk.com)
 BCRMClearCaches = function (silent) {
-    var a = SiebelApp.S_App.GetActiveView().GetActiveApplet();
-    a.InvokeMethod("ClearCTEventCache");
-    a.InvokeMethod("ClearLOVCache");
-    a.InvokeMethod("ClearResponsibilityCache");
-    if (silent) {
-        //silent
+    try {
+        var a = SiebelApp.S_App.GetActiveView().GetActiveApplet();
+        a.InvokeMethod("ClearCTEventCache");
+        a.InvokeMethod("ClearLOVCache");
+        a.InvokeMethod("ClearResponsibilityCache");
+        if (silent) {
+            //silent
+        }
+        else {
+            alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
+        }
     }
-    else {
-        alert("Caches cleared:\nRuntime Events\nLOVs\nResponsibility");
+    catch (e) {
+        console.log("Error in BCRMClearCaches: " + e.toString());
     }
+
 };
 
 /* 
@@ -4967,6 +6021,8 @@ BCRMGetResps = function () {
     return BCRMQuickEval("GetProfileAttrAsList(\"User Responsibilities\")");
 };
 
+var BCRM_RWD_FPM = false;
+var BCRM_RWD_FAR = [];
 //Really Free Grid Layout (from Siebel2Phone, simplified)
 if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
     SiebelJS.Namespace("SiebelAppFacade.BCRMRWDFactory");
@@ -4974,12 +6030,324 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
     SiebelAppFacade.BCRMRWDFactory = (function () {
         function BCRMRWDFactory(options) { }
 
-        BCRMRWDFactory.prototype.BCRMMakeGridResponsive = function (pm) {
+        BCRMRWDFactory.prototype.SaveConfig = function (el, size, css, cond) {
+            var resize = false;
+            var style = false;
+            var conditional = false;
+            var fconf = {};
+            if (typeof (size) !== "undefined") {
+                resize = true;
+            }
+            if (typeof (css) !== "undefined") {
+                style = true;
+            }
+            if (typeof (cond) !== "undefined") {
+                conditional = true;
+            }
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var inames = [];
+            var fields = [];
+            var pm = ut.ValidateContext($(el).closest(".siebui-applet").parent().attr("id"));
+            var ae = ut.GetAppletElem(pm);
+            var an = pm.GetObjName();
+            var acc;
+            var cs = pm.Get("GetControls");
+            var el_iname = $(el).find(".mceGridField").attr("data-iname");
+            var el_fn;
+            for (c in cs) {
+                if (cs[c].GetInputName() == el_iname) {
+                    el_fn = cs[c].GetFieldName();
+                }
+            }
+            var sn = "@" + an;
+            var fn;
+            var oldconfig;
+            oldconfig = BCRMGetStorageItem(devpops_storage, sn);
+            if (typeof (oldconfig) !== "undefined") {
+                oldconfig = JSON.parse(oldconfig);
+            }
+            else {
+                oldconfig = sessionStorage.getItem("BCRM_APPLET_CFG_" + an);
+                if (oldconfig != null) {
+                    oldconfig = JSON.parse(oldconfig);
+                }
+            }
+            //for each section...
+            ae.find(".ui-accordion-content").each(function () {
+                inames = [];
+                fields = [];
+                acc = $(this).attr("aria-labelledby");
+                //...find all grid wrappers within section...
+                $(this).find(".bcrm-new-grid-wrap").each(function (x) {
+                    //...and get the control name
+                    inames.push($(this).find(".mceGridField").attr("data-iname"));
+                });
+                //get field names for each control found
+                for (var i = 0; i < inames.length; i++) {
+                    for (c in cs) {
+                        if (cs[c].GetInputName() == inames[i]) {
+                            fn = cs[c].GetFieldName();
+                            fields.push(fn);
+                            fconf[fn] = {};
+                        }
+                    }
+                }
 
+                //save field sequence for section
+                if (oldconfig != null) {
+                    oldconfig[acc]["fields"] = fields;
+                }
+            });
+            //save field style override
+            if (resize) {
+                if (typeof (oldconfig["ov"]) !== "undefined") {
+                    for (fc in oldconfig["ov"]) {
+                        if (fc == el_fn) {
+                            oldconfig["ov"][el_fn].size = size;
+                        }
+                    }
+                }
+                else {
+                    fconf[el_fn].size = size;
+                    oldconfig["ov"] = fconf;
+                }
+            }
+            if (style) {
+                if (typeof (oldconfig["ov"]) !== "undefined") {
+                    for (fc in oldconfig["ov"]) {
+                        if (fc == el_fn) {
+                            oldconfig["ov"][el_fn].css = css;
+                            if (conditional) {
+                                oldconfig["ov"][el_fn].cond = cond;
+                            }
+                        }
+                    }
+                }
+                else {
+                    fconf[el_fn].css = css;
+                    if (conditional) {
+                        fconf[el_fn].cond = cond;
+                    }
+                    oldconfig["ov"] = fconf;
+                }
+            }
+            BCRMSetStorageItem(devpops_storage, sn, JSON.stringify(oldconfig), "RWD Factory Applet Configuration");
+        };
+
+        BCRMRWDFactory.prototype.ShowFieldOptions = function (pm, iname) {
+            var cs = pm.Get("GetControls");
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var ae = ut.GetAppletElem(pm);
+            var el = ae.find(".mceGridField[data-iname='" + iname + "']").parent();
+            var an = pm.GetObjName();
+            var fn;
+            var template = "font-size:1.2em;\nbackground:lavender;";
+
+            var oldex;
+            for (c in cs) {
+                if (cs[c].GetInputName() == iname) {
+                    fn = cs[c].GetFieldName();
+                    break;
+                }
+            }
+            var exprtemplate = "[" + fn + "] = \"CHANGE_ME\"";
+            var sn = "@" + an;
+            var appletconfig = BCRMGetStorageItem(devpops_storage, sn);
+            if (typeof (appletconfig) !== "undefined") {
+                appletconfig = JSON.parse(appletconfig);
+            }
+            var fconf;
+            var fstyle;
+            var fcond;
+            if (typeof (appletconfig) !== "undefined" && typeof (appletconfig["ov"]) !== "undefined") {
+                fconf = appletconfig["ov"][fn];
+                if (typeof (fconf) !== "undefined") {
+                    fstyle = fconf["css"];
+                    if (typeof (fconf["cond"]) !== "undefined") {
+                        fcond = fconf["cond"];
+                    }
+                }
+            }
+            var dlg = $("<div id='bcrm_fopt_dlg' style='overflow:auto;'>");
+            var ex = $("<div>Conditional Expression (Siebel Query Language)</div><textarea id='bcrm_fopt_ex' style='width:400px;height:80px;overflow:auto;'>");
+            var ta = $("<div id='bcrm_cm'>");
+            dlg.append(ta);
+            dlg.append(ex);
+            var oldval;
+            var oldex;
+            if (typeof (fstyle) !== "undefined") {
+                oldval = JSON.stringify(fstyle);
+            }
+            else {
+                oldval = template;
+            }
+            if (typeof (fcond) !== "undefined") {
+                oldex = fcond;
+            }
+            else {
+                oldex = exprtemplate;
+            }
+            ex.val(oldex);
+            dlg.dialog({
+                title: "Layout Options for " + fn,
+                width: 450,
+                height: 450,
+                buttons: {
+                    "Preview": function () {
+                        var inp = ae.find(".mceGridField[data-iname='" + iname + "']").find("input");
+                        var css = $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.getValue();
+                        var stl = inp.attr("style");
+                        if (typeof (inp.attr("bcrm-stl")) === "undefined") {
+                            inp.attr("bcrm-stl", stl);
+                        }
+                        else {
+                            stl = inp.attr("bcrm-stl");
+                        }
+                        stl += css;
+                        inp.attr("style", stl);
+                        var el = inp.closest(".bcrm-new-grid-wrap");
+                        if (css.indexOf("display:none") > -1) {
+                            el.addClass("bcrm-ov-hide");
+                            el.hide();
+                        }
+                        else {
+                            el.removeClass("bcrm-ov-hide");
+                            el.show();
+                        }
+                    },
+                    "Save": function () {
+                        var n;
+                        var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                        var css = $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.getValue();
+                        var expr = $("#bcrm_fopt_ex").val();
+                        if (expr.indexOf("CHANGE_ME") == -1) {
+                            rwd.SaveConfig(el, n, css, expr);
+                        }
+                        rwd.SaveConfig(el, n, css);
+                        $(this).dialog("destroy");
+                    },
+                    "Cancel": function () {
+                        $(this).dialog("destroy");
+                    }
+                },
+                open: function () {
+                    var val = oldval.replaceAll("\"", "");
+                    val = val.replaceAll("\\n", "\n");
+                    CodeMirror($("#bcrm_cm")[0], {
+                        value: val,
+                        mode: "json",
+                        lineNumbers: true
+                    });
+                    $(".CodeMirror-scroll").height(150);
+                    $(".CodeMirror.cm-s-default").height(200);
+                }
+            })
+        };
+
+        BCRMRWDFactory.prototype.ApplyOverrides = function (pmi) {
+            var m, pm;
+            if (typeof (pmi.Get) !== "function") {
+                m = pmi;
+                pm = this;
+                BCRM_RWD_FPM = true;
+            }
+            else {
+                pm = pmi;
+            }
+            var rwd = new SiebelAppFacade.BCRMRWDFactory();
+            var appletconfig = rwd.GetConfig(pm);
+            var ov = appletconfig["ov"];
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var ae = ut.GetAppletElem(pm);
+
+            if (typeof (ov) !== "undefined") {
+                if (typeof (m) === "undefined" || m == "WriteRecord") {
+                    var cs = pm.Get("GetControls");
+                    for (f in ov) {
+                        if (!$.isEmptyObject(ov[f])) {
+                            for (c in cs) {
+                                if (c != "Name Title") {
+                                    if (cs[c].GetFieldName() == f) {
+                                        var iname = cs[c].GetInputName();
+                                        var t = ae.find(".mceGridField[data-iname='" + iname + "']");
+                                        if (t.length == 1) {
+                                            var el = t.parent();
+                                            var c = t.find(":input");
+                                            //size override
+                                            if (typeof (ov[f].size) !== "undefined") {
+                                                var size = ov[f].size;
+                                                el.width(size.wd);
+                                                el.height(size.hd);
+                                                c.width(size.cw);
+                                                c.height(size.ch);
+                                            }
+
+                                            //style override
+
+                                            if (BCRM_RWD_FAR.indexOf(f) == -1 || typeof (c.attr("bcrm-ov")) === "undefined") {
+                                                c.attr("bcrm-ov", "true");
+                                                BCRM_RWD_FAR.push(f);
+                                                var eval;
+                                                if (typeof (ov[f].cond) !== "undefined") {
+                                                    if (ov[f].cond != "") {
+                                                        eval = BCRMQuickEval(ov[f].cond, "", pm.Get("GetBusComp").GetName());
+                                                    }
+                                                    else {
+                                                        eval = "Y";
+                                                    }
+                                                    if (eval == "Y") {
+                                                        eval = true;
+                                                        if (pm.Get("BCRM_OV_CONDITION") !== "true") {
+                                                            pm.AddMethod("InvokeMethod", rwd.ApplyOverrides, { sequence: true, scope: pm });
+                                                            //pm.AttachPMBinding("FieldChange",rwd.ApplyOverrides,{sequence:true, scope:pm});
+                                                            pm.SetProperty("BCRM_OV_CONDITION", "true");
+                                                        }
+                                                    }
+                                                    else {
+                                                        eval = false;
+                                                    }
+                                                }
+                                                else {
+                                                    eval = true;
+                                                }
+                                                if (eval) {
+                                                    if (typeof (ov[f].css) !== "undefined") {
+                                                        var stl = c.attr("style");
+                                                        var nstl = ov[f].css;
+                                                        if (nstl.indexOf("display:none") > -1) {
+                                                            el.addClass("bcrm-ov-hide");
+                                                            el.hide();
+                                                        }
+                                                        else {
+                                                            el.removeClass("bcrm-ov-hide");
+                                                            el.show();
+                                                        }
+                                                        stl += nstl;
+                                                        c.attr("style", stl);
+                                                        //c.css(ov[f].css);
+                                                    }
+                                                }
+                                                else {
+                                                    c.css("background", "");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    BCRM_RWD_FPM = false;
+                    BCRM_RWD_FAR = [];
+                }
+            }
+        };
+
+        BCRMRWDFactory.prototype.BCRMMakeGridResponsive = function (pm) {
             var utils = new SiebelAppFacade.BCRMUtils();
+            var rwd = new SiebelAppFacade.BCRMRWDFactory();
             var ts = Date.now();
             var exp = false;  //switch to export applet layout to conf object
-
             pm = utils.ValidateContext(pm);
             var ae = utils.GetAppletElem(pm);
             var tb = ae.find("table.GridBack");
@@ -4991,6 +6359,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
             //start
             if (true) {
                 var appletconfig = this.GetConfig(pm);
+                sessionStorage.setItem("BCRM_APPLET_CFG_" + an, JSON.stringify(appletconfig));
                 var newgriddiv = this.GetResponsiveGrid(pm, appletconfig);
             }
 
@@ -5003,8 +6372,11 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
                 active: 0,
             };
             //ae.find("#bcrm_section_container").accordion(acconf);
+
+            //post-conversion tasks (styles, overrides)
             setTimeout(function () {
                 ae.find("#bcrm_section_container").find(".ui-accordion-content").each(function (x) {
+                    /*CSS Grid Example
                     $(this).css({
                         "display": "grid",
                         "grid-template-columns": "repeat(auto-fit, 245px)",
@@ -5012,12 +6384,108 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
                         "row-gap": "4px",
                         "margin-left": "4px",
                         "height": "none"
+                    });*/
+                    //CSS Flex Example
+                    //Note: use flex for layout edit support
+                    $(this).css({
+                        "display": "flex",
+                        "margin-left": "4px",
+                        "flex-wrap": "wrap"
                     });
                     $(this).find("input").attr("style", "width:240px!important;");
                     $(this).find("textarea").attr("style", "width:240px!important;height:30px!important");
                     $(this).find(".bcrm-new-grid-wrap .mceGridLabel").css("text-align", "left");
                     ae.find("#bcrm_section_container").find("h3").css("background", "linear-gradient(90deg, #d2e9f5, transparent)");
                 });
+                //apply overrides
+                rwd.ApplyOverrides(pm);
+                //add edit layout button
+                var bg = ae.find(".siebui-btn-grp-applet");
+                var btn;
+                if (ae.find(".bcrm-rwd-layout").length == 0) {
+                    btn = $("<button bcrm-applet='" + an + "' class='bcrm-rwd-layout' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='I want to break free...'>Edit Layout</button>");
+                    bg.prepend(btn);
+                    btn.on("click", function () {
+                        var grid = 8;
+                        var ut = new SiebelAppFacade.BCRMUtils();
+                        var an = $(this).attr("bcrm-applet");
+                        var ae = ut.GetAppletElem(an);
+                        ae.find(".bcrm-new-grid-wrap").each(function (x) {
+                            $(this).on("mouseover", function () {
+                                $(this).css("border", "1px solid grey");
+                                $(this).find(".bcrm-opt-btn").show();
+                            });
+                            $(this).on("mouseout", function () {
+                                $(this).css("border", "1px solid transparent");
+                                $(this).find(".bcrm-opt-btn").hide();
+                            });
+                            var lbl = $(this).find(".mceGridLabel");
+                            var iname = lbl.attr("data-iname");
+                            var obtn = $('<span class="bcrm-opt-btn" style="display:none;float: right;height:16px;position: relative; top: -8px; left:16px" title="Options"><span style="height:16px" class="miniBtnUIC"><button type="button" id="options_' + iname + '" style="color:#1474bf;background: transparent;border: 0;" class="siebui-appletmenu-btn"><span style="height:16px;">Options</span></button></span></span>');
+                            obtn.on("click", function () {
+                                var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                                var pm = ut.ValidateContext($(this).closest(".siebui-applet").parent().attr("id"));
+                                var iname = $(this).find("button").attr("id").split("options_")[1];
+                                rwd.ShowFieldOptions(pm, iname);
+                            })
+                            lbl.css("cursor", "move");
+                            lbl.append(obtn);
+                            $(this).resizable({
+                                grid: [grid, grid],
+                                resize: function (e, ui) {
+                                    var o = grid - 2;
+                                    var c = $(this).find(":input").not(".siebui-appletmenu-btn");
+                                    if ($(this).find("span[id*='icon']").length == 1) {
+                                        var sw = $(this).find("span[id*='icon']")[0].offsetWidth;
+                                        o = (grid - 6) + sw + (grid - (sw % grid));
+                                    }
+                                    c.width(ui.size.width - o);
+                                    if (c.hasClass("siebui-ctrl-textarea")) {
+                                        c.height(ui.size.height - 3 * grid);
+                                    }
+                                },
+                                stop: function (e, ui) {
+                                    var c = $(this).find(":input").not(".siebui-appletmenu-btn");
+                                    var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                                    var size = {
+                                        wd: ui.size.width,
+                                        hd: ui.size.height,
+                                        cw: c.width(),
+                                        ch: c.height()
+                                    };
+                                    //save changes
+                                    rwd.SaveConfig(this, size);
+                                }
+                            });
+                        });
+                        ae.find(".bcrm-new-grid-wrap").parent().parent().sortable({
+                            grid: [grid, grid],
+                            items: ".bcrm-new-grid-wrap",
+                            stop: function (e, ui) {
+                                //store field sequence
+                                var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                                rwd.SaveConfig(this);
+                            }
+                        });
+                        //expand accordions
+                        if (ae.find(".ui-accordion-content").length > 1) {
+                            ae.find(".ui-accordion-content").show();
+                        }
+                        //show blueprint grid
+                        ae.find(".GridBorder").css({
+                            "background-color": "white",
+                            "background-image": "linear-gradient(#aacee0 1px, transparent 1px), linear-gradient(90deg, #aacee0 1px, transparent 1px), linear-gradient(#d2e9f5 1px, transparent 1px), linear-gradient(90deg, #d2e9f5 1px, transparent 1px)",
+                            "background-size": "64px 64px, 64px 64px, 8px 8px, 8px 8px",
+                            "background-position": "-1px -1px, -1px -1px, -1px -1px, -1px -1px"
+                        });
+                        //show hidden elements
+                        ae.find(".bcrm-ov-hide").show();
+                        ae.find(".bcrm-ov-hide").find("input").show();
+                        var lbl = ae.find(".bcrm-new-grid-wrap.bcrm-ov-hide").find(".mceGridLabel [bcrm-label-for]");
+                        lbl.text("[HIDDEN]:" + lbl.html());
+                    });
+                }
+
                 setTimeout(function () {
                     ae.find("#bcrm_section_container").find("h3").each(function (i) {
                         ae.find("#bcrm_section_container").accordion("option", "active", i);
@@ -5029,14 +6497,13 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
                 }, 20)
             }, 20);
 
-            //console.log("BCRMRWDFactory.BCRMMakeGridResponsive.Performance: " + an + " : " + (Date.now() - ts) + " ms.");
-            //console.log("Applet '" + an + "' is now responsive. This took " + (Date.now()-ts) + " ms.");
             if (exp) {
                 var x = {};
                 x[cname] = appletconfig;
                 prompt("Copy Applet Configuration to Clipboard", JSON.stringify(x));
             }
         };
+
         BCRMRWDFactory.prototype.Reset = function (a) {
             //console.log("BCRMRWDFactory.Reset");
             var utils = new SiebelAppFacade.BCRMUtils();
@@ -5076,7 +6543,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
             var an = pm.GetObjName();
             //console.log("BCRMRWDFactory.GetResponsiveGrid: " + an);
             var newgriddiv = $("<div id='bcrm_new_grid' class='bcrm-new-grid'></div>");  //the top container for the "new" grid, replacing the table
-            var wrapdiv = "<div class='bcrm-new-grid-wrap'></div>"; //container for individual labels/controls
+            var wrapdiv = "<div class='bcrm-new-grid-wrap' style='border: 1px solid transparent; margin:6px 8px 0px 0px;'></div>"; //container for individual labels/controls
             var cwrapdiv = "<div id='bcrm_section_container' class='bcrm-new-grid-sc'></div>"; //container for new formsections
             var fs_sel = ".FormSection"; //selector for form sections, for easy replacement
             var field_sel = ".mceGridField"; //selector for grid layout controls/fields (not labels)
@@ -5347,27 +6814,36 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
             var dname = an + "__default";
             var tname = an + "__";
             var useconf = "none";
-            var appletconfig = BCRMRWDConf[cname];
+            var appletconfig;
+            var sn = "@" + an;
             var hasconfig = false;
-            if (typeof (appletconfig) === "undefined") {
-                appletconfig = BCRMRWDConf[tname];
-            }
-            else {
-                useconf = cname;
-            }
-            if (typeof (appletconfig) === "undefined") {
-                appletconfig = BCRMRWDConf[dname];
-            }
-            else {
-                useconf = tname;
-            }
+
+            appletconfig = BCRMGetStorageItem(devpops_storage, sn);
             if (typeof (appletconfig) !== "undefined") {
+                appletconfig = JSON.parse(appletconfig);
                 hasconfig = true;
-                if (useconf == "none") {
-                    useconf = dname;
+            }
+            else {
+                appletconfig = BCRMRWDConf[cname];
+                if (typeof (appletconfig) === "undefined") {
+                    appletconfig = BCRMRWDConf[tname];
+                }
+                else {
+                    useconf = cname;
+                }
+                if (typeof (appletconfig) === "undefined") {
+                    appletconfig = BCRMRWDConf[dname];
+                }
+                else {
+                    useconf = tname;
+                }
+                if (typeof (appletconfig) !== "undefined") {
+                    hasconfig = true;
+                    if (useconf == "none") {
+                        useconf = dname;
+                    }
                 }
             }
-
             //console.log("BCRMRWDFactory.GetConfig: " + an + " : " + useconf);
             var fs_sel = ".FormSection"; //selector for form sections, for easy replacement
             var field_sel = ".mceGridField"; //selector for grid layout controls/fields (not labels)
@@ -5571,47 +7047,10 @@ BCRMShowUnmappedFields = function (context) {
 
 //get server and component status through undocumented SMC REST API
 //do not try this at home!
-var BCRM_BASIC_AUTH = "";
+
 var BCRM_ENT = "";
 var BCRM_SERVERS = [];
 var BCRM_COMPS = [];
-
-BCRMGetCredentials = function (next) {
-    var dlg = $("<div id='bcrm_cred_dlg' style='display:grid;'>");
-    var user = $("<input id='username' type='text' placeholder='User Name'>");
-    var pw = $("<input id='password' type='password' placeholder='Password'>");
-    dlg.append(user);
-    dlg.append(pw);
-    dlg.dialog({
-        title: "Provide Credentials for Server Management",
-        width: 540,
-        height: 200,
-        buttons: {
-            Go: function (e, ui) {
-                var un = $(this).find("#username").val();
-                var pw = $(this).find("#password").val();
-                BCRM_BASIC_AUTH = "Basic " + btoa(un + ":" + pw);
-                $(this).dialog("destroy");
-                if (next == "ent") {
-                    BCRMGetEnterprise();
-                }
-                if (next == "srv") {
-                    BCRMGetServers();
-                }
-                if (next == "com") {
-                    BCRMGetComponents();
-                }
-                if (next == "dis") {
-                    BCRMDisplayServer();
-                }
-            },
-            Cancel: function (e, ui) {
-                $(this).dialog("destroy");
-            }
-        }
-    });
-};
-
 BCRMGetEnterprise = function () {
     var retval;
     if (BCRM_BASIC_AUTH == "") {
@@ -5993,6 +7432,11 @@ BCRMWorkflowRunner = function () {
         inpc.parent().after(temp);
         inpc.parent().css("background", "lightblue");
         inpc.parent().css("font-weight", "bold");
+        var tempcss = ".ui-dialog {z-index: 1000!important;}";
+        var st = $("<style bcrm-temp-style='yes'>" + tempcss + "</style>");
+        if ($("style[bcrm-temp-style]").length == 0) {
+            $("head").append(st);
+        }
         inpc.autocomplete({
             source: BCRMGetWFList(),
             minLength: 0,
@@ -6359,6 +7803,11 @@ BCRMBusinessServiceRunner = function () {
                                             asel = true;
                                         }
                                         if (asel) {
+                                            var tempcss = ".ui-dialog {z-index: 1000!important;}";
+                                            var st = $("<style bcrm-temp-style='yes'>" + tempcss + "</style>");
+                                            if ($("style[bcrm-temp-style]").length == 0) {
+                                                $("head").append(st);
+                                            }
                                             inpc.autocomplete({
                                                 source: src,
                                                 minLength: 0,
@@ -6401,16 +7850,21 @@ BCRMBusinessServiceRunner = function () {
 //Workspace Banner
 //Vanilla business service to the rescue
 BCRMGetWSContext = function () {
-    try{
-        var wecp = SiebelApp.S_App.GetService("Web Engine Client Preferences");
+    try {
+        var svwecp = SiebelApp.S_App.GetService("Web Engine Client Preferences");
         var ip = SiebelApp.S_App.NewPropertySet();
-        var op = wecp.InvokeMethod("GetActiveWSContext", ip).GetChildByType("ResultSet");
-        sessionStorage.BCRMCurrentWorkspaceVersion = op.GetProperty("WSVersion");
-        sessionStorage.BCRMCurrentWorkspace = op.GetProperty("WSName");
-        sessionStorage.BCRMCurrentWorkspaceStatus = op.GetProperty("ActiveWSStatus");
-        BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+        if (typeof (svwecp.InvokeMethod) === "function") {
+            var op = svwecp.InvokeMethod("GetActiveWSContext", ip);
+            if (typeof (op) !== "undefined") {
+                op = op.GetChildByType("ResultSet");
+                sessionStorage.BCRMCurrentWorkspaceVersion = op.GetProperty("WSVersion");
+                sessionStorage.BCRMCurrentWorkspace = op.GetProperty("WSName");
+                sessionStorage.BCRMCurrentWorkspaceStatus = op.GetProperty("ActiveWSStatus");
+                BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+            }
+        }
     }
-    catch(e){
+    catch (e) {
         console.log("Error in BCRMGetWSContext: " + e.toString());
     }
 };
