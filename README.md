@@ -8,17 +8,31 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # What's New in 21.4?
 
-Web Tools: Register View with Responsibility from Screen Views List
+Web Tools: Register View with Responsibility from Screen Views List.
 
 Web Tools: Screens Menu
 
-Persistent storage (with JSON editor)
+Persistent storage (with JSON editor).
 
 Fast Inspect Enhancements (Options, Auto Cache Refresh)
 
 Menu Persistence
 
 Break Free! Demo with Applet Layout Editor in Application (a belated easter eggo)
+
+# Update to 21.4
+
+Review User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
+
+Import and deliver SIFS:
+
+Base IOs _ Responsibility _ Feature Access.sif
+
+BCRM devpops Storage.sif
+
+Import FWK Runtime.xml
+
+Copy postload.js and separate code if necessary
 
 # What's New in 21.3?
 
