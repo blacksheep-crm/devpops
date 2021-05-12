@@ -6,59 +6,31 @@ User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
-# What's New in 21.4?
+# What's New in 21.5?
 
-Web Tools: Register View with Responsibility from Screen Views List.
+Test Automation Support
 
-Web Tools: Screens Menu
+Test Automation Readiness Wizard
 
-Persistent storage (with JSON editor).
+User Responsibility Check
 
-Fast Inspect Enhancements (Options, Auto Cache Refresh)
+Code Separation
 
-Menu Persistence
-
-Break Free! Demo with Applet Layout Editor in Application (a belated easter eggo)
-
-# Update to 21.4
+# Update to 21.5
 
 Review User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
-Import and deliver SIFS:
-
-Base IOs _ Responsibility _ Feature Access.sif
-
-BCRM devpops Storage.sif
+Import and deliver devpops_V52.sif 
 
 Import FWK Runtime.xml
 
-Copy postload.js and separate code if necessary
+Copy postload.js to vanilla postload.js
 
-# What's New in 21.3?
+Copy devpops.js to siebel/custom
 
-21.3.xxvii: Fixed workspace banner display issue
+Register devpops.js with Application / Common / PLATFORM INDEPENDENT
 
-21.3.xxvii: Fixed context preserve on fast inspect
-
-21.3.xxvii: Added automatic cache reload if workspace has a Screen update (most likely new View)
-
-21.3.xxvii: Added version check for FWK Runtime business service
-
-Business Service Runner (meep meep)
-
-21.3.xvii: add custom properties and delete presets, export escript
-
-21.3.xxi: Workflow Runner (requires 20.7 or higher). Autocomplete workflow list and WF Properties
-
-Ability to detach and float debug menu, option to "toolbarize" (rotate) menu
-
-21.3.xvii: right-click in toolbar mode shows toggle/options
-
-Editable debug menu (hide/show items) with localstorage persistence
-
-21.3.xvii: Override function for debug menu, modify and add items
-
-# Other Features
+# Features
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -74,25 +46,35 @@ Server Manager command line (srvrmgr) via browser, quick SARM on/off (user must 
 
 Server and Components status display (experimental REST API access)
 
+Business Service Runner/Workflow Runner
+
+Toolbarizable/Customizable Menu
+
+Web Tools: Register View with Responsibility from Screen Views List.
+
+Web Tools: Screens Menu
+
+Persistent storage (with JSON editor).
+
+Fast Inspect Enhancements (Options, Auto Cache Refresh)
+
+Menu Persistence
+
+Break Free! Demo with Applet Layout Editor in Application
+
 # Videos
 
 Video update (Siebel Friday 26-MAR-2021): https://youtu.be/ok9rEZGhKBI?t=2242
 
-Video update (Siebel Friday 26-FEB-2021): https://youtu.be/l0C8hhd1x0A?t=3473
-
-Video (Demo on Siebel Friday meet-up 29-JAN-2021): https://youtu.be/9zWsOtCuEdc?t=1691
-
-Video (early version): https://youtu.be/pesmDPSNIvw
-
 # Installation
 
-1. Import SIFs
+1. Import all SIFs
 
 2. Add BCRM Modified Objects List View to a screen of your choice.
 
 3. Register BCRM Modified Objects List View with a responsibility of your choice
 
-4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser ;-).
+4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser)
    Edit the Business Service User Properties to match your Enterprise, Gateway host address and Gateway TLS port number
 
 5. Register FWK Runtime and BCRM Server Manager Service business services with your Application(s) in Application User Prop (ClientBusinessServiceN)
@@ -103,13 +85,15 @@ Video (early version): https://youtu.be/pesmDPSNIvw
 
 8. If you want to use the runcmd and readFile methods, set System Preference: Runtime Scripts System Access = TRUE
 
-9. Copy SiebelQueryLang.js file to $AI_APPLICATIONCONTAINER$/webapps/siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
+9. If you want to use Responsibility Check, register BCRM View Helper business service with Responsibility in Business Service Access (for REST API)
 
-10. Copy code from postload.js to the vanilla postload.js for a quick demo. 
+10. Copy SiebelQueryLang.js file to $AI_APPLICATIONCONTAINER$/webapps/siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
 
-11. Validate the functionality.
+11. Copy code from postload.js to the vanilla postload.js.
 
-12. Follow instructions in postload.js (ca. line 875) how to split code and register custom Open UI JS library
+12. Copy devpops.js to siebel/custom
+
+13. Register devpops.js with Application / Common / PLATFORM INDEPENDENT in Manifest Administration
 
 # Pre-Requisites
 
