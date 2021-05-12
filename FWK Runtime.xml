@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><?Siebel-Property-Set EscapeNames="true"?><Business_spcService
- Comments="V 50"
+ Comments="V 52"
  State_spcManagement_spcType="Stateful"
  Cache="N"
  Server_spcEnabled="N"
@@ -25,7 +25,7 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function CleanAttributes(sAttr) {_newline    try{_newline        var tl = 0;_newline        var ta = sAttr.split(&quot;*&quot;);_newline        var t = &quot;&quot;;_newline        var tt = [];_newline        //everything before first * is the length of the next section_newline        //8*Personal6*Person0*8*Owner Id0*0*_newline        tl = parseInt(ta[0]);_newline        for (var i = 1; i &lt; ta.length; i++) {_newline            if (tl == 0) {_newline                t = &quot;&quot;;_newline            }_newline           //kudos to Henkrik T._newline           else if (ta[i].length &lt; tl) {_newline                    ta[i+1] = ta[i] + &quot;*&quot; + ta[i+1];_newline                    continue;_newline            }_newline            //end_newline            else {_newline                t = ta[i].substring(0, tl);_newline            }_newline            tl = parseInt(ta[i].substring(tl, ta[i].length));_newline            tt.push(t);_newline        }_newline    }_newline    catch(e){_newline        TheApplication().RaiseErrorText(&quot;Error in CleanAttributes: &quot; + e.toString());_newline    }_newline    return tt;_newline}"
+ Script="function CleanAttributes(sAttr) {_newline    try{_newline        var tl = 0;_newline        var ta = sAttr.split(&quot;*&quot;);_newline        var t = &quot;&quot;;_newline        var tt = [];_newline        //everything before first * is the length of the next section_newline        //8*Personal6*Person0*8*Owner Id0*0*_newline        tl = parseInt(ta[0]);_newline        for (var i = 1; i &lt; ta.length; i++) {_newline            if (tl == 0) {_newline                t = &quot;&quot;;_newline            }_newline           //kudos to Henkrik T._newline           else if (ta[i].length &lt; tl) {_newline                    ta[i+1] = ta[i] + &quot;*&quot; + ta[i+1];_newline                    continue;_newline            }_newline            //end_newline            else {_newline                t = ta[i].substring(0, tl);_newline            }_newline            tl = parseInt(ta[i].substring(tl, ta[i].length));_newline            tt.push(t);_newline        }_newline    }_newline    catch(e){_newline       // TheApplication().RaiseErrorText(&quot;Error in CleanAttributes: &quot; + e.toString());_newline    }_newline    return tt;_newline}"
  Program_spcLanguage="JS"
  Name="CleanAttributes"
  Sequence="6"
@@ -69,10 +69,21 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
+ Script="function GetBSMethodList (Inputs, Outputs)_newline{_newlinevar bo = TheApplication().GetBusObject(&quot;BCRM RR&quot;);_newlinevar bc = bo.GetBusComp(&quot;SRF Service Method&quot;);_newlinevar sn = Inputs.GetProperty(&quot;Service Name&quot;);_newlinebc.ClearToQuery();_newlinebc.ActivateField(&quot;Name&quot;);_newlinebc.ActivateField(&quot;Display Name&quot;);_newlinebc.ActivateField(&quot;Service&quot;);_newlinebc.SetSearchSpec(&quot;Service&quot;,sn);_newlinebc.ExecuteQuery(ForwardOnly);_newlineif (bc.FirstRecord()){_newline   _newline    if (bc.FirstRecord()){_newline        do{_newline        Outputs.SetProperty(bc.GetFieldValue(&quot;Name&quot;),bc.GetFieldValue(&quot;Display Name&quot;));_newline        _newline    }while (bc.NextRecord())_newline    }_newline}_newlinebc = null;_newlinebo = null;_newline}"
+ Program_spcLanguage="JS"
+ Name="GetBSMethodList"
+ Sequence="10"
+></Business_spcService_spcScript
+><Business_spcService_spcScript
+ Comments=""
+ Parent_spcId="1-5VUH"
+ Parent_spcName="FWK Runtime"
+ Parent_spcInactive="N"
+ Inactive="N"
  Script="function GetBusinessServiceList (Inputs, Outputs)_newline{_newlinevar bo = TheApplication().GetBusObject(&quot;Business Service&quot;);_newlinevar bc = bo.GetBusComp(&quot;Business Service Test&quot;);_newlinebc.NewRecord();_newlinevar bcp = bc.GetPicklistBusComp(&quot;Service Name&quot;);_newlinevar ops = TheApplication().NewPropertySet();_newlinebcp.ClearToQuery();_newlinebcp.ActivateField(&quot;Name&quot;);_newlinebcp.ActivateField(&quot;Display Name&quot;);_newlinebcp.SetSortSpec(&quot;Name(ASCENDING)&quot;);_newlinebcp.ExecuteQuery(ForwardOnly);_newline_newlineif (bcp.FirstRecord()){_newline    do{_newline        Outputs.SetProperty(bcp.GetFieldValue(&quot;Name&quot;),bcp.GetFieldValue(&quot;Display Name&quot;));_newline    }while (bcp.NextRecord())_newline}_newlinebc.UndoRecord();_newline// = ops.Copy();_newlinebcp = null;_newlinebc = null;_newlinebo = null;_newlineops = null;_newline}_newline"
  Program_spcLanguage="JS"
  Name="GetBusinessServiceList"
- Sequence="10"
+ Sequence="11"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -83,7 +94,7 @@
  Script="function GetIOList (Inputs, Outputs)_newline{_newlinevar bo = TheApplication().GetBusObject(&quot;SRF Interface&quot;);_newlinevar bc = bo.GetBusComp(&quot;SRF Integration Object&quot;);_newlinebc.ClearToQuery();_newlinebc.ActivateField(&quot;Name&quot;);_newlinebc.ExecuteQuery(ForwardOnly);_newlineif (bc.FirstRecord()){_newline do{_newline  Outputs.SetProperty(bc.GetFieldValue(&quot;Name&quot;),bc.GetFieldValue(&quot;Name&quot;));_newline } while (bc.NextRecord())_newline}_newlinebc = null;_newlinebo = null;_newline}_newline"
  Program_spcLanguage="JS"
  Name="GetIOList"
- Sequence="13"
+ Sequence="14"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments="read RR data including NEO"
@@ -94,17 +105,6 @@
  Script="function GetRRBC (Inputs,Outputs)_newline{_newlinevar bcname = Inputs.GetProperty(&quot;Business Component&quot;);_newlinevar fieldname = Inputs.GetProperty(&quot;Field&quot;);_newlinevar sv = TheApplication().GetService(&quot;EAI Siebel Adapter&quot;);_newlinevar ips = TheApplication().NewPropertySet();_newline//var ops = TheApplication().NewPropertySet();_newlinevar ssp = &quot;&quot;;_newlineips.SetProperty(&quot;OutputIntObjectName&quot;,&quot;Base BCRM RR&quot;);_newlinessp = &quot;[BCRM RR BusComp.Name]=\&quot;&quot; + bcname + &quot;\&quot;&quot;;_newlineif (fieldname != &quot;&quot;){_newline    ssp += &quot; AND [BCRM RR Field.Name]=\&quot;&quot; + fieldname + &quot;\&quot;&quot;;_newline}_newlineips.SetProperty(&quot;SearchSpec&quot;,ssp);_newlinesv.InvokeMethod(&quot;Query&quot;,ips,Outputs);_newline_newline}_newline"
  Program_spcLanguage="JS"
  Name="GetRRBC"
- Sequence="15"
-></Business_spcService_spcScript
-><Business_spcService_spcScript
- Comments=""
- Parent_spcId="1-5VUH"
- Parent_spcName="FWK Runtime"
- Parent_spcInactive="N"
- Inactive="N"
- Script="function GetRRData(Inputs, Outputs) {_newline    try{_newline        var psCache = TheApplication().NewPropertySet();_newline        var psIn = TheApplication().NewPropertySet();_newline        var psOut = TheApplication().NewPropertySet();_newline        var psDef, cpsDef;_newline        var psAttr = TheApplication().NewPropertySet();_newline        var cpsAttr = TheApplication().NewPropertySet();_newline        var cc, i;_newline        var ccc = 0;_newline        //var raw = TheApplication().NewPropertySet();_newline        psIn.SetProperty(&quot;Object Type&quot;, Inputs.GetProperty(&quot;Object Type&quot;));_newline        psIn.SetProperty(&quot;Object Name&quot;, Inputs.GetProperty(&quot;Object Name&quot;));_newline        psOut = GetRawRRData(psIn);_newline        cc = psOut.GetChildCount();_newline_newline        //root_newline        psAttr = TranslateAttr(psOut, psCache);_newline        psOut.AddChild(psAttr);_newline        //end root_newline_newline        //level 1 children_newline        if (cc &gt; 0) {_newline            for (i = 0; i &lt; cc; i++) {_newline                psAttr = TheApplication().NewPropertySet();_newline                psDef = psOut.GetChild(i);_newline                //let&apos;s ignore scripts, they cause trouble_newline                if (psDef.GetType().indexOf(&quot;Script&quot;) == -1){_newline                    ccc = psDef.GetChildCount();_newline                    psAttr = TranslateAttr(psDef, psCache);_newline                    psOut.GetChild(i).AddChild(psAttr);_newline                    //level 2 children_newline                    if (ccc &gt; 0) {_newline                        for (var k = 0; k &lt; ccc; k++) {_newline                            cpsAttr = TheApplication().NewPropertySet();_newline                            cpsDef = psDef.GetChild(k);_newline                            cpsAttr = TranslateAttr(cpsDef, psCache);_newline                            psOut.GetChild(i).GetChild(k).AddChild(cpsAttr);_newline                        }_newline                    }//end level 2 children_newline                }_newline            }_newline        }//end level 1 children_newline_newline        Outputs.AddChild(psOut);_newline    }_newline    catch(e){_newline        TheApplication().RaiseErrorText(&quot;Error in GetRRData: &quot; + e.toString());_newline    }_newline}"
- Program_spcLanguage="JS"
- Name="GetRRData"
  Sequence="16"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
@@ -113,10 +113,10 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function GetRawRRData(Inputs) {_newline    try{_newline        var boTypeRR = TheApplication().GetBusObject(&quot;Runtime Repository Details&quot;);_newline        var bsWFUtils = TheApplication().GetService(&quot;Workflow Utilities&quot;);_newline        var psIn = TheApplication().NewPropertySet();_newline        var psOut = TheApplication().NewPropertySet();_newline        //use &quot;Type&quot; to get metameta_newline        var bcTypeRR = boTypeRR.GetBusComp(&quot;Runtime Repository &quot; + Inputs.GetProperty(&quot;Object Type&quot;));_newline        //eg. &quot;Field&quot; or &quot;Join&quot;..._newline        var sTypeRR = Inputs.GetProperty(&quot;Object Name&quot;);_newline        var sDef;_newline        bcTypeRR.ClearToQuery();_newline        bcTypeRR.ActivateField(&quot;Complied Obj Def&quot;);_newline        bcTypeRR.SetSearchExpr(&quot;[Name] LIKE \&quot;&quot; + sTypeRR + &quot;\&quot;&quot;);_newline        bcTypeRR.ExecuteQuery(ForwardOnly);_newline        if (bcTypeRR.FirstRecord()) {_newline            sDef = bcTypeRR.GetFieldValue(&quot;Complied Obj Def&quot;);_newline            psIn.SetValue(sDef);_newline            bsWFUtils.InvokeMethod(&quot;TextToPropSet&quot;, psIn, psOut);_newline        }_newline    }_newline    catch(e){_newline        TheApplication().RaiseErrorText(&quot;Error in GetRawRRData: &quot; + e.toString());_newline    }_newline    return psOut;_newline}_newline"
+ Script="function GetRRData(Inputs, Outputs) {_newline    try{_newline        var psCache = TheApplication().NewPropertySet();_newline        var psIn = TheApplication().NewPropertySet();_newline        var psOut = TheApplication().NewPropertySet();_newline        var psDef, cpsDef;_newline        var psAttr = TheApplication().NewPropertySet();_newline        var cpsAttr = TheApplication().NewPropertySet();_newline        var cc, i;_newline        var ccc = 0;_newline        //var raw = TheApplication().NewPropertySet();_newline        psIn.SetProperty(&quot;Object Type&quot;, Inputs.GetProperty(&quot;Object Type&quot;));_newline        psIn.SetProperty(&quot;Object Name&quot;, Inputs.GetProperty(&quot;Object Name&quot;));_newline        psOut = GetRawRRData(psIn);_newline        cc = psOut.GetChildCount();_newline_newline        //root_newline        psAttr = TranslateAttr(psOut, psCache);_newline        psOut.AddChild(psAttr);_newline        //end root_newline_newline        //level 1 children_newline        if (cc &gt; 0) {_newline            for (i = 0; i &lt; cc; i++) {_newline                psAttr = TheApplication().NewPropertySet();_newline                psDef = psOut.GetChild(i);_newline                //let&apos;s ignore scripts, they cause trouble_newline                if (psDef.GetType().indexOf(&quot;Script&quot;) == -1){_newline                    ccc = psDef.GetChildCount();_newline                    psAttr = TranslateAttr(psDef, psCache);_newline                    psOut.GetChild(i).AddChild(psAttr);_newline                    //level 2 children_newline                    if (ccc &gt; 0) {_newline                        for (var k = 0; k &lt; ccc; k++) {_newline                            cpsAttr = TheApplication().NewPropertySet();_newline                            cpsDef = psDef.GetChild(k);_newline                            cpsAttr = TranslateAttr(cpsDef, psCache);_newline                            psOut.GetChild(i).GetChild(k).AddChild(cpsAttr);_newline                        }_newline                    }//end level 2 children_newline                }_newline            }_newline        }//end level 1 children_newline_newline        Outputs.AddChild(psOut);_newline    }_newline    catch(e){_newline        //TheApplication().RaiseErrorText(&quot;Error in GetRRData: &quot; + e.toString());_newline    }_newline}"
  Program_spcLanguage="JS"
- Name="GetRawRRData"
- Sequence="14"
+ Name="GetRRData"
+ Sequence="17"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -124,10 +124,21 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function GetTypeRRFieldMap(Inputs, Outputs) {_newline    try{_newline        var psIn = TheApplication().NewPropertySet();_newline        var psOut = TheApplication().NewPropertySet();_newline        psIn.SetProperty(&quot;Object Type&quot;, &quot;Type&quot;);_newline        psIn.SetProperty(&quot;Object Name&quot;, Inputs.GetProperty(&quot;Object Type&quot;));_newline        psOut = GetRawRRData(psIn);_newline        var psDef, sAttr, arrAttr, ts;_newline        var arTypeRR = [];_newline        var arTypeNoCompRR = [];_newline        var arTypeFilteredRR = [];_newline        //kudos to Henrik T._newline        var arTypeNoExtRR = [];_newline_newline        var cc = psOut.GetChildCount();_newline        if (cc &gt; 0) {_newline            for (var i = 0; i &lt; cc; i++) {_newline                psDef = psOut.GetChild(i);_newline                sAttr = psDef.GetProperty(&quot;ATTRS&quot;);_newline                arrAttr = CleanAttributes(sAttr);_newline                for (var j = 0; j &lt; arrAttr.length; j++) {_newline                    ts = arrAttr[j];_newline_newline                    //Field name array_newline                    if (j == 3) {_newline                        arTypeRR.push(ts);_newline                    }_newline                    //array of &quot;No Compile&quot; flags_newline                    if (j == 4) {_newline                        arTypeNoCompRR.push(ts);_newline                    }_newline//array of &quot;Extension&quot; flags_newline//kudos to Henrik T._newlineif (j == 7) {_newline_newlinearTypeNoExtRR.push(ts);_newline_newline}_newline                }_newline            }_newline        }_newline/*_newline        //apply filter to get only compiled fields_newline        for (var k = 0; k &lt; arTypeNoCompRR.length; k++) {_newline            if (arTypeNoCompRR[k] == &quot;N&quot;) {_newline                arTypeFilteredRR.push(arTypeRR[k]);_newline            }_newline        }_newline*/_newline//kudos to Henrik T._newline//apply filter to get only compiled fields and no extension fields_newline_newlinefor (var k = 0; k &lt; arTypeNoCompRR.length; k++) {_newline_newline    //            if (arTypeNoCompRR[k] == &quot;N&quot;) {_newline_newline                            if (arTypeNoCompRR[k] == &quot;N&quot; &amp;&amp; arTypeNoExtRR[k] == &quot;N&quot;) {_newline_newline                                       arTypeFilteredRR.push(arTypeRR[k]);_newline_newline                       }_newline_newline}_newline        Outputs.SetProperty(&quot;RRFieldMap&quot;, arTypeFilteredRR.join(&quot;,&quot;));_newline    }_newline    catch(e){_newline        TheApplication().RaiseErrorText(&quot;Error in GetTypeRRFieldMap: &quot; + e.toString());_newline    }_newline}"
+ Script="function GetRawRRData(Inputs) {_newline    try{_newline        var boTypeRR = TheApplication().GetBusObject(&quot;Runtime Repository Details&quot;);_newline        var bsWFUtils = TheApplication().GetService(&quot;Workflow Utilities&quot;);_newline        var psIn = TheApplication().NewPropertySet();_newline        var psOut = TheApplication().NewPropertySet();_newline        //use &quot;Type&quot; to get metameta_newline        var bcTypeRR = boTypeRR.GetBusComp(&quot;Runtime Repository &quot; + Inputs.GetProperty(&quot;Object Type&quot;));_newline        //eg. &quot;Field&quot; or &quot;Join&quot;..._newline        var sTypeRR = Inputs.GetProperty(&quot;Object Name&quot;);_newline        var sDef;_newline        bcTypeRR.ClearToQuery();_newline        bcTypeRR.ActivateField(&quot;Complied Obj Def&quot;);_newline        bcTypeRR.SetSearchExpr(&quot;[Name] LIKE \&quot;&quot; + sTypeRR + &quot;\&quot;&quot;);_newline        bcTypeRR.ExecuteQuery(ForwardOnly);_newline        if (bcTypeRR.FirstRecord()) {_newline            sDef = bcTypeRR.GetFieldValue(&quot;Complied Obj Def&quot;);_newline            psIn.SetValue(sDef);_newline            bsWFUtils.InvokeMethod(&quot;TextToPropSet&quot;, psIn, psOut);_newline        }_newline    }_newline    catch(e){_newline        //TheApplication().RaiseErrorText(&quot;Error in GetRawRRData: &quot; + e.toString());_newline    }_newline    return psOut;_newline}_newline"
+ Program_spcLanguage="JS"
+ Name="GetRawRRData"
+ Sequence="15"
+></Business_spcService_spcScript
+><Business_spcService_spcScript
+ Comments=""
+ Parent_spcId="1-5VUH"
+ Parent_spcName="FWK Runtime"
+ Parent_spcInactive="N"
+ Inactive="N"
+ Script="function GetTypeRRFieldMap(Inputs, Outputs) {_newline    try{_newline        var psIn = TheApplication().NewPropertySet();_newline        var psOut = TheApplication().NewPropertySet();_newline        psIn.SetProperty(&quot;Object Type&quot;, &quot;Type&quot;);_newline        psIn.SetProperty(&quot;Object Name&quot;, Inputs.GetProperty(&quot;Object Type&quot;));_newline        psOut = GetRawRRData(psIn);_newline        var psDef, sAttr, arrAttr, ts;_newline        var arTypeRR = [];_newline        var arTypeNoCompRR = [];_newline        var arTypeFilteredRR = [];_newline        //kudos to Henrik T._newline        var arTypeNoExtRR = [];_newline_newline        var cc = psOut.GetChildCount();_newline        if (cc &gt; 0) {_newline            for (var i = 0; i &lt; cc; i++) {_newline                psDef = psOut.GetChild(i);_newline                sAttr = psDef.GetProperty(&quot;ATTRS&quot;);_newline                arrAttr = CleanAttributes(sAttr);_newline                for (var j = 0; j &lt; arrAttr.length; j++) {_newline                    ts = arrAttr[j];_newline_newline                    //Field name array_newline                    if (j == 3) {_newline                        arTypeRR.push(ts);_newline                    }_newline                    //array of &quot;No Compile&quot; flags_newline                    if (j == 4) {_newline                        arTypeNoCompRR.push(ts);_newline                    }_newline//array of &quot;Extension&quot; flags_newline//kudos to Henrik T._newlineif (j == 7) {_newline_newlinearTypeNoExtRR.push(ts);_newline_newline}_newline                }_newline            }_newline        }_newline/*_newline        //apply filter to get only compiled fields_newline        for (var k = 0; k &lt; arTypeNoCompRR.length; k++) {_newline            if (arTypeNoCompRR[k] == &quot;N&quot;) {_newline                arTypeFilteredRR.push(arTypeRR[k]);_newline            }_newline        }_newline*/_newline//kudos to Henrik T._newline//apply filter to get only compiled fields and no extension fields_newline_newlinefor (var k = 0; k &lt; arTypeNoCompRR.length; k++) {_newline_newline    //            if (arTypeNoCompRR[k] == &quot;N&quot;) {_newline_newline                            if (arTypeNoCompRR[k] == &quot;N&quot; &amp;&amp; arTypeNoExtRR[k] == &quot;N&quot;) {_newline_newline                                       arTypeFilteredRR.push(arTypeRR[k]);_newline_newline                       }_newline_newline}_newline        Outputs.SetProperty(&quot;RRFieldMap&quot;, arTypeFilteredRR.join(&quot;,&quot;));_newline    }_newline    catch(e){_newline       // TheApplication().RaiseErrorText(&quot;Error in GetTypeRRFieldMap: &quot; + e.toString());_newline    }_newline}"
  Program_spcLanguage="JS"
  Name="GetTypeRRFieldMap"
- Sequence="17"
+ Sequence="18"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -138,7 +149,7 @@
  Script="function InspectWS (Inputs, Outputs)_newline{_newline    var name = Inputs.GetProperty(&quot;Name&quot;);_newline    var bInspect = (Inputs.GetProperty(&quot;Inspect&quot;) == &quot;Y&quot;);_newline    var iLimit = ToNumber(Inputs.GetProperty(&quot;Limit&quot;));_newline    var res = &quot;&quot;, sWS = &quot;&quot;;_newline    _newline    var bo = TheApplication().GetBusObject(&quot;Workspace&quot;);_newline    var bc = bo.GetBusComp(&quot;Repository Workspace&quot;);_newline    var ss = &quot;&quot;;_newline    if (name == &quot;&quot;) {_newline        ss = &apos;[Created By] = LoginId () AND [Status] &lt;&gt; &quot;Delivered&quot; AND [Repository Id] = RepositoryId()&apos;;_newline    } else if (name.match(/\[.*\]/g)) {_newline        ss = name;_newline    } else {_newline        ss = &apos;[Name] like &quot;&apos; + name + &apos;&quot; AND [Repository Id] = RepositoryId()&apos;;_newline    }_newline    _newline    try {_newline        bc.SetSearchExpr(ss);_newline        bc.SetViewMode(AllView);_newline        bc.SetSortSpec(&quot;Updated(DESC)&quot;);_newline        bc.ExecuteQuery(ForwardBackward);_newline        var h = bc.FirstRecord();_newline        if (h) {_newline            if (bInspect) {_newline                bc.InvokeMethod(&quot;OpenWS&quot;);_newline                bc.InvokeMethod(&quot;PreviewWS&quot;);_newline                sWS = bc.GetFieldValue(&quot;Name&quot;);_newline            } else {_newline                var aWS = [];_newline                var i = 1;_newline                while(h &amp;&amp; i &lt;= iLimit) {_newline                     aWS.push(bc.GetFieldValue(&quot;Name&quot;));_newline                     h = bc.NextRecord();_newline                     i++;_newline                }_newline                sWS = aWS.join(&quot;,&quot;);_newline            }_newline        } else {_newline            res = &quot;No workspace found with SearchSpec: &quot; + ss;_newline        }_newline    } catch(e) {_newline        res = &quot;Error happened inspecting a workspace with SearchSpec: &quot; + ss + &quot;\n&quot; + e.toString();_newline    } finally {_newline        bc = null;_newline        bo = null;_newline    }_newline    _newline    Outputs.SetProperty(&quot;Result&quot;, res);_newline    Outputs.SetProperty(&quot;Workspaces&quot;, sWS);_newline}_newline"
  Program_spcLanguage="JS"
  Name="InspectWS"
- Sequence="19"
+ Sequence="20"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -149,7 +160,7 @@
  Script="function InvokeServiceMethod(Inputs, Outputs)_newline{_newline // Extract service/method name params_newline var sBS = Inputs.GetProperty(&quot;Service&quot;);_newline Inputs.RemoveProperty(&quot;Service&quot;);_newline var sMethod = Inputs.GetProperty(&quot;Method&quot;);_newline Inputs.RemoveProperty(&quot;Method&quot;);_newline _newline var bs;_newline _newline try {_newline     // invoke BS_newline     bs = TheApplication().GetService(sBS);_newline     bs.InvokeMethod(sMethod, Inputs, Outputs);_newline }catch(e){_newline     throw e;_newline }finally{_newline     bs = null;_newline }_newline}"
  Program_spcLanguage="JS"
  Name="InvokeServiceMethod"
- Sequence="20"
+ Sequence="21"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -160,7 +171,7 @@
  Script="function ProcessLogRequest(Inputs, Outputs)_newline{_newline /*_newline    Created 21-Jan-2021 by Jason MacZura to allow Siebel developers to turn SQL tracing on and off, and to display_newline      the SQL trace files in the browser. _newline   */_newline var sFilePath = Inputs.GetProperty(&quot;FilePath&quot;);_newline if (sFilePath == &quot;&quot;) sFilePath = &quot;/siebelfs/developer/&quot;; // Log the files to a subdirectory on the Siebel File System for global access_newline_newline var bsSvc:Service = TheApplication().GetService(&quot;EAI File Transport&quot;);_newline var psIn:PropertySet = TheApplication().NewPropertySet();_newline var psOut:PropertySet = TheApplication().NewPropertySet();_newline var oTransService:Service = TheApplication().GetService(&quot;Transcode Service&quot;);_newline var oTransOutputs:PropertySet = TheApplication().NewPropertySet();_newline_newline try_newline {_newline  var sOperation = Inputs.GetProperty(&quot;Operation&quot;);_newline  var strLogin = TheApplication().LoginName();_newline  var sTraceMsg = Inputs.GetProperty(&quot;TraceMsg&quot;);_newline                var sTraceType = Inputs.GetProperty(&quot;TraceType&quot;);_newline  if (sOperation == &quot;ViewLog&quot;){_newline   var strKeepFile = Inputs.GetProperty(&quot;RetainFile&quot;);_newline_newline   psIn.SetProperty(&quot;FileName&quot;, sFilePath + strLogin + &quot;.log&quot;);_newline   psIn.SetProperty(&quot;FileSleepTime&quot;, &quot;1&quot;); // No need to wait around for the file (default is 20000 ms)_newline_newline   if (strKeepFile == &quot;false&quot;) psIn.SetProperty(&quot;DeleteFile&quot;, &quot;True&quot;); // Delete the file to keep the size down_newline_newline   bsSvc.InvokeMethod(&quot;Receive&quot;, psIn, psOut); // If the file doesn&apos;t exist, Siebel throws an error._newline_newline   // The output from EAI File Transport is in binary format.  Use Transcode to convert it to text._newline   psOut.SetProperty(&quot;ConversionMode&quot;, &quot;EncodingToString&quot;);_newline   psOut.SetProperty(&quot;SourceEncoding&quot;, &quot;UTF-8&quot;);_newline   oTransService.InvokeMethod(&quot;Convert&quot;, psOut, oTransOutputs);_newline   var strContent = oTransOutputs.GetValue();_newline_newline   var myOutput = strContent;//.split(&apos;\n&apos;).join(&apos;&lt;br&gt;&apos;); // replace the newline characters with HTML &lt;br&gt; tags for display in the dialog box_newline_newline   Outputs.SetProperty(&quot;myOutput&quot;, myOutput);_newline   Outputs.SetProperty(&quot;Status&quot;, &quot;File retrieved&quot;);_newline_newline  }_newline  else if (sOperation == &quot;StartLogging&quot;)_newline  {_newline   Outputs.SetProperty(&quot;Status&quot;, &quot;Logging Started&quot;);_newline                        if (sTraceType == &quot;SQL&quot; || sTraceType == &quot;&quot;){_newline                            TheApplication().TraceOn(sFilePath + strLogin + &quot;.log&quot;, &quot;SQL&quot;, &quot;&quot;);_newline                        }_newline                        if (sTraceType == &quot;Allocation&quot;){_newline                            TheApplication().TraceOn(sFilePath + strLogin + &quot;.log&quot;, &quot;Allocation&quot;, &quot;All&quot;);_newline                        }_newline  }_newline  else if (sOperation == &quot;StopLogging&quot;)_newline  {_newline   Outputs.SetProperty(&quot;Status&quot;, &quot;Logging Stopped&quot;);_newline   TheApplication().TraceOff();_newline  }_newline  else if (sOperation == &quot;Trace&quot;){_newline   TheApplication().Trace(sTraceMsg);_newline  }_newline  else_newline  {_newline   Outputs.SetProperty(&quot;Status&quot;, &quot;Unknown Operation argument &quot; + sOperation);_newline  }_newline }_newline catch (e)_newline {_newline  Outputs.SetProperty(&quot;Error&quot;,e.toString());_newline  Outputs.SetProperty(&quot;Status&quot;,&quot;Error&quot;);_newline  Outputs.SetProperty(&quot;myOutput&quot;, &quot;&quot;);_newline }_newline finally_newline {_newline  oTransOutputs = null;_newline  oTransService = null;_newline  psOut = null;_newline  psIn = null;_newline  bsSvc = null;_newline }_newline_newline}_newline"
  Program_spcLanguage="JS"
  Name="ProcessLogRequest"
- Sequence="23"
+ Sequence="24"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -168,10 +179,10 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function Service_usPreInvokeMethod (MethodName, Inputs, Outputs)_newline{_newline if (MethodName == &quot;EvalExpr&quot;){_newline  EvalExpr(Inputs, Outputs);_newline }_newline if (MethodName == &quot;EvalScript&quot;){_newline  EvalScript(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InvokeServiceMethod&quot;){_newline  InvokeServiceMethod(Inputs, Outputs);_newline }_newline if (MethodName == &quot;Log&quot;){_newline  AppLog(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWS&quot;){_newline  InspectWS (Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWSVersion&quot;){_newline  InspectWSVersion(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;FastInspect&quot;){_newline  FastInspect(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;ProcessLogRequest&quot;){_newline  ProcessLogRequest(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;GetRRData&quot;){_newline  GetRRData(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;srvrmgr&quot;){_newline  srvrmgr(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;runcmd&quot;){_newline  runcmd(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;readFile&quot;){_newline  readFile(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;GetRRBC&quot;){_newline  GetRRBC(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;GetBusinessServiceList&quot;){_newline  GetBusinessServiceList(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;GetIOList&quot;){_newline  GetIOList(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;getWFList&quot;){_newline  getWFList(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;getDRWFProps&quot;){_newline   getDRWFProps(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;openPopup&quot;){_newline  openPopup(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;getFWKVersion&quot;){_newline   getFWKVersion(Inputs,Outputs);_newline}_newline return (CancelOperation);_newline}"
+ Script="function Service_usPreInvokeMethod (MethodName, Inputs, Outputs)_newline{_newline if (MethodName == &quot;EvalExpr&quot;){_newline  EvalExpr(Inputs, Outputs);_newline }_newline if (MethodName == &quot;EvalScript&quot;){_newline  EvalScript(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InvokeServiceMethod&quot;){_newline  InvokeServiceMethod(Inputs, Outputs);_newline }_newline if (MethodName == &quot;Log&quot;){_newline  AppLog(Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWS&quot;){_newline  InspectWS (Inputs, Outputs);_newline }_newline if (MethodName == &quot;InspectWSVersion&quot;){_newline  InspectWSVersion(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;FastInspect&quot;){_newline  FastInspect(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;ProcessLogRequest&quot;){_newline  ProcessLogRequest(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;GetRRData&quot;){_newline  GetRRData(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;srvrmgr&quot;){_newline  srvrmgr(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;runcmd&quot;){_newline  runcmd(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;readFile&quot;){_newline  readFile(Inputs, Outputs);_newline }_newlineif (MethodName == &quot;GetRRBC&quot;){_newline  GetRRBC(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;GetBusinessServiceList&quot;){_newline  GetBusinessServiceList(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;GetIOList&quot;){_newline  GetIOList(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;getWFList&quot;){_newline  getWFList(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;getDRWFProps&quot;){_newline   getDRWFProps(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;openPopup&quot;){_newline  openPopup(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;getFWKVersion&quot;){_newline   getFWKVersion(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;SetSysPrefs&quot;){_newline   SetSysPrefs(Inputs,Outputs);_newline}_newlineif (MethodName == &quot;GetBSMethodList&quot;){_newline    GetBSMethodList(Inputs,Outputs);_newline}_newline return (CancelOperation);_newline}"
  Program_spcLanguage="JS"
  Name="Service_usPreInvokeMethod"
- Sequence="28"
+ Sequence="30"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -179,10 +190,21 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function TranslateAttr(Inputs, psCache) {_newline    try{_newline        var psFilter = TheApplication().NewPropertySet();_newline        var psIn = TheApplication().NewPropertySet();_newline        var psAttr = TheApplication().NewPropertySet();_newline        var psDef = Inputs;_newline        var otype = &quot;&quot;;_newline        var sAttr = psDef.GetProperty(&quot;ATTRS&quot;);_newline        var arrAttr = CleanAttributes(sAttr);_newline        var rrfmap = &quot;&quot;;_newline        var arTypeFilteredRR;_newline        var ts;_newline        var fv = &quot;&quot;;_newline_newline        otype = psDef.GetType();_newline        if (psCache.GetProperty(otype) == &quot;&quot;) {_newline            psIn.SetProperty(&quot;Object Type&quot;, otype);_newline            GetTypeRRFieldMap(psIn, psFilter);_newline            rrfmap = psFilter.GetProperty(&quot;RRFieldMap&quot;);_newline            psCache.SetProperty(otype, rrfmap);_newline        }_newline        else {_newline            rrfmap = psCache.GetProperty(otype);_newline        }_newline_newline        arTypeFilteredRR = rrfmap.split(&quot;,&quot;);_newline_newline        for (var h = 0; h &lt; arrAttr.length; h++) {_newline            ts = arrAttr[h];_newline            fv = arTypeFilteredRR[h];_newline            psAttr.SetProperty(fv, ts);_newline        }_newline        psAttr.SetType(&quot;Properties&quot;);_newline    }_newline    catch(e){_newline        TheApplication().RaiseErrorText(&quot;Error in TranslateAttr: &quot; + e.toString() + &quot;otype: &quot; + otype + &quot;***rrfmap: &quot; + rrfmap + &quot;***fv: &quot; + fv);_newline    }_newline    return psAttr;_newline}"
+ Script="function SetSysPrefs (Inputs, Outputs)_newline{_newlinevar bo = TheApplication().GetBusObject(&quot;System Preferences&quot;);_newlinevar bc = bo.GetBusComp(&quot;System Preferences&quot;);_newlinevar prefname = &quot;&quot;;_newlinevar val = &quot;&quot;;_newlineprefname = Inputs.GetFirstProperty();_newline_newlinewhile (prefname != &quot;&quot;){_newline    val = Inputs.GetProperty(prefname);_newline    bc.ClearToQuery();_newline    bc.ActivateField(&quot;Name&quot;);_newline    bc.ActivateField(&quot;Value&quot;);_newline    bc.SetSearchSpec(&quot;Name&quot;, prefname);_newline    bc.ExecuteQuery(ForwardOnly);_newline    if (bc.FirstRecord()){_newline        bc.SetFieldValue(&quot;Value&quot;, val);_newline        bc.WriteRecord();_newline        Outputs.SetProperty(prefname,val);_newline    }_newline    prefname = Inputs.GetNextProperty();_newline}_newlinebc = null;_newlinebo = null;_newline}_newline"
+ Program_spcLanguage="JS"
+ Name="SetSysPrefs"
+ Sequence="27"
+></Business_spcService_spcScript
+><Business_spcService_spcScript
+ Comments=""
+ Parent_spcId="1-5VUH"
+ Parent_spcName="FWK Runtime"
+ Parent_spcInactive="N"
+ Inactive="N"
+ Script="function TranslateAttr(Inputs, psCache) {_newline    try{_newline        var psFilter = TheApplication().NewPropertySet();_newline        var psIn = TheApplication().NewPropertySet();_newline        var psAttr = TheApplication().NewPropertySet();_newline        var psDef = Inputs;_newline        var otype = &quot;&quot;;_newline        var sAttr = psDef.GetProperty(&quot;ATTRS&quot;);_newline        var arrAttr = CleanAttributes(sAttr);_newline        var rrfmap = &quot;&quot;;_newline        var arTypeFilteredRR;_newline        var ts;_newline        var fv = &quot;&quot;;_newline_newline        otype = psDef.GetType();_newline        if (psCache.GetProperty(otype) == &quot;&quot;) {_newline            psIn.SetProperty(&quot;Object Type&quot;, otype);_newline            GetTypeRRFieldMap(psIn, psFilter);_newline            rrfmap = psFilter.GetProperty(&quot;RRFieldMap&quot;);_newline            psCache.SetProperty(otype, rrfmap);_newline        }_newline        else {_newline            rrfmap = psCache.GetProperty(otype);_newline        }_newline_newline        arTypeFilteredRR = rrfmap.split(&quot;,&quot;);_newline_newline        for (var h = 0; h &lt; arrAttr.length; h++) {_newline            ts = arrAttr[h];_newline            fv = arTypeFilteredRR[h];_newline            psAttr.SetProperty(fv, ts);_newline        }_newline        psAttr.SetType(&quot;Properties&quot;);_newline    }_newline    catch(e){_newline       // TheApplication().RaiseErrorText(&quot;Error in TranslateAttr: &quot; + e.toString() + &quot;otype: &quot; + otype + &quot;***rrfmap: &quot; + rrfmap + &quot;***fv: &quot; + fv);_newline    }_newline    return psAttr;_newline}"
  Program_spcLanguage="JS"
  Name="TranslateAttr"
- Sequence="27"
+ Sequence="29"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -237,7 +259,7 @@
  Script="function getDRWFProps (Inputs, Outputs)_newline{_newlinevar wn = Inputs.GetProperty(&quot;Process Name&quot;);_newlinevar bo = TheApplication().GetBusObject(&quot;Repository Details&quot;);_newlinevar bc = bo.GetBusComp(&quot;Repository WF Process Prop&quot;);_newlinevar prop;_newlinebc.ClearToQuery();_newlinebc.ActivateField(&quot;Name&quot;);_newlinebc.ActivateField(&quot;Parent Name&quot;);_newlinebc.ActivateField(&quot;Inactive&quot;);_newlinebc.ActivateField(&quot;InOut&quot;);_newlinebc.ActivateField(&quot;Data Type&quot;);_newlinebc.ActivateField(&quot;Default String&quot;);_newlinebc.ActivateField(&quot;Comments&quot;);_newlinebc.SetSearchExpr(&quot;[Parent Name]=&apos;&quot; + wn + &quot;&apos;&quot;);_newlinebc.ExecuteQuery(ForwardOnly);_newlineif (bc.FirstRecord()){_newline    do{_newline        prop = TheApplication().NewPropertySet();_newline        prop.SetProperty(&quot;Name&quot;,bc.GetFieldValue(&quot;Name&quot;));_newline        prop.SetProperty(&quot;Inactive&quot;,bc.GetFieldValue(&quot;Inactive&quot;));_newline        prop.SetProperty(&quot;InOut&quot;,bc.GetFieldValue(&quot;InOut&quot;));_newline        prop.SetProperty(&quot;Data Type&quot;,bc.GetFieldValue(&quot;Data Type&quot;));_newline        prop.SetProperty(&quot;Default String&quot;,bc.GetFieldValue(&quot;Default String&quot;));_newline        prop.SetProperty(&quot;Comments&quot;,bc.GetFieldValue(&quot;Comments&quot;));_newline        Outputs.AddChild(prop);_newline    }while (bc.NextRecord())_newline}_newlinebc = null;_newlinebo  = null;_newline}_newline"
  Program_spcLanguage="JS"
  Name="getDRWFProps"
- Sequence="11"
+ Sequence="12"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -245,10 +267,10 @@
  Parent_spcName="FWK Runtime"
  Parent_spcInactive="N"
  Inactive="N"
- Script="function getFWKVersion (Inputs, Outputs)_newline{_newline     var v = &quot;50&quot;;_newline    Outputs.SetProperty(&quot;FWK Version&quot;,v);_newline}_newline"
+ Script="function getFWKVersion (Inputs, Outputs)_newline{_newline     var v = &quot;52&quot;;_newline    Outputs.SetProperty(&quot;FWK Version&quot;,v);_newline}_newline"
  Program_spcLanguage="JS"
  Name="getFWKVersion"
- Sequence="12"
+ Sequence="13"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -259,7 +281,7 @@
  Script="function getWFList (Inputs, Outputs)_newline{_newlinevar bo = TheApplication().GetBusObject(&quot;Runtime Repository Details&quot;);_newlinevar bc = bo.GetBusComp(&quot;Runtime Repository Workflow&quot;);_newlinebc.ClearToQuery();_newlinebc.ActivateField(&quot;Name&quot;);_newlinebc.ExecuteQuery(ForwardOnly);_newlineif (bc.FirstRecord()){_newline    do{_newline        Outputs.SetProperty(bc.GetFieldValue(&quot;Name&quot;),&quot;&quot;);_newline    }while (bc.NextRecord())_newline}_newlinevar bod = TheApplication().GetBusObject(&quot;Repository Details&quot;);_newlinevar bcd = bod.GetBusComp(&quot;Repository Workflow Process&quot;);_newlinevar wn = &quot;&quot;;_newlinebcd.ClearToQuery();_newlinebcd.ActivateField(&quot;Name&quot;);_newlinebcd.SetSearchSpec(&quot;Inactive&quot;,&quot;N&quot;);_newlinebcd.ExecuteQuery(ForwardOnly);_newlineif (bcd.FirstRecord()){_newline    do{_newline        wn = bcd.GetFieldValue(&quot;Name&quot;);_newline        if (wn.indexOf(&quot;:&quot;) &gt; -1){_newline            wn = wn.split(&quot;:&quot;)[0];_newline        }_newline        Outputs.SetProperty(wn,&quot;&quot;);_newline    }while (bcd.NextRecord())_newline}_newline}_newline"
  Program_spcLanguage="JS"
  Name="getWFList"
- Sequence="18"
+ Sequence="19"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -270,7 +292,7 @@
  Script="function log() {_newline var res = [];_newline var d = new Date();_newline var sd = d.toString();_newline res.push(sd.substr(sd.length-9, 8) + &apos;:&apos; + d.getMilliseconds());_newline for (var i = 0; i &lt; arguments.length; i++) {_newline  res.push(_uslog_usone(arguments[i]));_newline }_newline _uslogs.push(res.join(&apos;\t|\t&apos;));_newlinereturn arguments[i];_newline}"
  Program_spcLanguage="JS"
  Name="log"
- Sequence="21"
+ Sequence="22"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -281,7 +303,7 @@
  Script="function openPopup (Inputs, Outputs)_newline{_newline//kudos: http://siebelmantra.blogspot.com/2013/08/how-to-display-popup-applet-in-siebel.html_newlinevar an = Inputs.GetProperty(&quot;Applet Name&quot;);_newlinevar mode = Inputs.GetProperty(&quot;Applet Mode&quot;);_newlinevar oBSSLM = TheApplication().GetService(&quot;SLM Save List Service&quot;);_newlinevar psInp = TheApplication().NewPropertySet();_newline//var psOut = TheApplication().NewPropertySet();_newlinepsInp.SetProperty(&quot;Applet Height&quot;, &quot;620&quot;);_newlinepsInp.SetProperty(&quot;Applet Mode&quot;, mode);                           // 1 - List Applet, 2 - Form Applet_newlinepsInp.SetProperty(&quot;Applet Name&quot;, an);_newlinepsInp.SetProperty(&quot;Applet Width&quot;, &quot;210&quot;);_newlineoBSSLM.InvokeMethod(&quot;LoadPopupApplet&quot;, psInp , Outputs);_newlineoBSSLM = null;_newline}_newline"
  Program_spcLanguage="JS"
  Name="openPopup"
- Sequence="22"
+ Sequence="23"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -292,7 +314,7 @@
  Script="function readFile (Inputs,Outputs)_newline{_newlinevar fn = Inputs.GetProperty(&quot;FileName&quot;);_newlinevar st = Inputs.GetProperty(&quot;FileSleepTime&quot;);_newlineif (st == &quot;&quot;){ st = &quot;5000&quot;; }_newlinevar fs = TheApplication().GetService(&quot;EAI File Transport&quot;);_newlinevar fi = TheApplication().NewPropertySet();_newlinevar fo = TheApplication().NewPropertySet();_newlinefi.SetProperty(&quot;FileName&quot;,fn);_newlinefi.SetProperty(&quot;FileSleepTime&quot;,st);_newlinefs.InvokeMethod(&quot;Receive&quot;,fi,fo);_newline//convert output_newlinevar ts = TheApplication().GetService(&quot;Transcode Service&quot;);_newlinevar tso = TheApplication().NewPropertySet();_newlinefo.SetProperty(&quot;ConversionMode&quot;, &quot;EncodingToString&quot;);_newlinefo.SetProperty(&quot;SourceEncoding&quot;, &quot;UTF-8&quot;);_newlinets.InvokeMethod(&quot;Convert&quot;, fo, tso);_newlineOutputs.SetValue(tso.GetValue());_newline}_newline"
  Program_spcLanguage="JS"
  Name="readFile"
- Sequence="24"
+ Sequence="25"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -303,7 +325,7 @@
  Script="function runcmd (Inputs, Outputs)_newline{_newline   var cmd = Inputs.GetProperty(&quot;cmd&quot;);_newline   Clib.system(cmd);_newline}_newline"
  Program_spcLanguage="JS"
  Name="runcmd"
- Sequence="25"
+ Sequence="26"
 ></Business_spcService_spcScript
 ><Business_spcService_spcScript
  Comments=""
@@ -314,7 +336,7 @@
  Script="function srvrmgr (Inputs,Outputs)_newline{_newlinevar ts = new Date;_newlinevar tsm = ts.toSystem().toString();_newlinevar ln = TheApplication().LoginName();_newlinevar pa = Inputs.GetProperty(&quot;FilePath&quot;);_newlineif (pa == &quot;&quot;){_newline pa = &quot;C:\\Siebel\\ses\\siebsrvr\\TEMP\\&quot;;_newline}_newlinevar st = Inputs.GetProperty(&quot;FileSleepTime&quot;);_newlineif (st == &quot;&quot;){_newline st = &quot;5000&quot;;_newline}_newlinevar fn = pa + &quot;srvrmgr_usinput.txt&quot;;_newlinevar sf = pa + ln + &quot;_us&quot; + tsm + &quot;_ussrvrmgr_usspool.txt&quot;;_newlinevar cmd = Inputs.GetProperty(&quot;cmd&quot;);_newline_newlinevar fs = TheApplication().GetService(&quot;EAI File Transport&quot;);_newlinevar svc = TheApplication().GetService(&quot;BCRM Server Manager Service&quot;);_newlinevar ts = TheApplication().GetService(&quot;Transcode Service&quot;);_newline_newline//write input file_newlinevar fi = TheApplication().NewPropertySet();_newlinevar fo = TheApplication().NewPropertySet();_newlinefi.SetProperty(&quot;FileName&quot;,fn);_newlinecmd = &quot;spool &quot; + sf + &quot;\n&quot; + cmd + &quot;\n&quot; + &quot;spool off&quot; + &quot;\n&quot; + &quot;exit&quot;;_newlinefi.SetValue(cmd);_newlinefs.InvokeMethod(&quot;Send&quot;,fi,fo);_newline_newline//run srvrmgr command_newlinevar ips = TheApplication().NewPropertySet();_newline//ips.SetProperty(&quot;migrationid&quot;,&quot;TEST1&quot;);_newlinevar ops = TheApplication().NewPropertySet();_newlinesvc.InvokeMethod(&quot;Export&quot;, ips, ops);_newline_newline//retrieve spool file_newlinefi.Reset();_newlinefi.SetProperty(&quot;FileSleepTime&quot;, st);_newlinefi.SetProperty(&quot;FileName&quot;,sf);_newlinefi.SetProperty(&quot;DeleteFile&quot;,&quot;true&quot;);_newlinefs.InvokeMethod(&quot;Receive&quot;,fi,fo);_newline_newline//convert output_newlinevar tso = TheApplication().NewPropertySet();_newlinefo.SetProperty(&quot;ConversionMode&quot;, &quot;EncodingToString&quot;);_newlinefo.SetProperty(&quot;SourceEncoding&quot;, &quot;UTF-8&quot;);_newlinets.InvokeMethod(&quot;Convert&quot;, fo, tso);_newlineOutputs.SetValue(tso.GetValue());_newline}_newline"
  Program_spcLanguage="JS"
  Name="srvrmgr"
- Sequence="26"
+ Sequence="28"
 ></Business_spcService_spcScript
 ></Business_spcService
 >
