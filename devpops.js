@@ -43,9 +43,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.5";
-var devpops_version = 52;
-var devpops_tag = "Dorothy Crowfoot Hodgkin";
+var devpops_dver = "21.6";
+var devpops_version = 53;
+var devpops_tag = "Carl Ferdinand Braun";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -340,7 +340,8 @@ BCRMWSGetObjectDef = function (cell) {
     bcrm_meta.wrn = $(cell).attr("wrn");
 
     //need to get workspace/version data for given object
-    var url = location.origin + "/siebel/v1.0/workspace/*/" + bcrm_meta.wot + "/*?workspace=" + bcrm_meta.wsn + "&version=" + bcrm_meta.wsv + "&searchspec=[Name]=\"" + bcrm_meta.wrn + "\"";
+    //var url = location.origin + "/siebel/v1.0/workspace/*/" + bcrm_meta.wot + "/*?workspace=" + bcrm_meta.wsn + "&version=" + bcrm_meta.wsv + "&searchspec=[Name]=\"" + bcrm_meta.wrn + "\"";
+    var url = location.origin + "/siebel/v1.0/workspace/" + bcrm_meta.wsn + "/" + bcrm_meta.wot + "/*?workspace=" + bcrm_meta.wsn + "&version=" + bcrm_meta.wsv + "&searchspec=[Name]=\"" + bcrm_meta.wrn + "\"";
     var settings = {
         "url": url,
         "method": "GET",
@@ -829,6 +830,9 @@ BCRMButtonizeDebugMenu = function () {
             dv.css("width", "36px");
             dv.css("margin-top", "1px");
             dv.css("padding-bottom", "0px");
+            if (i == "RedwoodBanner") {
+                dv.css("border-radius", "8px");
+            }
         }
         $("li#" + i).on("contextmenu", function () {
             if ($(this).find("button[id^='options']").length > 0) {
@@ -864,6 +868,13 @@ BCRMButtonizeDebugMenu = function () {
 var BCRM_MENU;
 BCRM_MENU = {};
 BCRMCreateDebugMenu = function () {
+    var redwood = [
+        "https://docs.oracle.com/cd/F26413_16/portalres/images/Abstracts_Light_3.png",
+        "https://docs.oracle.com/cd/F26413_13/portalres/images/Abstracts_Winter_1.png",
+        "https://docs.oracle.com/cd/F26413_10/portalres/images/Abstracts_Open_Dark_5.png",
+        "https://docs.oracle.com/cd/F26413_09/portalres/images/Abstracts_Autumn_1.png",
+        "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png"
+    ];
     if (typeof (BCRM_MENU["ShowControls"]) === "undefined") {
         BCRM_MENU = {
             "ShowControls": {
@@ -1374,6 +1385,19 @@ BCRMCreateDebugMenu = function () {
                 "showtoggle": true,
                 "img": "images/grid_matte_formwrench.png"
             },
+            "RedwoodBanner": {
+                "seq": 25,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_RedwoodBanner") == "false" ? false : true,
+                "label": "Redwood Banner",
+                "title": "Relax with Redwood",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMPrettifyBanner();
+                    return r;
+                },
+                "showtoggle": true,
+                "img": redwood[Math.floor((Math.random() * redwood.length))]
+            },
             "SiebelHub": {
                 "seq": 20,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_SiebelHub") == "false" ? false : true,
@@ -1536,6 +1560,23 @@ BCRMCreateDebugMenu = function () {
                         return false;
                     });
                 }
+                else if (i == "RedwoodBanner") {
+                    $(tog).find("label").on("click", function (e, ui) {
+                        e.stopImmediatePropagation();
+                        var ip = $(this).attr("for");
+                        $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
+                        var checked = $("input#" + ip).prop("checked");
+                        if (checked) {
+                            sessionStorage.BCRM_REDWOOD_BANNER = "true";
+                            $("#bcrm_debug_msg").text("Redwood Banner set as default");
+                        }
+                        else {
+                            sessionStorage.BCRM_REDWOOD_BANNER = "false";
+                            $("#bcrm_debug_msg").text("");
+                        }
+                        return false;
+                    });
+                }
                 else {
                     $(tog).find("label").on("click", function (e, ui) {
                         e.stopImmediatePropagation();
@@ -1544,7 +1585,7 @@ BCRMCreateDebugMenu = function () {
                         var checked = $("input#" + ip).prop("checked");
                         if (checked) {
                             sessionStorage.BCRM_TOGGLE_DEFAULT = ip.split("_")[1];
-                            $("input.bcrm-toggle").not("#toggle_freeform").each(function (x) {
+                            $("input.bcrm-toggle").not("#toggle_freeform").not("#toggle_RedwoodBanner").each(function (x) {
                                 if ($(this).attr("id") != ip && $(this).prop("checked")) {
                                     $(this).prop("checked", false);
                                 }
@@ -1564,6 +1605,14 @@ BCRMCreateDebugMenu = function () {
                         tog.find("input").attr("bcrm-bf-checked", "true");
                         setTimeout(function () {
                             $("input[bcrm-bf-checked='true']").prop("checked", true);
+                        }, 50)
+                    }
+                }
+                if (i == "RedwoodBanner") {
+                    if (sessionStorage.BCRM_REDWOOD_BANNER == "true") {
+                        tog.find("input").attr("bcrm-rw-checked", "true");
+                        setTimeout(function () {
+                            $("input[bcrm-rw-checked='true']").prop("checked", true);
                         }, 50)
                     }
                 }
@@ -2568,7 +2617,7 @@ BCRMParseTrace = function (s) {
             type = "SELECT";
             var sn = statement.split(",SELECT,")[0].split(",")[1] + ".0";
             var sql = statement.split(",SELECT,")[1];
-            if (sql.indexOf("S_RR") > -1 || sql.indexOf("S_WEB_TMPL") > -1 || sql.indexOf("S_UI_") > -1) {
+            if (sql.indexOf("S_ACC_VIEW_APPL") > 1 ||  sql.indexOf("S_RR") > -1 || sql.indexOf("S_WEB_TMPL") > -1 || sql.indexOf("S_UI_") > -1) {
                 isrr = true;
                 rrc++;
             }
@@ -2661,7 +2710,7 @@ BCRMParseTrace = function (s) {
     for (tbl in alltables) {
         if (typeof (alltables[tbl].select_count) !== "undefined") {
             //ignore RR tables
-            if (!(tbl.indexOf("S_RR") > -1 || tbl.indexOf("S_WEB_TMPL") > -1 || tbl.indexOf("S_UI_") > -1)) {
+            if (!(tbl.indexOf("S_ACC_VIEW_APPL") > 1 || tbl.indexOf("S_RR") > -1 || tbl.indexOf("S_WEB_TMPL") > -1 || tbl.indexOf("S_UI_") > -1)) {
                 select_ranked.push({ table: tbl, count: alltables[tbl].select_count });
             }
         }
@@ -2832,7 +2881,18 @@ BCRMApplyDefaultBreakFree = function () {
             }
         }
     }
-}
+};
+
+//Redwood Banner postload helper
+BCRMApplyDefaultRedwoodBanner = function () {
+    var t = sessionStorage.BCRM_REDWOOD_BANNER;
+    if (typeof (t) !== "undefined") {
+        if (t == "true") {
+            BCRMPrettifyBanner();
+        }
+    }
+};
+
 //version checker
 BCRMCheckVersion = function () {
     if (!devpops_vcheck) {
@@ -2977,6 +3037,7 @@ BCRMGetFWKVersion = function () {
 
 //main postload function
 BCRMWSHelper = function () {
+    //console.time("BCRMWSHelper");
     try {
         var vn = SiebelApp.S_App.GetActiveView().GetName();
         var an = "BCRM Modified Objects List Applet";
@@ -3047,6 +3108,9 @@ BCRMWSHelper = function () {
             //default break free demo
             BCRMApplyDefaultBreakFree();
 
+            //default Redwood Banner
+            BCRMApplyDefaultRedwoodBanner();
+
             //devpops storage view mod
             if (vn == "Business Service Script Editor View") {
                 BCRMModStorageView();
@@ -3064,6 +3128,7 @@ BCRMWSHelper = function () {
     catch (e) {
         console.log("Error in BCRMWSHelper: " + e.toString());
     }
+    //console.timeEnd("BCRMWSHelper");
 };
 
 SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
@@ -3325,7 +3390,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.ShowBCFields = function (context) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
-            var bc, fm, cs, tp, fn, fd;
+            var bc, fm, cs, tp, fn, fd, lovtype;
             var fdt, fln, fcl, frq;
             var nl;
             if (pm) {
@@ -3339,6 +3404,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     for (c in cs) {
                         if (cs.hasOwnProperty(c)) {
                             fn = cs[c].GetFieldName();
+                            lovtype = cs[c].GetLovType();
                             if (fn != "") {
                                 fd = fm[fn];
                                 if (typeof (fd) !== "undefined") {
@@ -3347,6 +3413,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                     frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
                                     fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
                                     nl = fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
+                                    if (lovtype != null) {
+                                        nl = nl + "<br>LOV_TYPE: " + lovtype;
+                                    }
                                     ut.SetLabel(cs[c], nl, pm);
                                 }
                                 else {
@@ -6787,8 +6856,8 @@ BCRMBusinessServiceRunner = function () {
     var dlg = $('<div style="overflow:auto;"><div style="width: 200px;float:left;"><label for="bcrm_service">Business Service (Type to search):</label></div><input style="width:300px;" id="bcrm_service"></div>');
     var pre = $('<div style="display:none;padding-bottom: 4px;border-bottom: 1px solid;margin-bottom: 4px;"><div style="width: 200px;float:left;"><label for="bcrm_presets">Load Preset:</label></div><select style="width:300px;" id="bcrm_preset"></select><button style="margin-left:16px;" title="Delete current preset" id="bcrm_del_preset">Delete</button></div>');
     var mt = $('<div style="display:none;margin-top:6px;margin-bottom:6px;"><div style="width: 200px;float:left;"><label for="bcrm_method">Method:</label></div><input  style="width:300px;" id="bcrm_method"></div>');
-    var outt = BCRM$("<textarea style='display:none;width:750px;height:300px;overflow:auto;margin-top:10px;' id='bcrm_outt'></textarea>", { ot: consts.get("SWE_CTRL_TEXTAREA") });
-    var outps = BCRM$("<textarea style='display:none;width:750px;height:80px;overflow:auto;margin-top:10px;' id='bcrm_outps'></textarea>", { ot: consts.get("SWE_CTRL_TEXTAREA") });
+    var outt = BCRM$("<textarea style='display:none;width:962px;height:300px;overflow:auto;margin-top:10px;' id='bcrm_outt'></textarea>", { ot: consts.get("SWE_CTRL_TEXTAREA") });
+    var outps = BCRM$("<textarea style='display:none;width:962px;height:80px;overflow:auto;margin-top:10px;' id='bcrm_outps'></textarea>", { ot: consts.get("SWE_CTRL_TEXTAREA") });
     //Add custom property button
     var addp = BCRM$("<button style='display:none;margin-top:6px;' id='bcrm_add_prop'>Add Custom Property</button>");
     addp.on("click", function () {
@@ -6916,7 +6985,7 @@ BCRMBusinessServiceRunner = function () {
         dlg.find("#bcrm_preset").parent().show();
     }
     dlg.dialog({
-        width: 800,
+        width: 1000,
         height: 700,
         buttons: {
             "New": function () {
@@ -7055,6 +7124,12 @@ BCRMBusinessServiceRunner = function () {
                     }
                 });
             },
+            "PropSet Viewer (experimental)":function(){
+                var ps = $("#bcrm_outps").val();
+                var t = SiebelApp.S_App.NewPropertySet();
+                t.DecodeFromStringOld(ps);
+                BCRMShowPropSet(t);
+            },
             "Close": function () {
                 $(this).dialog("destroy");
             }
@@ -7063,7 +7138,7 @@ BCRMBusinessServiceRunner = function () {
         open: function () {
             $(this).parent().find(".ui-dialog-buttonset").find("button").each(function (x) {
                 if ($(this).text() == "Run") {
-                    $(this).css({ "cursor": "pointer", "font-size": "4em", "position": "relative", "bottom": "600px", "left": "420px", "float": "left", "background": "#385427", "color": "white", "border-radius": "10px" });
+                    $(this).css({ "cursor": "pointer", "font-size": "4em", "position": "relative", "bottom": "600px", "left": "600px", "float": "left", "background": "#385427", "color": "white", "border-radius": "10px" });
                     //$(this).draggable();
                     $(this).on("click", function () {
                         BCRMTitle($(this).parent().parent().parent().find(".ui-dialog-title"), "Running...");
@@ -7863,4 +7938,117 @@ BCRMplaySound = function (name, options) {
         source.connect(volume);
         source.start(0);
     }
+};
+
+//Web Engine HTTP TXN Full Mojo
+BCRMShowHTTPSecrets = function () {
+    var t = SiebelApp.S_App.NewPropertySet();
+    var s = BCRMInvokeServiceMethod({ service: "Web Engine HTTP TXN", method: "GetRequestInfo" }).GetChildByType("ResultSet").GetProperty("v");
+    t.DecodeFromStringOld(s);
+    BCRMShowPropSet(t);
+};
+
+var BCRMPSC = 0;
+var BCRMPSHTML = [];
+var BCRMPSCL = 0;
+
+BCRMShowPropSet = function (ps) {
+    BCRMPSC = 0;
+    BCRMPSHTML = [];
+    BCRMPSCL = 0;
+    //var t = SiebelApp.S_App.NewPropertySet();
+    //t.DecodeFromStringOld(BCRMInvokeServiceMethod({service:"Web Engine HTTP TXN",method:"GetRequestInfo"}).GetChildByType("ResultSet").GetProperty("v"));
+
+    BCRMPropSet2HTML(ps);
+    //console.log(BCRMPSHTML);
+
+    var depth = BCRMPSHTML.length;
+    if (depth > 1) {
+        for (var i = depth - 1; i > 0; i--) {
+            var tlevel = i - 1;
+            var tpos1 = parseInt(BCRMPSHTML[i].attr("cl")) - 1;
+            tpos1 = tpos1.toString();
+            var tpos2 = BCRMPSHTML[i].attr("c");
+            if (tpos2 == "1") {
+                tpos2 == "0";
+            }
+            BCRMPSHTML[i].tabs();
+            BCRMPSHTML[tlevel].find("#tabs-" + tpos1 + "_" + tpos2).append(BCRMPSHTML[i]);
+            BCRMPSHTML[tlevel].tabs();
+        }
+    }
+    else {
+        BCRMPSHTML[0].tabs();
+    }
+    BCRMPSHTML[0].dialog({
+        title: "Property Set Viewer",
+        width: 800,
+        height: 600,
+        open: function () {
+            $(this).parent().find("#bcrmpropset_0_0").css("overflow", "auto");
+        }
+    });
+};
+
+BCRMPropSet2HTML = function (ps, p) {
+    var level;
+    if (BCRMPSCL <= 1) {
+        level = 0;
+    }
+    else {
+        level = BCRMPSCL - 1;
+    }
+    if (typeof (BCRMPSHTML[level]) === "undefined") {
+        BCRMPSHTML[level] = $("<div id='bcrmpropset_" + BCRMPSCL + "_" + BCRMPSC + "'>");
+        BCRMPSHTML[level].append("<ul>");
+    }
+    if (typeof (p) !== "undefined") {
+        BCRMPSHTML[level].attr("cl", p.cl);
+        BCRMPSHTML[level].attr("c", p.c);
+    }
+
+    //type
+    var type = ps.GetType();
+    if (type == "") {
+        type = "Properties";
+    }
+    var tab = $('<li style="background: lightblue;padding: 2px;border-top-left-radius: 8px;border-top-right-radius: 8px;margin-right: 2px;"><a href="#tabs-' + BCRMPSCL + "_" + BCRMPSC + '">' + type + '</a></li>');
+
+    BCRMPSHTML[level].find("ul").append(tab);
+
+    //properties
+    var content = $('<div id="tabs-' + BCRMPSCL + "_" + BCRMPSC + '"></div>');
+    var prop = ps.GetFirstProperty();
+    var pdiv;
+    while (prop != null) {
+        pdiv = $('<div class="bcrm-property" style="display:flex;align-items:center;padding:4px;"><div class="bcrm-prop-name" style="width:180px;">' + prop + '</div><div class="bcrm-prop-val"><input style="width:400px;"></div></div>');
+        pdiv.find("input").val(ps.GetProperty(prop));
+        pdiv.find("input").attr("title", ps.GetProperty(prop));
+        prop = ps.GetNextProperty();
+        content.append(pdiv);
+    }
+    //value, show as property
+    var value = ps.GetValue();
+    if (value != "") {
+        pdiv = $('<div class="bcrm-value" style="display:flex;align-items:center;padding:4px;"><div class="bcrm-prop-name" style="width:180px;">' + 'VALUE' + '</div><div class="bcrm-prop-val"><textarea style="width:400px;height:80px;overflow:auto;"></div></div>');
+        pdiv.find("textarea").val(value);
+        content.append(pdiv);
+    }
+
+    BCRMPSHTML[level].find("ul").after(content);
+
+    //children
+    var cc = ps.GetChildCount();
+    var p;
+    if (cc > 0) {
+        BCRMPSCL++;
+        if (BCRMPSCL >= 1) {
+            p = { cl: BCRMPSCL, c: BCRMPSC };
+        }
+        for (var i = 0; i < cc; i++) {
+            BCRMPropSet2HTML(ps.GetChild(i), p);
+        }
+        BCRMPSCL--;
+    }
+    BCRMPSC++;
 };
