@@ -6,17 +6,15 @@ User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
-# What's New in 21.5?
+# What's New in 21.6?
 
-Test Automation Support
+Tools Online Help in Web Tools
 
-Test Automation Readiness Wizard
+Redwood Banner
 
-User Responsibility Check
+Property Set Viewer (beta)
 
-Code Separation
-
-# Update to 21.5
+# Update to 21.6
 
 Review User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
@@ -62,9 +60,15 @@ Menu Persistence
 
 Break Free! Demo with Applet Layout Editor in Application
 
+Test Automation Support
+
+Test Automation Readiness Wizard
+
+User Responsibility Check
+
 # Videos
 
-Video update (Siebel Friday 30 April 2021): https://youtu.be/bbhoHAvWbRA?t=2456
+Video update (Siebel Friday 28-MAY-2021): https://youtu.be/uwP34iYqlLk?t=2424
 
 # Installation
 
