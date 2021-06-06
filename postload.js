@@ -25,6 +25,106 @@ var bcrm_meta = {};
 var devpops_storage = "devpopsStorage";
 //set to true to enable responsibility check, this will prompt for user credentials intermittently
 var bcrm_check_user_views = false;
+var bcrm_help_map = {
+    "20.1": "F26413_01",
+    "20.2": "F26413_02",
+    "20.3": "F26413_03",
+    "20.4": "F26413_04",
+    "20.5": "F26413_05",
+    "20.6": "F26413_06",
+    "20.7": "F26413_07",
+    "20.8": "F26413_08",
+    "20.9": "F26413_09",
+    "20.10": "F26413_10",
+    "20.11": "F26413_11",
+    "20.12": "F26413_12",
+    "21.1": "F26413_13",
+    "21.2": "F26413_14",
+    "21.3": "F26413_15",
+    "21.4": "F26413_16",
+    "21.5": "F26413_17",
+    "21.6": "F26413_18",
+    "21.7": "F26413_19",
+    "21.8": "F26413_20",
+    "21.9": "F26413_21",
+    "21.10": "F26413_22",
+    "21.11": "F26413_23",
+    "21.12": "F26413_24"
+};
+
+//Bookmarker
+BCRMGetBookmark = function(){
+    var bookmark = {};
+    bookmark.url = location.href;
+    bookmark.title = document.title;
+    bookmark.view = SiebelApp.S_App.GetActiveView().GetName();
+    return bookmark;
+    //App().GotoView("Account Detail - Contacts View", "", "/siebel/app/callcenter/enu?SWENeedContext=false&SWECmd=GotoBookmarkView&SWEBMC=256&SWEC=258&SWEBID=-1&SRN=&SWETS=&SWEKeepContext=1", window);
+};
+
+//Online Help URL
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetToolsHelpURL = function () {
+    var retval;
+    var seblver;
+    var url1 = "https://docs.oracle.com/cd/";
+    var url2 = "/portalres/pages/other_toolshelp.htm";
+    if (typeof (localStorage.BCRM_SIEBEL_VERSION) === "undefined") {
+        alert("Siebel version information not found. Please log in to a Siebel application session with devpops in the same browser and try again.");
+    }
+    else {
+        seblver = localStorage.BCRM_SIEBEL_VERSION.split(".")[0] + "." + localStorage.BCRM_SIEBEL_VERSION.split(".")[1];
+        retval = url1 + bcrm_help_map[seblver] + url2;
+    }
+    return retval;
+};
+
+//Online Help Menu
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMSetToolsHelpContent = function () {
+    var url = BCRMGetToolsHelpURL();
+    if (typeof (url) != "undefined") {
+        $("[data-caption='&Help']").find("a").each(function (x) {
+            if ($(this).text().indexOf("Contents") != -1) {
+                $(this).off("click");
+                $(this).parent().off("click");
+                $(this).attr("href", url);
+                $(this).attr("target", "_blank");
+                $(this).text("Online Help");
+                $(this).on("click",function(e){
+                    e.stopImmediatePropagation();
+                });
+            }
+        });
+    }
+};
+
+//Banner prettifier
+var bannerint;
+BCRMPrettifyBanner = function () {
+    var redwood = [
+        "https://docs.oracle.com/cd/F26413_16/portalres/images/Abstracts_Light_3.png",
+        "https://docs.oracle.com/cd/F26413_13/portalres/images/Abstracts_Winter_1.png",
+        "https://docs.oracle.com/cd/F26413_10/portalres/images/Abstracts_Open_Dark_5.png",
+        "https://docs.oracle.com/cd/F26413_09/portalres/images/Abstracts_Autumn_1.png",
+        "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png"
+    ];
+
+    var bg = redwood[Math.floor((Math.random() * redwood.length))];
+    $("#_sweappmenu").css("background", "url(" + bg + ")");
+    $("#_sweappmenu").css("background-position-y", 3300 * Math.random() + "px");
+    $(".applicationMenu").css("background", "transparent");
+    $(".siebui-search-toolbar-options").css("background", "transparent");
+    $(".siebui-nav-hb-btn").css("background", "transparent");
+    if (typeof (bannerint) !== "undefined") {
+        clearInterval(bannerint);
+    }
+    bannerint = setInterval(function () {
+        var bpy = parseFloat($("#_sweappmenu").css("background-position-y"));
+        $("#_sweappmenu").css("background-position-y", bpy + 0.1 + "px");
+    }, 100);
+    $("#_sweappmenu").css("background-position-y")
+};
 
 //DOM element creator helper, supports Siebel Test Automation for custom DOM elements
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
@@ -998,6 +1098,12 @@ BCRMWTHelper = function () {
             //add screen menu
             BCRMAddWTScreenMenu();
 
+            //Point Help > Contents to Bookshelf
+            BCRMSetToolsHelpContent();
+
+            //Prettify Banner, because we can
+            BCRMPrettifyBanner();
+
             console.log("BCRM devpops extension for Siebel Web Tools loaded");
         }
     }
@@ -1016,5 +1122,4 @@ catch (e) {
     console.log("Error in BCRM devpops extension for Siebel Web Tools: " + e.toString());
 }
 
-//Tools online help https://docs.oracle.com/cd/F26413_16/portalres/pages/other_toolshelp.htm
 //END WSTOOLS postload.js content
