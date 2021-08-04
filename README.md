@@ -79,13 +79,14 @@ Video update (Siebel Friday 28-MAY-2021): https://youtu.be/uwP34iYqlLk?t=2424
 3. Register BCRM Modified Objects List View with a responsibility of your choice
 
 4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser)
-   Edit the Business Service User Properties to match your Enterprise, Gateway host address and Gateway TLS port number
+   Edit the Business Service User Properties to match your Enterprise, Gateway host address and Gateway TLS port number 
 
 5. Register FWK Runtime and BCRM Server Manager Service business services with your Application(s) in Application User Prop (ClientBusinessServiceN)
 
 6. Deliver repository changes.
 
 7. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
+   If you use the BCRM Server Manager Service, check the default path in the srvrmgr method in the FWK Runtime business service and change if required.
 
 8. If you want to use the runcmd and readFile methods, set System Preference: Runtime Scripts System Access = TRUE
 
