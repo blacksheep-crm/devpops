@@ -107,7 +107,12 @@ BCRMWSGenerateWSBanner = function (ws, ver, status, type) {
         type = "banner";
     }
     var u, w, v, s;
-    var c = $('<div id="bcrm_wsui_name" class="siebui-active-ws" style="margin-right: 4px;background:transparent!important;"></div>');
+    //if workspace banner looks weird, toogle below comments
+	//should look fine
+	var c = $('<div id="bcrm_wsui_name" class="siebui-active-ws" style="margin-right: 4px;background:transparent!important;width: fit-content;float: right;margin-top: 4px;"></div>');
+	//uncomment below if workspace banner is weird
+    //var c = $('<div id="bcrm_wsui_name" class="siebui-active-ws" style="margin-right: 4px;background:transparent!important;"></div>');
+	
     if (type == "banner") {
         u = $('<ul class="siebui-wsui-ctx-bar">');
     }
