@@ -4253,12 +4253,30 @@ function BCRMSiebelAboutView() {
     // to support single session
     $("#" + BCRM_AV_id).parent().remove();
 
-    if ("undefined" === typeof EJS) {
+
+	/* ahansal 2022-02-24: this stopped working in 22.2
+	if ("undefined" === typeof EJS) {
         var src = "3rdParty/ejs/ejs_production";
         requirejs([src], BCRMSiebelAboutView, function () { SiebelApp.Utils.Alert("Failed to load EJS library ! \n" + src); });
     }
 
     var html = new EJS({ text: tmp }).render(SiebelApp.S_App);
+	
+	*/
+	
+	//fix for 22.2 and higher, should also work in lower versions, but not tested
+	
+    if ("undefined" === typeof(ejs)) {
+        var src = "3rdParty/ejs/ejs_production";
+        //requirejs([src], BCRMSiebelAboutView, function () { SiebelApp.Utils.Alert("Failed to load EJS library ! \n" + src); });
+		jQuery.getScript("scripts/" + src + ".js").done(function(){
+			setTimeout(function(){
+				BCRMSiebelAboutView();
+			},100);
+		});
+    }
+
+    let html = ejs.render(tmp,SiebelApp.S_App);
 
     $d = $(html).dialog({
         modal: true,
