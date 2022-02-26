@@ -6,15 +6,13 @@ User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
-# What's New in 21.6?
+# What's New in 22.2?
 
-Tools Online Help in Web Tools
+X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/formatted)
 
-Redwood Banner
+Fixed EJS bug in About View
 
-Property Set Viewer (beta)
-
-# Update to 21.6
+# Update to 22.2
 
 Review User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
@@ -65,6 +63,12 @@ Test Automation Support
 Test Automation Readiness Wizard
 
 User Responsibility Check
+
+Tools Online Help in Web Tools
+
+Redwood Banner
+
+Property Set Viewer (beta)
 
 # Videos
 
