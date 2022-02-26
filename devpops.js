@@ -43,9 +43,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "21.6";
-var devpops_version = 53;
-var devpops_tag = "Carl Ferdinand Braun";
+var devpops_dver = "22.2";
+var devpops_version = 54;
+var devpops_tag = "Shirin Ebadi";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -54,6 +54,9 @@ var BCRM_SIEBEL_VERSION = "";
 var BCRM_SIEBEL_V = {};
 var BCRM_WORKSPACE = {};
 var FWK_VERSION = 0;
+var BCRM_XRAY_DATA = {};
+var BCRM_XRAY_APPLETS = [];
+var BCRM_XRAY_ADDVIEW = false;
 
 //module configuration, most defaults and other stuff can be controlled from here
 var devpops_config = {
@@ -108,11 +111,11 @@ BCRMWSGenerateWSBanner = function (ws, ver, status, type) {
     }
     var u, w, v, s;
     //if workspace banner looks weird, toogle below comments
-	//should look fine
-	var c = $('<div id="bcrm_wsui_name" class="siebui-active-ws" style="margin-right: 4px;background:transparent!important;width: fit-content;float: right;margin-top: 4px;"></div>');
-	//uncomment below if workspace banner is weird
+    //should look fine
+    var c = $('<div id="bcrm_wsui_name" class="siebui-active-ws" style="margin-right: 4px;background:transparent!important;width: fit-content;float: right;margin-top: 4px;"></div>');
+    //uncomment below if workspace banner is weird
     //var c = $('<div id="bcrm_wsui_name" class="siebui-active-ws" style="margin-right: 4px;background:transparent!important;"></div>');
-	
+
     if (type == "banner") {
         u = $('<ul class="siebui-wsui-ctx-bar">');
     }
@@ -870,6 +873,77 @@ BCRMButtonizeDebugMenu = function () {
     localStorage.BCRM_MENU_STATE = "toolbar";
 };
 
+BCRMRunSilentXRay = function () {
+    $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
+    setTimeout(function () {
+
+        if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+            $("#bcrm_dbg_menu").remove();
+        }
+
+        if (typeof (localStorage.BCRM_OPT_Silent_ClearXRay) === "undefined") {
+            BCRM_XRAY_DATA = {};
+        }
+        if (localStorage.BCRM_OPT_Silent_ClearXRay == "true") {
+            BCRM_XRAY_DATA = {};
+        }
+
+        BCRMdevpopsTest("xray");
+        $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
+
+        setTimeout(function () {
+            $("#bcrm_debug_msg").text("");
+        }, 5000);
+
+        if (typeof (localStorage.BCRM_OPT_Silent_CopyXRay) === "undefined" || localStorage.BCRM_OPT_Silent_CopyXRay == "true") {
+            setTimeout(function () {
+                var dlg = $("<div>Select options, then click OK to copy X-Ray data to clipboard.</div>");
+                var opt = $("<div id='bcrm_xray_opt' style='margin-top:4px;border=1px solid gray'>");
+                dlg.append(opt);
+                dlg.dialog({
+                    title: "X-Ray Export",
+                    width: 300,
+                    height: "auto",
+                    buttons: {
+                        "OK": function () {
+                            BCRM_XRAY_APPLETS = [];
+                            var opt = $(this).find("#bcrm_xray_opt");
+                            opt.find("input").each(function () {
+                                if ($(this).prop("checked")) {
+                                    BCRM_XRAY_APPLETS.push($(this).parent().parent().attr("id"));
+                                }
+                            });
+                            var ut = new SiebelAppFacade.BCRMUtils();
+                            ut.XRAY2HTML();
+                            $(this).dialog("destroy");
+                        },
+                        "Cancel": function () {
+                            $(this).dialog("destroy");
+                        }
+                    },
+                    open: function () {
+                        var opt = $(this).find("#bcrm_xray_opt");
+                        var achoice;
+                        for (a in BCRM_XRAY_DATA) {
+                            if (a != "Technical Support Applet") {
+                                achoice = $("<div id='" + a + "'><span><input type='checkbox'></span><span>" + a + "</span></div>");
+                                achoice.find("input").prop("checked", true);
+                                opt.append(achoice);
+                            }
+                        }
+                        achoice = $("<div id='" + "viewdata" + "'><span><input type='checkbox'></span><span>" + "Include View Data" + "</span></div>");
+                        achoice.find("input").prop("checked", false);
+                        opt.append("<hr>");
+                        opt.append(achoice);
+                    }
+                })
+            }, 1000);
+        }
+        return BCRMCloseDebugMenu();
+    }, 200);
+    return BCRMCloseDebugMenu();
+};
+
 var BCRM_MENU;
 BCRM_MENU = {};
 BCRMCreateDebugMenu = function () {
@@ -878,7 +952,9 @@ BCRMCreateDebugMenu = function () {
         "https://docs.oracle.com/cd/F26413_13/portalres/images/Abstracts_Winter_1.png",
         "https://docs.oracle.com/cd/F26413_10/portalres/images/Abstracts_Open_Dark_5.png",
         "https://docs.oracle.com/cd/F26413_09/portalres/images/Abstracts_Autumn_1.png",
-        "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png"
+        "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png",
+        "https://docs.oracle.com/cd/F26413_24/portalres/images/Abstracts_Winter_1.png",
+        "https://docs.oracle.com/cd/F26413_26/portalres/images/Abstracts_Plum.png"
     ];
     if (typeof (BCRM_MENU["ShowControls"]) === "undefined") {
         BCRM_MENU = {
@@ -992,20 +1068,24 @@ BCRMCreateDebugMenu = function () {
                 "label": "XR Silent Mode",
                 "title": "X-Ray: Complete scan, update tooltips only",
                 "onclick": function () {
-                    $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
-                    setTimeout(function () {
-                        if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                            $("#bcrm_dbg_menu").remove();
-                        }
-                        BCRMdevpopsTest("xray");
-                        $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
-                        setTimeout(function () {
-                            $("#bcrm_debug_msg").text("");
-                        }, 5000);
-                        //$("#bcrm_dbg_menu").find("ul.depth-0").menu("destroy");
-                        return BCRMCloseDebugMenu();
-                    }, 200);
-                    return BCRMCloseDebugMenu();
+                    BCRMRunSilentXRay();
+                },
+                "showoptions": true,
+                "options": {
+                    "CopyXRay": {
+                        "label": "Copy X-Ray data to clipboard",
+                        "default": "true",
+                        "tip": "X-Ray data will be available for pasting as CSV, HTML or Excel",
+                        "type": "select",
+                        "lov": ["true", "false"]
+                    },
+                    "ClearXRay": {
+                        "label": "Clear X-Ray data",
+                        "default": "true",
+                        "tip": "Clear previous X-Ray data (only current view will be exported)",
+                        "type": "select",
+                        "lov": ["true", "false"]
+                    }
                 },
                 "img": "images/grid_matte_ship.png"
             },
@@ -1785,6 +1865,9 @@ BCRMCreateDebugMenu = function () {
                                         $("#bcrm_debug_msg").text("");
                                     });
                                 }
+                                if (id == "Silent") {
+                                    BCRMRunSilentXRay();
+                                }
                             },
                             Save: function () {
                                 $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -1828,7 +1911,9 @@ BCRMAddDebugButton = function () {
     if ($("#bcrm_debug").length == 0) {
         //inject CSS
         var togglecss = ".bcrm-dock-ug:before{content:'\\f004';font-family:'oracle';} .bcrm-dock-rot:before{content:'\\e94a';font-family:'oracle';} #bcrm_dbg_menu ul.bcrm-tb li.bcrm-dbg-item div.ui-state-disabled {background-size: cover!important;mix-blend-mode: soft-light;} .bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
-        togglecss += "li#bcrm_debug_li:active{background: radial-gradient(red, transparent);color: black;border-radius: 50%;}";
+        togglecss += " li#bcrm_debug_li:active{background: radial-gradient(red, transparent);color: black;border-radius: 50%;}";
+        togglecss += " .bcrm-recent-view a {background:transparent;text-decoration:none!important;font-size: 14px!important; padding-top: 2px!important; padding-bottom: 0px!important; margin-top: 0px!important; line-height: 19px!important; font-weight: normal!important; }";
+        togglecss += " #bcrm_sitemap li a:hover{color:white;background:#5277b8;}";
         var st = $("<style bcrm-style='yes'>" + togglecss + "</style>");
         if ($("style[bcrm-style]").length == 0) {
             $("head").append(st);
@@ -2622,7 +2707,7 @@ BCRMParseTrace = function (s) {
             type = "SELECT";
             var sn = statement.split(",SELECT,")[0].split(",")[1] + ".0";
             var sql = statement.split(",SELECT,")[1];
-            if (sql.indexOf("S_ACC_VIEW_APPL") > 1 ||  sql.indexOf("S_RR") > -1 || sql.indexOf("S_WEB_TMPL") > -1 || sql.indexOf("S_UI_") > -1) {
+            if (sql.indexOf("S_ACC_VIEW_APPL") > 1 || sql.indexOf("S_RR") > -1 || sql.indexOf("S_WEB_TMPL") > -1 || sql.indexOf("S_UI_") > -1) {
                 isrr = true;
                 rrc++;
             }
@@ -3040,6 +3125,45 @@ BCRMGetFWKVersion = function () {
     return retval;
 };
 
+//Site Map Magic
+BCRMEnableMagicSitemap = function () {
+    var btn = $("li[name='SiteMap']");
+    if (btn.length == 1) {
+        if (btn.attr("bcrm-enabled") !== "true") {
+            btn.attr("bcrm-enabled", "true");
+            btn.attr("title", "Right-click for Site Map Magic");
+            btn.on("contextmenu", function () {
+
+                setTimeout(function () {
+                    /*
+                    if (typeof (BCRM_SITEMAP) !== "undefined") {
+                        var sm = BCRM_SITEMAP;
+                        var count = sm.find("li").length + 1;
+                        $("#bcrm_debug_msg").text(count + " items in your Site Map. Be patient.");
+                    }
+                    */
+                    setTimeout(function () {
+                        $("#maskoverlay").show();
+
+                        setTimeout(function () {
+                            if ($("#bcrm_sitemap:visible").length == 0) {
+                                BCRMShowSitemap();
+                            }
+                            else {
+                                $("#bcrm_sitemap").hide();
+                            }
+
+                            $("#maskoverlay").hide();
+                            $("#bcrm_debug_msg").text("");
+                        }, 10);
+                    }, 10);
+                }, 10);
+                return false;
+            });
+        }
+    }
+};
+
 //main postload function
 BCRMWSHelper = function () {
     //console.time("BCRMWSHelper");
@@ -3120,6 +3244,9 @@ BCRMWSHelper = function () {
             if (vn == "Business Service Script Editor View") {
                 BCRMModStorageView();
             }
+
+            //site map menu
+            BCRMEnableMagicSitemap();
             //multiselect
             /*
             var mjs = $('<script src="scripts/siebel/custom/ui.multiselect.js"></script>');
@@ -3397,17 +3524,35 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var pm = ut.ValidateContext(context);
             var bc, fm, cs, tp, fn, fd, lovtype;
             var fdt, fln, fcl, frq;
-            var nl;
+            var nl, an, cn, bcn, fi;
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "ShowBCFields");
+
                 bc = pm.Get("GetBusComp");
                 fm = bc.GetFieldMap();
                 tp = ut.GetAppletType(pm);
+                an = pm.GetObjName();
+                bcn = bc.GetName();
+                fi = pm.Get("GetFullId");
+
+                //ahansal: 2022-02-25: collect all XRAY data for later visualization/export
+                if (typeof (BCRM_XRAY_DATA[an]) === "undefined") {
+                    BCRM_XRAY_DATA[an] = {};
+                }
+                if (typeof (BCRM_XRAY_DATA[an]["Controls"]) === "undefined") {
+                    BCRM_XRAY_DATA[an]["Controls"] = {};
+                }
+                xrd = BCRM_XRAY_DATA[an]["Controls"];
+
+
                 //Form Applet treatment
                 if (tp == "form" || tp == "list") {
                     cs = pm.Get("GetControls");
                     for (c in cs) {
                         if (cs.hasOwnProperty(c)) {
+                            cn = c;
                             fn = cs[c].GetFieldName();
                             lovtype = cs[c].GetLovType();
                             if (fn != "") {
@@ -3418,8 +3563,30 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                     frq = fd.IsRequired() ? "*" : ""; //get an asterisk when field is required, otherwise nothing
                                     fcl = fd.IsCalc() ? "C" : ""; //get a "C" when field is calculated, otherwise nothing
                                     nl = fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
+
+                                    //collect XRAY data
+                                    if (typeof (xrd[cn]) === "undefined") {
+                                        xrd[cn] = ut.GetXRAYTemplate();
+                                    }
+                                    xrd[cn]["View Name"] = vn;
+                                    xrd[cn]["Business Object"] = bo;
+                                    xrd[cn]["Applet Name"] = an;
+                                    xrd[cn]["Applet Type"] = tp;
+                                    xrd[cn]["BC Name"] = bcn;
+                                    xrd[cn]["Control Name"] = cn;
+                                    xrd[cn]["Applet DOM Full Id"] = fi;
+                                    xrd[cn]["DOM Input Name"] = cs[c].GetInputName();
+                                    xrd[cn]["Label"] = cs[c].GetDisplayName();
+                                    xrd[cn]["UI Type"] = cs[c].GetUIType();
+                                    xrd[cn]["BC Field Name"] = cs[c].GetFieldName();
+                                    xrd[cn]["BC Field Type"] = fdt;
+                                    xrd[cn]["BC Field Length"] = fln;
+                                    xrd[cn]["BC Field Required"] = (frq == "*" ? "Y" : "N");
+                                    xrd[cn]["BC Field Calculated"] = (fcl == "C" ? "Y" : "N");
+
                                     if (lovtype != null) {
                                         nl = nl + "<br>LOV_TYPE: " + lovtype;
+                                        xrd[cn]["BC Field LOV Type"] = lovtype;
                                     }
                                     ut.SetLabel(cs[c], nl, pm);
                                 }
@@ -3458,42 +3625,134 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var fn;
             retval["Business Component"] = {};
             bc = retval["Business Component"];
-            props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
-            pc = props.length;
-            for (p in props) {
-                bc[p] = props[p];
+            if (rrdata.GetChild(0).GetChildByType("Properties") != null) {
+                props = rrdata.GetChild(0).GetChildByType("Properties").propArray;
+                pc = props.length;
+                for (p in props) {
+                    bc[p] = props[p];
+                }
+                bc["Fields"] = {};
+                bc["Joins"] = {};
+                bc["Multi Value Links"] = {};
+                cc = rrdata.GetChild(0).childArray;
+                for (c in cc) {
+                    if (cc[c].type == "Field") {
+                        props = cc[c].GetChildByType("Properties").propArray;
+                        fn = cc[c].GetChildByType("Properties").propArray["Name"];
+                        bc["Fields"][fn] = {};
+                        for (p in props) {
+                            bc["Fields"][fn][p] = props[p];
+                        }
+                    }
+                    if (cc[c].type == "Join") {
+                        props = cc[c].GetChildByType("Properties").propArray;
+                        fn = cc[c].GetChildByType("Properties").propArray["Name"];
+                        bc["Joins"][fn] = {};
+                        for (p in props) {
+                            bc["Joins"][fn][p] = props[p];
+                        }
+                    }
+                    if (cc[c].type == "Multi Value Link") {
+                        props = cc[c].GetChildByType("Properties").propArray;
+                        fn = cc[c].GetChildByType("Properties").propArray["Name"];
+                        bc["Multi Value Links"][fn] = {};
+                        for (p in props) {
+                            bc["Multi Value Links"][fn][p] = props[p];
+                        }
+                    }
+                }
             }
-            bc["Fields"] = {};
-            bc["Joins"] = {};
-            bc["Multi Value Links"] = {};
-            cc = rrdata.GetChild(0).childArray;
-            for (c in cc) {
-                if (cc[c].type == "Field") {
-                    props = cc[c].GetChildByType("Properties").propArray;
-                    fn = cc[c].GetChildByType("Properties").propArray["Name"];
-                    bc["Fields"][fn] = {};
-                    for (p in props) {
-                        bc["Fields"][fn][p] = props[p];
-                    }
-                }
-                if (cc[c].type == "Join") {
-                    props = cc[c].GetChildByType("Properties").propArray;
-                    fn = cc[c].GetChildByType("Properties").propArray["Name"];
-                    bc["Joins"][fn] = {};
-                    for (p in props) {
-                        bc["Joins"][fn][p] = props[p];
-                    }
-                }
-                if (cc[c].type == "Multi Value Link") {
-                    props = cc[c].GetChildByType("Properties").propArray;
-                    fn = cc[c].GetChildByType("Properties").propArray["Name"];
-                    bc["Multi Value Links"][fn] = {};
-                    for (p in props) {
-                        bc["Multi Value Links"][fn][p] = props[p];
-                    }
-                }
-            }
+
             return retval;
+        };
+
+        //ahansal 2022-02-25: Convert XRAY JSON data to html table
+        BCRMUtils.prototype.XRAY2HTML = function () {
+            if ($.isEmptyObject(BCRM_XRAY_DATA)) {
+                SiebelApp.Utils.Alert("No X-Ray data found.\nPlease run X-Ray first.");
+            }
+            else {
+                var d = BCRM_XRAY_DATA;
+                var hd;
+                var row;
+                var cs, c, p;
+                var table;
+                var vc = ["View Name","Business Object"];
+                var vn = SiebelApp.S_App.GetActiveView().GetName();
+                var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
+                table = $("<table id='bcrm_xray' style='width:max-content;'>");
+                for (a in d) {
+                    if (a != "Technical Support Applet" && BCRM_XRAY_APPLETS.indexOf(a) > -1) {
+                        cs = d[a]["Controls"];
+                        for (cn in cs) {
+                            c = cs[cn];
+                            if (typeof (hd) === "undefined") {
+                                hd = $("<tr style='font-weight:bold;background:gainsboro;'>");
+                                if (BCRM_XRAY_APPLETS.indexOf("viewdata") == -1) {
+                                    for (p in c) {
+                                        if (vc.indexOf(p) == -1){
+                                            hd.append("<td>" + p + "</td>");
+                                        }
+                                    }
+                                }
+                                else{
+                                    for (p in c) {
+                                        hd.append("<td>" + p + "</td>");
+                                    }
+                                }
+                                table.append(hd);
+                            }
+                            row = $("<tr>");
+                            if (BCRM_XRAY_APPLETS.indexOf("viewdata") == -1) {
+                                for (p in c) {
+                                    if (vc.indexOf(p) == -1){
+                                        row.append("<td>" + c[p] + "</td>");
+                                    }
+                                }
+                            }
+                            else{
+                                for (p in c) {
+                                    row.append("<td>" + c[p] + "</td>");
+                                }
+                            }
+                            table.append(row);
+                        }
+                    }
+                }
+
+                setTimeout(function () {
+                    $("body").append(table);
+                    var el = $("body").find("#bcrm_xray")[0];
+
+                    //source: https://stackoverflow.com/questions/2044616/select-a-complete-table-with-javascript-to-be-copied-to-clipboard
+                    var body = document.body, range, sel;
+                    if (document.createRange && window.getSelection) {
+                        range = document.createRange();
+                        sel = window.getSelection();
+                        sel.removeAllRanges();
+                        try {
+                            range.selectNodeContents(el);
+                            sel.addRange(range);
+                        } catch (e) {
+                            range.selectNode(el);
+                            sel.addRange(range);
+                        }
+                        document.execCommand("copy");
+
+                    } else if (body.createTextRange) {
+                        range = body.createTextRange();
+                        range.moveToElementText(el);
+                        range.select();
+                        range.execCommand("Copy");
+                    }
+
+                    setTimeout(function () {
+                        $("body").find("#bcrm_xray").remove();
+                        //SiebelApp.Utils.Alert("X-Ray data copied to clipboard.");
+                    }, 500)
+                }, 500);
+
+            }
         };
 
         //experimental extraction of "SRF" metadata cache, including NEOs
@@ -3835,43 +4094,122 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return ad;
         };
 
+        //helper for XRAY data
+        BCRMUtils.prototype.GetXRAYTemplate = function () {
+            var tmp = {};
+
+            tmp["View Name"] = "";
+            tmp["Business Object"] = "";
+            tmp["Applet Name"] = "";
+            tmp["Applet Type"] = "";
+            tmp["BC Name"] = "";
+            tmp["Control Name"] = "";
+            tmp["Applet DOM Full Id"] = "";
+            tmp["DOM Input Name"] = "";
+            tmp["Label"] = "";
+            tmp["MVG Applet"] = "";
+            tmp["Associate Applet"] = "";
+            tmp["UI Type"] = "";
+            tmp["Pick Applet"] = "";
+            tmp["Method Invoked"] = "";
+            tmp["BC Field Name"] = "";
+            tmp["BC Field Type"] = "";
+            tmp["BC Field Length"] = "";
+            tmp["BC Field Required"] = "";
+            tmp["BC Field Calculated"] = "";
+            tmp["BC Field Calc Expr"] = "";
+            tmp["BC Field Join"] = "";
+            tmp["BC Field MVLink"] = "";
+            tmp["BC Field MVField"] = "";
+            tmp["BC Field MVBusComp"] = "";
+            tmp["BC Field LOV Type"] = "";
+            tmp["DB Column"] = "";
+            tmp["DB Table"] = "";
+            tmp["NEO"] = "";
+
+            return tmp;
+        }
         BCRMUtils.prototype.ShowControls = function (context) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var an, apd, tp, cs, cn, uit, pop;
+            var bcn, fi;
             var nl;
+            var xrd;
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
+
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "ShowControls");
                 an = pm.GetObjName();
+                bcn = pm.Get("GetBusComp").GetName();
+                fi = pm.Get("GetFullId");
                 apd = ut.GetAppletData(an);
                 tp = ut.GetAppletType(pm);
                 //currently supporting form applets only
                 if (tp == "form" || tp == "list") {
                     cs = pm.Get("GetControls");
+
+                    //ahansal: 2022-02-25: collect all XRAY data for later visualization/export
+                    if (typeof (BCRM_XRAY_DATA[an]) === "undefined") {
+                        BCRM_XRAY_DATA[an] = {};
+                    }
+                    if (typeof (BCRM_XRAY_DATA[an]["Controls"]) === "undefined") {
+                        BCRM_XRAY_DATA[an]["Controls"] = {};
+                    }
+                    xrd = BCRM_XRAY_DATA[an]["Controls"];
+
                     for (c in cs) {
                         pop = "";
                         if (cs.hasOwnProperty(c) && c != "CleanEmptyElements") {
                             cn = c;
+
+                            if (typeof (xrd[cn]) === "undefined") {
+                                xrd[cn] = ut.GetXRAYTemplate();
+                            }
+
+                            //collect XRAY data
+                            xrd[cn]["View Name"] = vn;
+                            xrd[cn]["Business Object"] = bo;
+                            xrd[cn]["Applet Name"] = an;
+                            xrd[cn]["Applet Type"] = tp;
+                            xrd[cn]["BC Name"] = bcn;
+                            xrd[cn]["Control Name"] = cn;
+                            xrd[cn]["Applet DOM Full Id"] = fi;
+                            xrd[cn]["DOM Input Name"] = cs[c].GetInputName();
+                            xrd[cn]["Label"] = cs[c].GetDisplayName();
+                            xrd[cn]["UI Type"] = cs[c].GetUIType();
+                            xrd[cn]["BC Field Name"] = cs[c].GetFieldName();
+
                             uit = cs[cn].GetUIType();
                             if (uit == "Mvg") {
                                 if (typeof (apd["Controls"][cn]) !== "undefined") {
                                     pop = apd["Controls"][cn]["MVG Applet"];
+                                    xrd[cn]["MVG Applet"] = pop;
                                     //get Assoc applet
                                     var mvgd = ut.GetAppletData(pop);
                                     var asa = mvgd["Associate Applet"];
                                     if (asa != "") {
                                         uit = "Shuttle";
                                         pop = asa + "<br>" + pop;
+                                        xrd[cn]["Associate Applet"] = asa;
                                     }
                                 }
                             }
+
+                            //collect XRAY data
+                            xrd[cn]["UI Type"] = uit;
+
+
                             if (uit == "Pick") {
                                 if (typeof (apd["Controls"][cn]) !== "undefined") {
                                     pop = apd["Controls"][cn]["Pick Applet"];
+                                    xrd[cn]["Pick Applet"] = pop;
                                 }
                             }
                             if (uit == "Button") {
                                 pop = cs[cn].GetMethodName();
+                                xrd[cn]["Method Invoked"] = pop;
                             }
                             else {
                                 //nothing to do as of yet
@@ -3893,9 +4231,11 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var pm = ut.ValidateContext(context);
             var table, column, mvlink, mvfield, mvbc, join;
             var bcd2;
-            var bc, bcd, bcn, fm, cs, tp, fn, fd;
-            var fdt, fln, fcl, frq;
+            var bc, bcd, bcn, fm, cs, tp, fn, fd, an;
+            var fdt, fln, fcl, frq, fi;
             var nl;
+            var vn = SiebelApp.S_App.GetActiveView().GetName();
+            var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "ShowTableColumns");
                 bc = pm.Get("GetBusComp");
@@ -3904,8 +4244,21 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 bcd = ut.GetBCData(bcn);
                 fm = bc.GetFieldMap();
                 tp = ut.GetAppletType(pm);
+                an = pm.GetObjName();
+                fi = pm.Get("GetFullId");
 
                 if (tp == "form" || tp == "list") {
+
+                    //ahansal: 2022-02-25: collect all XRAY data for later visualization/export
+                    if (typeof (BCRM_XRAY_DATA[an]) === "undefined") {
+                        BCRM_XRAY_DATA[an] = {};
+                    }
+                    if (typeof (BCRM_XRAY_DATA[an]["Controls"]) === "undefined") {
+                        BCRM_XRAY_DATA[an]["Controls"] = {};
+                    }
+                    xrd = BCRM_XRAY_DATA[an]["Controls"];
+
+
                     cs = pm.Get("GetControls");
                     for (c in cs) {
                         if (cs.hasOwnProperty(c) && c != "CleanEmptyElements") {
@@ -3926,64 +4279,110 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                     fcl = "";
                                 }
 
-                                if (typeof (bcd["Fields"][fn]) !== "undefined") {
+                                //collect XRAY data
+                                if (typeof (xrd[cn]) === "undefined") {
+                                    xrd[cn] = ut.GetXRAYTemplate();
+                                }
+                                xrd[cn]["View Name"] = vn;
+                                xrd[cn]["Business Object"] = bo;
+                                xrd[cn]["Applet Name"] = an;
+                                xrd[cn]["Applet Type"] = tp;
+                                xrd[cn]["BC Name"] = bcn;
+                                xrd[cn]["Control Name"] = cn;
+                                xrd[cn]["Applet DOM Full Id"] = fi;
+                                xrd[cn]["DOM Input Name"] = cs[c].GetInputName();
+                                xrd[cn]["Label"] = cs[c].GetDisplayName();
+                                xrd[cn]["UI Type"] = cs[c].GetUIType();
+                                xrd[cn]["BC Field Name"] = cs[c].GetFieldName();
+                                xrd[cn]["BC Field Type"] = fdt;
+                                xrd[cn]["BC Field Length"] = fln;
+                                xrd[cn]["BC Field Required"] = (frq == "*" ? "Y" : "N");
+                                xrd[cn]["BC Field Calculated"] = (fcl == "C" ? "Y" : "N");
 
-                                    table = bcd["Table"];
-                                    column = bcd["Fields"][fn]["Column"];
 
-                                    //Join lookup
-                                    if (bcd["Fields"][fn]["Join"] != "") {
-                                        join = bcd["Fields"][fn]["Join"];
-                                        if (typeof (bcd["Joins"][join]) !== "undefined") {
-                                            table = bcd["Joins"][join]["Table"];
+                                if (typeof (bcd["Fields"]) !== "undefined") {
+                                    if (typeof (bcd["Fields"][fn]) !== "undefined") {
+
+                                        table = bcd["Table"];
+                                        column = bcd["Fields"][fn]["Column"];
+
+
+                                        xrd[cn]["DB Column"] = column;
+                                        xrd[cn]["DB Table"] = table;
+
+                                        //Join lookup
+                                        if (bcd["Fields"][fn]["Join"] != "") {
+                                            join = bcd["Fields"][fn]["Join"];
+                                            xrd[cn]["BC Field Join"] = join;
+                                            if (typeof (bcd["Joins"][join]) !== "undefined") {
+                                                table = bcd["Joins"][join]["Table"];
+                                            }
+                                            else {
+                                                table = join;
+                                            }
                                         }
-                                        else {
-                                            table = join;
+                                        nl = table + "." + column;
+                                        xrd[cn]["DB Column"] = column;
+                                        xrd[cn]["DB Table"] = table;
+
+                                        //calculated fields
+                                        if (fcl == "C") {
+                                            nl = "Calc: " + bcd["Fields"][fn]["Calculated Value"];
+                                            xrd[cn]["BC Field Calc Expr"] = bcd["Fields"][fn]["Calculated Value"];
+                                            xrd[cn]["DB Column"] = "";
+                                            xrd[cn]["DB Table"] = "";
                                         }
-                                    }
-                                    nl = table + "." + column;
 
-                                    //calculated fields
-                                    if (fcl == "C") {
-                                        nl = "Calc: " + bcd["Fields"][fn]["Calculated Value"];
-                                    }
+                                        //multi-value fields
+                                        if (bcd["Fields"][fn]["Multi Valued"] == "Y") {
+                                            //debugger;
 
-                                    //multi-value fields
-                                    if (bcd["Fields"][fn]["Multi Valued"] == "Y") {
-                                        //debugger;
-                                        mvlink = bcd["Fields"][fn]["Multi Value Link"];
-                                        mvfield = bcd["Fields"][fn]["Dest Field"];
-                                        if (typeof (bcd["Multi Value Links"][mvlink]) !== "undefined") {
-                                            mvbc = bcd["Multi Value Links"][mvlink]["Destination Business Component"];
-                                            bcd2 = ut.GetBCData(mvbc);
-                                            if (typeof (bcd2["Fields"][mvfield]) !== "undefined") {
-                                                table = bcd2["Table"];
-                                                column = bcd2["Fields"][mvfield]["Column"];
-                                                //Join lookup
-                                                if (bcd2["Fields"][mvfield]["Join"] != "") {
-                                                    join = bcd2["Fields"][mvfield]["Join"];
-                                                    if (typeof (bcd2["Joins"][join]) !== "undefined") {
-                                                        table = bcd2["Joins"][join]["Table"];
-                                                    }
-                                                    else {
-                                                        table = join;
+                                            mvlink = bcd["Fields"][fn]["Multi Value Link"];
+                                            mvfield = bcd["Fields"][fn]["Dest Field"];
+                                            xrd[cn]["BC Field MVLink"] = mvlink;
+                                            xrd[cn]["BC Field MVField"] = mvfield;
+
+                                            if (typeof (bcd["Multi Value Links"][mvlink]) !== "undefined") {
+                                                mvbc = bcd["Multi Value Links"][mvlink]["Destination Business Component"];
+                                                xrd[cn]["BC Field MVBusComp"] = mvbc;
+                                                bcd2 = ut.GetBCData(mvbc);
+                                                if (typeof (bcd2["Fields"][mvfield]) !== "undefined") {
+                                                    table = bcd2["Table"];
+                                                    column = bcd2["Fields"][mvfield]["Column"];
+                                                    //Join lookup
+                                                    if (bcd2["Fields"][mvfield]["Join"] != "") {
+                                                        join = bcd2["Fields"][mvfield]["Join"];
+                                                        if (typeof (bcd2["Joins"][join]) !== "undefined") {
+                                                            table = bcd2["Joins"][join]["Table"];
+                                                        }
+                                                        else {
+                                                            table = join;
+                                                        }
                                                     }
                                                 }
                                             }
+                                            //nl = "MVF: " + mvbc + "::" + mvfield;
+                                            nl = "MVF: " + table + "." + column;
+                                            xrd[cn]["DB Column"] = column;
+                                            xrd[cn]["DB Table"] = table;
                                         }
-                                        //nl = "MVF: " + mvbc + "::" + mvfield;
-                                        nl = "MVF: " + table + "." + column;
                                     }
+
                                 }
+
                                 //field not found in bcdata
                                 else {
                                     //try experimental NEO access
                                     try {
                                         var neo = ut.GetNEOData(bcn, fn);
                                         if (typeof (neo["Fields"][fn]) !== "undefined") {
+
                                             table = neo["Fields"][fn]["Join"];
                                             column = neo["Fields"][fn]["Column"];
                                             nl = table + "." + column;
+                                            xrd[cn]["NEO"] = "Y";
+                                            xrd[cn]["DB Column"] = column;
+                                            xrd[cn]["DB Table"] = table;
                                         }
                                         else {
                                             //display field info from OUI layer
@@ -4253,30 +4652,12 @@ function BCRMSiebelAboutView() {
     // to support single session
     $("#" + BCRM_AV_id).parent().remove();
 
-
-	/* ahansal 2022-02-24: this stopped working in 22.2
-	if ("undefined" === typeof EJS) {
+    if ("undefined" === typeof EJS) {
         var src = "3rdParty/ejs/ejs_production";
         requirejs([src], BCRMSiebelAboutView, function () { SiebelApp.Utils.Alert("Failed to load EJS library ! \n" + src); });
     }
 
     var html = new EJS({ text: tmp }).render(SiebelApp.S_App);
-	
-	*/
-	
-	//fix for 22.2 and higher, should also work in lower versions, but not tested
-	
-    if ("undefined" === typeof(ejs)) {
-        var src = "3rdParty/ejs/ejs_production";
-        //requirejs([src], BCRMSiebelAboutView, function () { SiebelApp.Utils.Alert("Failed to load EJS library ! \n" + src); });
-		jQuery.getScript("scripts/" + src + ".js").done(function(){
-			setTimeout(function(){
-				BCRMSiebelAboutView();
-			},100);
-		});
-    }
-
-    let html = ejs.render(tmp,SiebelApp.S_App);
 
     $d = $(html).dialog({
         modal: true,
@@ -5243,6 +5624,7 @@ BCRMdevpopsTest = function (mode) {
     var v1 = "ISS Product Administration View";
     var st = 2000;
     if (mode == "xray") {
+        //BCRM_XRAY_DATA = {};
         st = 200;
     }
     var btn = $($("#bcrm_debug ul li")[0]);
@@ -7147,7 +7529,7 @@ BCRMBusinessServiceRunner = function () {
                     }
                 });
             },
-            "PropSet Viewer (experimental)":function(){
+            "PropSet Viewer (experimental)": function () {
                 var ps = $("#bcrm_outps").val();
                 var t = SiebelApp.S_App.NewPropertySet();
                 t.DecodeFromStringOld(ps);
@@ -8075,3 +8457,284 @@ BCRMPropSet2HTML = function (ps, p) {
     }
     BCRMPSC++;
 };
+
+//Site Map to Menu
+var BCRM_SITEMAP;
+
+//check for site map
+var BCRM_SM_INT = setInterval(function () {
+    BCRMGetSitemap();
+}, 1000);
+
+BCRMGetSitemap = function () {
+    var sm;
+    if (typeof (BCRM_SITEMAP) === "undefined") {
+        //site map open, let's clone and convert to menu
+        //takes a few seconds on first Site Map open
+        if ($("ul.siebui-sitemap-main").length == 1) {
+            clearInterval(BCRM_SM_INT);
+
+            sm = $("ul.siebui-sitemap-main").clone();
+
+            sm.find("a[href*='SWEGotoAnchor']").remove();
+            sm.find("a[id*='SWESiteMapStartAnchor']").remove();
+            sm.removeClass("siebui-sitemap-main");
+            sm.removeClass("ui-dialog-content");
+            sm.removeClass("ui-widget-content");
+            var dv = $("<div id='bcrm_sitemap'></div>");
+            dv.append(sm);
+
+            BCRM_SITEMAP = dv;
+            localStorage.BCRM_SITEMAP = dv[0].outerHTML;
+        }
+    }
+};
+
+BCRMShowSitemap = function (options) {
+    if (typeof (options) === "undefined") {
+        if (typeof (localStorage.BCRM_OPT_SM_STYLE) === "undefined") {
+            options = {
+                flat: true
+            }
+        }
+        else {
+            if (localStorage.BCRM_OPT_SM_STYLE == "menu") {
+                options = {
+                    flat: false
+                }
+            }
+            else if (localStorage.BCRM_OPT_SM_STYLE == "flat") {
+                options = {
+                    flat: true
+                }
+            }
+        }
+    }
+    var sm;
+    if (typeof (BCRM_SITEMAP) === "undefined") {
+        if (typeof (localStorage.BCRM_SITEMAP) !== "undefined") {
+            sm = $(localStorage.BCRM_SITEMAP);
+        }
+        else {
+            SiebelApp.Utils.Alert("No Site Map data found.\nPlease navigate to Site Map once to initialize Site Map data.");
+        }
+    }
+    else {
+        sm = BCRM_SITEMAP;
+    }
+    if (typeof (sm) !== "undefined") {
+        if (sm.attr("x-menu") !== "true") {
+            if (!options.flat) {
+                $(sm.find("ul")[0]).menu();
+            }
+            sm.attr("x-menu", "true");
+            sm.find("a[name*='s_']").each(function (x) {
+                $(this).attr("name", "bcrm_" + x);
+                $(this).attr("id", "bcrm_" + x);
+            });
+            BCRM_SITEMAP = sm.clone();
+            $("#bcrm_debug_msg").text("");
+        }
+        if ($("#bcrm_sitemap").length == 0) {
+            if ($("#sm_filter").length == 0) {
+                var f = $("<input placeholder='type to search' style='margin: 2px; font-size: 14px; padding: 2px; width:70%;' id='sm_filter'>");
+                f.on("keyup", function () {
+                    var value = $(this).val();
+                    $("#bcrm_sitemap li").filter(function () {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value.toLowerCase()) > -1)
+                    });
+                });
+                $(sm.find("ul")[0]).prepend(f);
+
+                var opt = $('<span style="float: right; margin-right: 6px;height:32px;" title="Options"><span style="height:32px" class="miniBtnUIC"></span></span>');
+                var optb = BCRM$('<button type="button" id="options_sm" style="background: #29303f;border: 0;" class="siebui-appletmenu-btn"><span style="height:32px;">Options</span></button>');
+                $(opt).find(".miniBtnUIC").append(optb);
+
+                f.after(opt);
+
+                var dlg = $("<div id='bcrm_options_dlg'>");
+                dlg.append('<div id="oc_sm_style"><div id="lc_sm_style">Display Mode</div><select style="width: 220px;height: 20px;margin-bottom: 4px;font-size:14px" class="bcrm-option" id="BCRM_OPT_SM_STYLE" selected="false" title="Choose display mode for magic site map.\nFlat (faster): looks like Site Map.\nMenu (slower): looks like a menu."><option value="flat">Flat</option><option value="menu">Menu</option></select></div>');
+                dlg.append('<div id="oc_hint1"><div id="lc_sm_style">Reset Site Map Data:</div><p>Click Reset button to purge client-side Site Map Cache.<br>Will also clear recently used view history.</p></div>');
+
+                $(opt).find(".miniBtnUIC").on("click", function () {
+                    dlg.dialog({
+                        title: "Psych Map Options",
+                        buttons: {
+                            Save: function () {
+                                $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
+                                    var sn = $(this).attr("id");
+                                    localStorage.setItem(sn, $(this).val());
+                                });
+                                $(this).dialog("destroy");
+                                location.reload();
+                            },
+                            Reset: function () {
+                                localStorage.removeItem("BCRM_SITEMAP");
+                                var und;
+                                BCRM_SITEMAP = und;
+                                BCRM_SM_INT = setInterval(function () {
+                                    BCRMGetSitemap();
+                                }, 1000);
+                                BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@app_rec_views", JSON.stringify({}), "Application Recent Views");
+                                SiebelApp.Utils.Alert("Site Map Cache purged.\nVisit Site Map to reload the cache.");
+                                $(this).dialog("destroy");
+                                location.reload();
+                            },
+                            Cancel: function (e, ui) {
+                                $(this).dialog("destroy");
+                            }
+                        }
+                    })
+                });
+
+                if (!options.flat) {
+                    $(sm.find("ul")[0]).css("background", "url(https://www.oracle.com/asset/web/i/rh02-panel2.jpg)");
+                    sm.find("ul").css("box-shadow", "8px 8px 3px 6px rgb(0 0 0 / 70%), 0 2px 2px rgb(0 0 0 / 40%) inset");
+                    sm.find("li").attr("style", "background:transparent!important;");
+                }
+                if (options.flat) {
+                    sm.find("li").each(function (x) {
+                        if ($(this).parent().parent().attr("id") == "bcrm_sitemap") {
+                            $(this).css("float", "left");
+                            $(this).css("width", "25%");
+                        }
+                    });
+                }
+                var rviews = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@app_rec_views");
+                var ra = [];
+                if (typeof (rviews) !== "undefined") {
+                    if (typeof (JSON.parse(rviews).array) !== "undefined") {
+                        ra = JSON.parse(rviews).array;
+                    }
+                }
+                if (typeof (ra) !== "undefined" && ra.length > 0) {
+                    var smr;
+                    $("#bcrm_sm_recent").remove();
+                    smr = $("<div id='bcrm_sm_recent'><h3 style='margin:1px;background:#7fbfdf;'>Recently Used</h3><div id='bcrm_sm_rec_content' style='height:auto;'></div></div>");
+                    if (options.flat) {
+                        smr.css("float", "left");
+                        smr.css("height", "100vh");
+                        smr.css("width", "20%");
+                    }
+                    sm.find("#options_sm").parent().parent().after(smr);
+
+                    for (var i = ra.length - 1; i >= 0; i--) {
+                        var rv = $("<div class='bcrm-recent-view' style='height:22px;'>");
+                        rv.attr("title", ra[i].path);
+                        rv.append(ra[i].html);
+                        rv.find("a").css("padding-left", "20px");
+                        rv.find("a").css("font-style", "italic");
+                        rv.find("li").on("click", function () {
+                            $("#bcrm_sitemap").hide();
+                        });
+                        smr.find("#bcrm_sm_rec_content").append(rv);
+                    }
+                    smr.accordion({
+                        active: 0,
+                        collapsible: true
+                    });
+                    smr.find(".bcrm-recent-view").css("height", "22px");
+                    smr.find("#bcrm_sm_rec_content").css("height", "auto");
+                }
+                sm.find("li").not("#bcrm_sm_rec_content li").click(function (e) {
+                    var ra = [];
+                    var rviews = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@app_rec_views");
+                    if (typeof (rviews) !== "undefined") {
+                        if (typeof (JSON.parse(rviews).array) !== "undefined") {
+                            ra = JSON.parse(rviews).array;
+                        }
+                    }
+                    e.stopImmediatePropagation();
+                    var r = {};
+                    var el;
+                    r.ltext = $(this).find("a")[0].outerText;
+                    r.path = "";
+                    el = $(this).clone();
+                    el.find("ul").remove();
+                    el.addClass("ui-menu-item");
+                    r.html = el[0].outerHTML;
+                    $(this).parentsUntil("#bcrm_sitemap").each(function (x) {
+                        if (this.tagName == "LI") {
+                            r.path = $(this).find("a")[0].outerText + (r.path == "" ? "" : "\\" + r.path);
+                        }
+                    });
+                    ra.push(r);
+                    var rap = { "array": ra };
+                    BCRMSetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@app_rec_views", JSON.stringify(rap), "Application Recent Views");
+                    $("#bcrm_sitemap").hide();
+                    //recently used
+                    if (typeof (ra) !== "undefined" && ra.length > 0) {
+                        var smr;
+
+                        //$("#bcrm_sm_recent").accordion("destroy");
+                        $("#bcrm_sm_recent").remove();
+
+                        smr = $("<div id='bcrm_sm_recent'><h3 style='margin:1px;background:#7fbfdf;'>Recently Used</h3><div id='bcrm_sm_rec_content' style='height:auto;'></div></div>");
+                        if (options.flat) {
+                            smr.css("float", "left");
+                            smr.css("height", "100vh");
+                            smr.css("width", "20%");
+                        }
+                        $("#options_sm").parent().parent().after(smr);
+
+                        for (var i = ra.length - 1; i >= 0; i--) {
+                            var rv = $("<div class='bcrm-recent-view' style='height:22px;'>");
+                            rv.attr("title", ra[i].path);
+                            rv.append(ra[i].html);
+                            rv.find("a").css("padding-left", "20px");
+                            rv.find("a").css("font-style", "italic");
+                            rv.find("li").on("click", function () {
+                                $("#bcrm_sitemap").hide();
+                            });
+                            smr.find("#bcrm_sm_rec_content").append(rv);
+                        }
+                        smr.accordion({
+                            active: 0,
+                            collapsible: true
+                        });
+                        smr.find(".bcrm-recent-view").css("height", "22px");
+                        smr.find("#bcrm_sm_rec_content").css("height", "auto");
+                    }
+                });
+
+            }
+            $("#_swethreadbar").before(sm);
+        }
+        else {
+            $("#bcrm_sitemap").show();
+        }
+        $("#sm_filter").focus();
+        $("#bcrm_sitemap").find("#bcrm_sm_recent").find(".ui-accordion-content").show();
+    }
+};
+
+//prototype: Applet Layout Editor 3.0
+//REST graveyard
+//get field list from BC
+//https://siebtraining.vcn.oraclevcn.com/siebel/v1.0/workspace/MAIN/Business Component/Contact/Field?childlinks=none&uniformresponse=Y&searchspec=[Inactive]="N"&fields=Name,Type,Comments,Calculated
+//create applet control
+//does not use Field!
+/*
+var myHeaders = new Headers();
+myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
+myHeaders.append("Content-Type", "application/json");
+
+var raw = JSON.stringify({
+  "Name": "REST Control 2",
+  "Field": "Location",
+  "Field Type": "BC Field",
+  "Caption - String Override": "REST API"
+});
+
+var requestOptions = {
+  method: 'PUT',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://siebtraining.vcn.oraclevcn.com/siebel/v1.0/workspace/dev_sadmin_202112190947/Applet/SIS Account Entry Applet/Control", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+  */
