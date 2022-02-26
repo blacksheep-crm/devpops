@@ -10,6 +10,8 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/formatted)
 
+Psych Map (Right-click Site Map toolbar button and get psyched)
+
 Fixed EJS bug in About View
 
 # Update to 22.2
