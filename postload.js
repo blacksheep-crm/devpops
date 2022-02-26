@@ -65,7 +65,7 @@ var bcrm_help_map = {
 };
 
 //Bookmarker
-BCRMGetBookmark = function(){
+BCRMGetBookmark = function () {
     var bookmark = {};
     bookmark.url = location.href;
     bookmark.title = document.title;
@@ -103,7 +103,7 @@ BCRMSetToolsHelpContent = function () {
                 $(this).attr("href", url);
                 $(this).attr("target", "_blank");
                 $(this).text("Online Help");
-                $(this).on("click",function(e){
+                $(this).on("click", function (e) {
                     e.stopImmediatePropagation();
                 });
             }
@@ -119,7 +119,9 @@ BCRMPrettifyBanner = function () {
         "https://docs.oracle.com/cd/F26413_13/portalres/images/Abstracts_Winter_1.png",
         "https://docs.oracle.com/cd/F26413_10/portalres/images/Abstracts_Open_Dark_5.png",
         "https://docs.oracle.com/cd/F26413_09/portalres/images/Abstracts_Autumn_1.png",
-        "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png"
+        "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png",
+        "https://docs.oracle.com/cd/F26413_24/portalres/images/Abstracts_Winter_1.png",
+        "https://docs.oracle.com/cd/F26413_26/portalres/images/Abstracts_Plum.png"
     ];
 
     var bg = redwood[Math.floor((Math.random() * redwood.length))];
