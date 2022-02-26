@@ -3677,7 +3677,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 var row;
                 var cs, c, p;
                 var table;
-                var vc = ["View Name","Business Object"];
+                var vc = ["View Name", "Business Object"];
                 var vn = SiebelApp.S_App.GetActiveView().GetName();
                 var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
                 table = $("<table id='bcrm_xray' style='width:max-content;'>");
@@ -3690,12 +3690,12 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                 hd = $("<tr style='font-weight:bold;background:gainsboro;'>");
                                 if (BCRM_XRAY_APPLETS.indexOf("viewdata") == -1) {
                                     for (p in c) {
-                                        if (vc.indexOf(p) == -1){
+                                        if (vc.indexOf(p) == -1) {
                                             hd.append("<td>" + p + "</td>");
                                         }
                                     }
                                 }
-                                else{
+                                else {
                                     for (p in c) {
                                         hd.append("<td>" + p + "</td>");
                                     }
@@ -3705,12 +3705,12 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             row = $("<tr>");
                             if (BCRM_XRAY_APPLETS.indexOf("viewdata") == -1) {
                                 for (p in c) {
-                                    if (vc.indexOf(p) == -1){
+                                    if (vc.indexOf(p) == -1) {
                                         row.append("<td>" + c[p] + "</td>");
                                     }
                                 }
                             }
-                            else{
+                            else {
                                 for (p in c) {
                                     row.append("<td>" + c[p] + "</td>");
                                 }
@@ -4652,12 +4652,30 @@ function BCRMSiebelAboutView() {
     // to support single session
     $("#" + BCRM_AV_id).parent().remove();
 
+
+    /* ahansal 2022-02-24: this stopped working in 22.2
     if ("undefined" === typeof EJS) {
         var src = "3rdParty/ejs/ejs_production";
         requirejs([src], BCRMSiebelAboutView, function () { SiebelApp.Utils.Alert("Failed to load EJS library ! \n" + src); });
     }
-
+ 
     var html = new EJS({ text: tmp }).render(SiebelApp.S_App);
+    
+    */
+
+    //fix for 22.2 and higher, should also work in lower versions, but not tested
+
+    if ("undefined" === typeof (ejs)) {
+        var src = "3rdParty/ejs/ejs_production";
+        //requirejs([src], BCRMSiebelAboutView, function () { SiebelApp.Utils.Alert("Failed to load EJS library ! \n" + src); });
+        jQuery.getScript("scripts/" + src + ".js").done(function () {
+            setTimeout(function () {
+                BCRMSiebelAboutView();
+            }, 100);
+        });
+    }
+
+    let html = ejs.render(tmp, SiebelApp.S_App);
 
     $d = $(html).dialog({
         modal: true,
