@@ -74,7 +74,7 @@ Property Set Viewer (beta)
 
 # Videos
 
-Video update (Siebel Friday 28-MAY-2021): https://youtu.be/uwP34iYqlLk?t=2424
+22.2 and all other Features: https://youtu.be/xenmD6euvPU
 
 # Installation
 
