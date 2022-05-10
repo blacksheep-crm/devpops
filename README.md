@@ -6,6 +6,12 @@ User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
 
 Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
+# Videos
+
+22.2 and all other Features: https://youtu.be/xenmD6euvPU
+
+Installation Video: https://youtu.be/gl7PljwLbbo
+
 # What's New in 22.2?
 
 X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/formatted)
@@ -71,10 +77,6 @@ Tools Online Help in Web Tools
 Redwood Banner
 
 Property Set Viewer (beta)
-
-# Videos
-
-22.2 and all other Features: https://youtu.be/xenmD6euvPU
 
 # Installation
 
