@@ -93,6 +93,7 @@ Property Set Viewer (beta)
 
 7. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
    If you use the BCRM Server Manager Service, check the default path in the srvrmgr method in the FWK Runtime business service and change if required.
+   Also, check the path specified in var devpops_config (ses_home) in devpops.js
 
 8. If you want to use the runcmd and readFile methods, set System Preference: Runtime Scripts System Access = TRUE
 
