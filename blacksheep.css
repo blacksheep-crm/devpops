@@ -3,8 +3,8 @@
     accent-color: papayawhip;
     background-color: #353535!important;
     color: papayawhip!important;
-    border-color: papayawhip!important;
-    font-size: 15px!important;
+    /*border-color: papayawhip!important;*/
+    font-size: 1.2rem!important;
 }
 a.drilldown{
 	color: #7fbfdf!important;
@@ -30,4 +30,20 @@ textarea {
 input[type=checkbox] {
     width: 20px!important;
     height: 20px!important;
+}
+.btn-plain,.appletButtonDis,.appletButtonDis:hover,.appletButtonDis:focus,.appletButtonDis:active,.siebui-view .ui-body-g .ui-btn,.siebui-view-navs .siebui-nav-tabScreen .ui-tabs-nav li a,.siebui-subview-navs .siebui-nav-tabScreen .ui-tabs-nav li a,.siebui-subview-screennavs .siebui-nav-tabScreen .ui-tabs-nav li a,.siebui-nav-hb.siebui-view-navs .siebui-nav-tabView,.siebui-nav-hb.siebui-subview-screennavs .siebui-nav-tabView,.siebui-nav-hb.siebui-subview-navs .siebui-nav-tabScreen,.siebui-nav-hb.siebui-subview-navs .siebui-nav-tabView,.siebui-button-toolbar span.ToolbarButtonOn,.siebui-navigation-tree .siebui-subview-navs .fancytree-container li .fancytree-title,.siebui-toolbar-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-settings-popup .siebui-tb-item-btn .appletButton,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .appletButton,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .appletButton,.siebui-toolbar-settings-popup .siebui-tb-item-btn .appletButtonDis,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .appletButtonDis,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .appletButtonDis,.siebui-toolbar-settings-popup .siebui-tb-item-btn .siebui-button-secondary,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .siebui-button-secondary,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .siebui-button-secondary,.siebui-sub-applets .siebui-subview-screennavs .siebui-nav-tabView .ui-tabs-nav li a,.siebui-button-toolbar span.ToolbarButtonOff,.siebui-catalogview-table .siebui-catalog-tile-container .siebui-tile .siebui-catalog-tile-right-col.siebui-catalog-tabs ul.ui-tabs-nav li a,.siebui-catalogview-table .siebui-catalog-grid-layout .siebui-tile .siebui-catalog-tile-right-col.siebui-catalog-tabs ul.ui-tabs-nav li a,.siebui-button-toolbar .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-enabled,.siebui-chat-pane .siebui-chat .siebui-chat-wrap .siebui-chat-tabs .siebui-chat-tab-head .siebui-chat-tab-head-items .siebui-chat-tab-head-item a,.siebui-comm-panel-container .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-enabled,.siebui-toolbar-custom-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-consumer-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-consumerprelogin-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-checkout-view-wrapper #siebui-sscheckout-paymentapplet .ui-tabs-nav li a,.siebui-button-toolbar .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-disabled,.siebui-comm-panel-container .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-disabled { 
+    background-color: #7c7459!important;
+    border-color: transparent!important;
+    border-top-left-radius: 6px;
+    margin-right: 1px;
+}
+.ui-tabs .ui-tabs-nav li a,
+button {
+    border: none!important;
+}
+select#j_s_sctrl_tabScreen,
+select#j_s_sctrl_tabView,
+select#j_s_vctrl_div_tabScreen,
+select#j_s_vctrl_div_tabView{
+	border:none;
 }
