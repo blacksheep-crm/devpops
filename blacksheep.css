@@ -1,0 +1,33 @@
+* {
+    color-scheme: dark!important;
+    accent-color: papayawhip;
+    background-color: #353535!important;
+    color: papayawhip!important;
+    border-color: papayawhip!important;
+    font-size: 15px!important;
+}
+a.drilldown{
+	color: #7fbfdf!important;
+	background-color: transparent!important;
+	
+}
+.ui-jqgrid .ui-jqgrid-btable .ui-state-highlight td {
+    background-color: #7c7459 !important;
+}
+.ui-dialog {
+    border: 8px solid papayawhip!important;
+}
+textarea {
+    min-width: 300px!important;
+    min-height: 100px!important;
+}
+.siebui-mask-overlay {
+     background-color: rgb(226 193 95 / 20%)!important;
+}
+.mceGridLabel.siebui-label.mceLabel span {
+    color: papayawhip!important;
+}
+input[type=checkbox] {
+    width: 20px!important;
+    height: 20px!important;
+}
