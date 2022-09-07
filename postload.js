@@ -1116,7 +1116,17 @@ BCRMWTHelper = function () {
             BCRMSetToolsHelpContent();
 
             //Prettify Banner, because we can
-            BCRMPrettifyBanner();
+			if (typeof(localStorage.BCRMBANNERTIMER) === "undefined"){
+				BCRMPrettifyBanner();
+				localStorage.BCRMBANNERTIMER = 10;
+			}
+            else{
+				localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
+				if (localStorage.BCRMBANNERTIMER <= 0){
+					BCRMPrettifyBanner();
+					localStorage.BCRMBANNERTIMER = 10;
+				}
+			}
 
             console.log("BCRM devpops extension for Siebel Web Tools loaded");
         }
