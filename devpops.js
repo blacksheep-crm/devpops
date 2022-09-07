@@ -3238,7 +3238,17 @@ BCRMWSHelper = function () {
             BCRMApplyDefaultBreakFree();
 
             //default Redwood Banner
-            BCRMApplyDefaultRedwoodBanner();
+			if (typeof(localStorage.BCRMBANNERTIMER) === "undefined"){
+				BCRMApplyDefaultRedwoodBanner();
+				localStorage.BCRMBANNERTIMER = 10;
+			}
+            else{
+				localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
+				if (localStorage.BCRMBANNERTIMER <= 0){
+					BCRMApplyDefaultRedwoodBanner();
+					localStorage.BCRMBANNERTIMER = 10;
+				}
+			}
 
             //devpops storage view mod
             if (vn == "Business Service Script Editor View") {
