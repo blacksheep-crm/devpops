@@ -61,17 +61,13 @@ var bcrm_help_map = {
     "22.9": "F26413_33",
     "22.10": "F26413_34",
     "22.11": "F26413_35",
-    "22.12": "F26413_36"
-};
-
-//Bookmarker
-BCRMGetBookmark = function () {
-    var bookmark = {};
-    bookmark.url = location.href;
-    bookmark.title = document.title;
-    bookmark.view = SiebelApp.S_App.GetActiveView().GetName();
-    return bookmark;
-    //App().GotoView("Account Detail - Contacts View", "", "/siebel/app/callcenter/enu?SWENeedContext=false&SWECmd=GotoBookmarkView&SWEBMC=256&SWEC=258&SWEBID=-1&SRN=&SWETS=&SWEKeepContext=1", window);
+    "22.12": "F26413_36",
+    "23.1": "F26413_37",
+    "23.2": "F26413_38",
+    "23.3": "F26413_39",
+    "23.4": "F26413_40",
+    "23.5": "F26413_41",
+    "23.6": "F26413_42"
 };
 
 //Online Help URL
@@ -121,7 +117,8 @@ BCRMPrettifyBanner = function () {
         "https://docs.oracle.com/cd/F26413_09/portalres/images/Abstracts_Autumn_1.png",
         "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png",
         "https://docs.oracle.com/cd/F26413_24/portalres/images/Abstracts_Winter_1.png",
-        "https://docs.oracle.com/cd/F26413_26/portalres/images/Abstracts_Plum.png"
+        "https://docs.oracle.com/cd/F26413_26/portalres/images/Abstracts_Plum.png",
+        "https://docs.oracle.com/cd/F26413_30/portalres/images/Abstracts_Light_5.png"
     ];
 
     var bg = redwood[Math.floor((Math.random() * redwood.length))];
@@ -1095,6 +1092,214 @@ BCRMGetStorageItem = function (rn, sn) {
     return retval;
 };
 
+//devpops 22.10 new features:
+
+//Inject custom CSS
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMInjectCSS = function (name, css) {
+    var st = $("<style bcrm-temp-style_" + name + "='yes'>" + css + "</style>");
+    if ($("style[bcrm-temp-style_" + name + "]").length == 0) {
+        $("head").append(st);
+    }
+}
+
+//Auto Column Resize: Add button (call from PR)
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMAddAutoResizeButton = function (pm) {
+    if (typeof (pm.Get) === "function") {
+        var pr = pm.GetRenderer();
+        var fi = pm.Get("GetFullId");
+        var id = pm.Get("GetId");
+        var ae = $("#" + fi);
+        var bg = ae.find(".siebui-btn-grp-applet");
+        var btntext = "↔";
+
+        if (bg.length == 0) {
+            bg = ae.find("#s_" + id + "_rc").parent();
+        }
+
+        var bid = "bcrm_autocol_btn_" + id;
+        if ($("#" + bid).length == 0) {
+            var btn = $("<span><button id='" + bid + "' title='Auto-resize columns' style='font-size:1.3em;cursor:pointer;border:none;background:transparent;'>" + btntext + "</button></span>");
+            bg.append(btn);
+            btn.on("click", function () {
+                SiebelApp.S_App.uiStatus.Busy({
+                    target: SiebelApp.S_App.GetTargetViewContainer(),
+                    mask: true
+                });
+                setTimeout(function () {
+                    BCRMAutoResizeColumns(pm);
+                    setTimeout(function () {
+                        SiebelApp.S_App.uiStatus.Free();
+                    }, 100);
+                }, 10);
+            });
+        }
+    }
+}
+
+//Auto Resize Columns Handler (call from BindData or PM Binding)
+//restricted to popup applets
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMAutoResizeHandler = function (pm) {
+    if (typeof (pm.Get) === "function") {
+        if (pm.Get("IsPopup")) {
+            var ap = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
+            var isquery = ap.IsInQueryMode();
+            if (!isquery) {
+                if (pm.Get("BCRM_AUTO_RESIZE_COLS") != "true") {
+                    setTimeout(function () {
+                        BCRMAutoResizeColumns(pm);
+                    }, 100);
+                    pm.SetProperty("BCRM_AUTO_RESIZE_COLS", "true");
+                }
+            }
+        }
+    }
+}
+
+//Auto Resize Columns execution
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMResizeCol = function (pm, colname, nw) {
+    if (typeof (pm.Get) === "function") {
+        var pr = pm.GetRenderer();
+        var idx = 0;
+        nw = parseInt(nw, 10);
+        var cm = pr.GetGrid().jqGrid("getGridParam", "colModel");
+        var pm = pr.GetPM();
+        var ph = pm.Get("GetPlaceholder");
+        var ts = $("table#" + ph + ".ui-jqgrid-btable");
+        var t = ts[0].grid;
+        var p = pr.GetGrid()[0].p;
+
+        //get column index
+        for (idx = 0; idx < cm.length; idx++) {
+            if (cm[idx].name == colname) {
+                break;
+            }
+        }
+
+        if (cm[idx].width != nw) {
+            cm[idx].width = nw;
+            t.headers[idx].width = nw;
+            t.headers[idx].el.style.width = nw + "px";
+            t.cols[idx].style.width = nw + "px";
+
+            if (t.footers.length > 0) { t.footers[idx].style.width = nw + "px"; }
+            if (p.forceFit === true) {
+                nw = t.headers[idx + p.nv].newWidth || t.headers[idx + p.nv].width;
+                t.headers[idx + p.nv].width = nw;
+                t.headers[idx + p.nv].el.style.width = nw + "px";
+                t.cols[idx + p.nv].style.width = nw + "px";
+                if (t.footers.length > 0) { t.footers[idx + p.nv].style.width = nw + "px"; }
+                p.colModel[idx + p.nv].width = nw;
+            } else {
+                p.tblwidth = t.newWidth || p.tblwidth;
+                $('table:first', t.bDiv).css("width", p.tblwidth + "px");
+                $('table:first', t.hDiv).css("width", p.tblwidth + "px");
+                t.hDiv.scrollLeft = t.bDiv.scrollLeft;
+                if (p.footerrow) {
+                    $('table:first', t.sDiv).css("width", p.tblwidth + "px");
+                    t.sDiv.scrollLeft = t.bDiv.scrollLeft;
+                }
+            }
+            $(ts).triggerHandler("jqGridResizeStop", [nw, idx]);
+            if ($.isFunction(p.resizeStop)) { p.resizeStop.call(ts, nw, idx); }
+        }
+    }
+}
+
+
+//Auto Resize Columns main function
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMAutoResizeColumns = function (pm) {
+    if (typeof (pm.Get) === "function") {
+        try {
+            var pr = pm.GetRenderer();
+            var pm = pr.GetPM();
+            var rs = pm.Get("GetRecordSet");
+            var cs = pm.Get("GetControls");
+            var r, field, record, cn;
+            var padding = 20;
+            var maxwidth = 500;
+            var nw;
+            var spt;
+            var ch = pr.GetColumnHelper();
+            var cm = ch.GetColMap();
+            var minwidth = new Map();
+
+            //add display names as virtual record (column header should not be truncated)
+            var nr = rs.length;
+            if (nr > 0) {
+                rs[nr] = {};
+                for (ct in cs) {
+                    if (cs[ct].GetFieldName() != "" && cs[ct].GetDisplayName() != "") {
+                        rs[nr][cs[ct].GetFieldName()] = cs[ct].GetDisplayName();
+                    }
+                }
+
+                for (r in rs) {
+                    record = rs[r];
+                    for (field in record) {
+                        //find col name
+                        for (col in cm) {
+                            if (cm[col] == field) {
+                                cn = col;
+                                break;
+                            }
+                        }
+
+                        if (record[field].length >= 0) {
+                            //add to map
+                            if (!minwidth.has(cn)) {
+                                minwidth.set(cn, 0);
+                            }
+
+                            /* this is accurate but slow
+                            //measure minimum length for column
+                            spt = $("<span>" + record[field] + "</span>");
+                            //spt.text = record[field];
+                            $("body").append(spt);
+                            nw = spt[0].offsetWidth;
+                            //spt.hide();
+                            nw = nw + padding;
+                            spt.remove();
+                            */
+
+                            /*faster but less accurate*/
+                            nw = record[field].length * 6.3;
+                            nw = nw + padding;
+
+                            if (nw >= maxwidth) {
+                                nw = maxwidth;
+                            }
+
+                            //overwrite map if new width is greater than existing entry
+                            if (minwidth.get(cn) < nw) {
+                                minwidth.set(cn, nw);
+                            }
+                        }
+                    }
+                }
+                //call resize function for each column
+
+                minwidth.forEach((newwidth, colname) => {
+                    if (typeof (colname) !== "undefined") {
+                        //Web Tools Writable column, set to 100px to allow for avatars
+                        if (colname == "Writable") {
+                            newwidth = 100;
+                        }
+                        BCRMResizeCol(pm, colname, newwidth);
+                    }
+                });
+            }
+        }
+        catch (e) {
+            console.log("Error in BCRMAutoResizeColumns: " + e.toString());
+        }
+    }
+}
+
 //main postload function for Web Tools
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWTHelper = function () {
@@ -1102,9 +1307,11 @@ BCRMWTHelper = function () {
         //enhance Web Tools
         if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
             var vn = SiebelApp.S_App.GetActiveView().GetName();
+
+            //General enhancements
             BCRMWebToolsEnhancer();
 
-            //experimental: the need of the view
+            //the need of the view
             if (vn == "WT Repository Screen View List View") {
                 BCRMEnhanceScreenViewListApplet();
             }
@@ -1112,22 +1319,25 @@ BCRMWTHelper = function () {
             //add screen menu
             BCRMAddWTScreenMenu();
 
-            //Point Help > Contents to Bookshelf
+            //Point Help > Contents to Bookshelf for current version
             BCRMSetToolsHelpContent();
 
-            //Prettify Banner, because we can
-			if (typeof(localStorage.BCRMBANNERTIMER) === "undefined"){
-				BCRMPrettifyBanner();
-				localStorage.BCRMBANNERTIMER = 10;
-			}
-            else{
-				localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
-				if (localStorage.BCRMBANNERTIMER <= 0){
-					BCRMPrettifyBanner();
-					localStorage.BCRMBANNERTIMER = 10;
-				}
-			}
+            //Redwood Banner, because we can
+            if (typeof (localStorage.BCRMBANNERTIMER) === "undefined") {
+                BCRMPrettifyBanner();
+                localStorage.BCRMBANNERTIMER = 10;
+            }
+            else {
+                localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
+                if (localStorage.BCRMBANNERTIMER <= 0) {
+                    BCRMPrettifyBanner();
+                    localStorage.BCRMBANNERTIMER = 10;
+                }
+            }
 
+            //Inject CSS for wide popups
+            //uses :has pseudo-class: check caniuse.com for browser support
+            BCRMInjectCSS("devpops1", ".ui-dialog.ui-corner-all.ui-widget.ui-widget-content.ui-front.ui-draggable.ui-resizable:has(.siebui-list){min-width:75vw!important;max-width:900px!important;}");
             console.log("BCRM devpops extension for Siebel Web Tools loaded");
         }
     }
