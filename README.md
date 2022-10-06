@@ -24,8 +24,6 @@ Web Tools: Stretched popup applets (Inject CSS feature demo)
 
 # Update to 22.10
 
-Take backup of vanilla postload.js
-
 Copy postload.js to vanilla postload.js
 
 Copy devpops.js to siebel/custom
@@ -81,8 +79,6 @@ Property Set Viewer (beta)
 X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/formatted)
 
 Psych Map (Right-click Site Map toolbar button and get psyched)
-
-Fixed EJS bug in About View
 
 # Installation
 
