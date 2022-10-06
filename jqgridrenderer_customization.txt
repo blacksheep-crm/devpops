@@ -1,0 +1,32 @@
+devpops 22.10
+custom extension for vanilla jqgridrenderer.js
+EDUCATIONAL ONLY!!! DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS
+add below code to jqgridrenderer.js
+
+ShowUI: add after first line
+(SiebelAppFacade.JQGridRenderer.superclass.ShowUI.call(this);)
+
+
+
+//START devpops Customization: Auto Resize Columns
+try{
+    BCRMAddAutoResizeButton(this.GetPM());
+}
+catch(e){
+    //do nothing
+}
+//END devpops Customization: Auto Resize Columns
+
+
+
+BindData: add at the end of function body
+
+
+//START devpops Customization: Auto Resize Columns
+try{
+    BCRMAutoResizeHandler(this.GetPM());
+}
+catch(e){
+    //do nothing
+}
+//END devpops Customization: Auto Resize Columns
