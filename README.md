@@ -8,33 +8,33 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
-22.2 and all other Features: https://youtu.be/xenmD6euvPU
+Features: https://youtu.be/xenmD6euvPU
 
-Installation Video: https://youtu.be/gl7PljwLbbo
+Installation: https://youtu.be/gl7PljwLbbo
 
-# What's New in 22.2?
+# What's New in 22.10?
 
-X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/formatted)
+X-Ray: Display option for form applets (replace labels or show below control)
 
-Psych Map (Right-click Site Map toolbar button and get psyched)
+List Applets: Column auto-resize (requires PR changes)
 
-Fixed EJS bug in About View
+Dark Mode/Toggle CSS demo
 
-# Update to 22.2
+Web Tools: Stretched popup applets (Inject CSS feature demo)
 
-Review User Guide: https://github.com/blacksheep-crm/devpops/blob/main/ug.pdf
+# Update to 22.10
 
-Import and deliver devpops_V52.sif 
-
-Import FWK Runtime.xml
+Take backup of vanilla postload.js
 
 Copy postload.js to vanilla postload.js
 
 Copy devpops.js to siebel/custom
 
-Register devpops.js with Application / Common / PLATFORM INDEPENDENT
+Copy blacksheep.css to files/custom
 
-# Features
+To implement column auto-resize, refer to jqgridrenderer_customization.txt
+
+# Features (22.2 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -78,6 +78,12 @@ Redwood Banner
 
 Property Set Viewer (beta)
 
+X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/formatted)
+
+Psych Map (Right-click Site Map toolbar button and get psyched)
+
+Fixed EJS bug in About View
+
 # Installation
 
 1. Import all SIFs
@@ -103,11 +109,15 @@ Property Set Viewer (beta)
 
 10. Copy SiebelQueryLang.js file to $AI_APPLICATIONCONTAINER$/webapps/siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
 
-11. Copy code from postload.js to the vanilla postload.js.
+11. Copy code from postload.js to vanilla postload.js
 
 12. Copy devpops.js to siebel/custom
 
 13. Register devpops.js with Application / Common / PLATFORM INDEPENDENT in Manifest Administration
+
+14. Copy blacksheep.css to files/custom
+
+15. To implement column auto-resize, refer to jqgridrenderer_customization.txt
 
 # Pre-Requisites
 
