@@ -43,9 +43,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "22.2";
-var devpops_version = 54;
-var devpops_tag = "Shirin Ebadi";
+var devpops_dver = "22.10";
+var devpops_version = 55;
+var devpops_tag = "Anton Zeilinger";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -954,7 +954,8 @@ BCRMCreateDebugMenu = function () {
         "https://docs.oracle.com/cd/F26413_09/portalres/images/Abstracts_Autumn_1.png",
         "https://docs.oracle.com/cd/F26413_08/portalres/images/Abstracts_Summer_1.png",
         "https://docs.oracle.com/cd/F26413_24/portalres/images/Abstracts_Winter_1.png",
-        "https://docs.oracle.com/cd/F26413_26/portalres/images/Abstracts_Plum.png"
+        "https://docs.oracle.com/cd/F26413_26/portalres/images/Abstracts_Plum.png",
+        "https://docs.oracle.com/cd/F26413_30/portalres/images/Abstracts_Light_5.png"
     ];
     if (typeof (BCRM_MENU["ShowControls"]) === "undefined") {
         BCRM_MENU = {
@@ -1085,6 +1086,13 @@ BCRMCreateDebugMenu = function () {
                         "tip": "Clear previous X-Ray data (only current view will be exported)",
                         "type": "select",
                         "lov": ["true", "false"]
+                    },
+                    "OSD": {
+                        "label": "On-Screen Display",
+                        "default": "Replace Label Text",
+                        "tip": "If result is displayed inline in applet, we can use labels or other means",
+                        "type": "select",
+                        "lov": ["Replace Label Text", "Show Below Control"]
                     }
                 },
                 "img": "images/grid_matte_ship.png"
@@ -1320,6 +1328,105 @@ BCRMCreateDebugMenu = function () {
                 },
                 "img": "images/grid_matte_checklist.png"
             },
+            "analyzer": {
+                "seq": 25,
+                "enable": false, //localStorage.getItem("BCRM_MENU_ENABLE_analyzer") == "false" ? false : true,
+                "label": "Analyzer",
+                "title": "Run Siebel Support Analyzers. Check documentation for details.",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMAnalyzerDialog();
+                    return r;
+                },
+                "img": "images/hm_pg_check_payments.jpg",
+                "showoptions": true,
+                "options": {
+                    "ANHOME": {
+                        "label": "Analyzer Home",
+                        "default": "C:\\Siebel\\analyzer",
+                        "tip": "Folder/UNC path where Support Analyzers are extracted",
+                        "type": "input"
+                    },
+                    "TEMP": {
+                        "label": "Temp Folder Path",
+                        "default": devpops_config.ses_home + "\\temp\\",
+                        "tip": "Enter a valid server path",
+                        "type": "input"
+                    },
+                    "SMHOME": {
+                        "label": "Siebel Server Home",
+                        "default": devpops_config.ses_home,
+                        "tip": "Siebel Server home",
+                        "type": "input"
+                    },
+                    "ENT": {
+                        "label": "Enterprise Name",
+                        "default": "TRAINING",
+                        "tip": "Siebel Enterprise Name",
+                        "type": "input"
+                    },
+                    "SMGW": {
+                        "label": "Siebel Gateway Connect String",
+                        "default": "localhost:2320",
+                        "tip": "Siebel Gateway Connect String, e.g. gw.domain.com:2320",
+                        "type": "input"
+                    },
+                    "SMUSER": {
+                        "label": "Siebel Gateway User Name",
+                        "default": "SADMIN",
+                        "tip": "Siebel Gateway User",
+                        "type": "input"
+                    },
+                    "SMPASS": {
+                        "label": "Siebel Gateway User Password",
+                        "default": "Welcome1",
+                        "tip": "Siebel Gateway User Password",
+                        "type": "input"
+                    },
+                    "AIHOME": {
+                        "label": "AI Home",
+                        "default": "C:\\Siebel\\ai",
+                        "tip": "Siebel AI home, preferably UNC path",
+                        "type": "input"
+                    },
+                    "TBLO": {
+                        "label": "Table Owner",
+                        "default": "SIEBEL",
+                        "tip": "Siebel DB Table Owner Name",
+                        "type": "input"
+                    },
+                    "TBLOPW": {
+                        "label": "Table Owner Password",
+                        "default": "Welcome1",
+                        "tip": "Siebel DB Table Owner Password",
+                        "type": "input"
+                    },
+                    "DBCONN": {
+                        "label": "DB Connect String",
+                        "default": "jdbc:oracle:thin:@localhost:1521:orcl",
+                        "tip": "DB JDBC Connect String",
+                        "type": "input"
+                    },
+                    "FS": {
+                        "label": "Siebel File System",
+                        "default": "C:\\Siebel\\fs",
+                        "tip": "Preferably UNC path to Siebel File System",
+                        "type": "input"
+                    },
+                    "JDK": {
+                        "label": "Java Home",
+                        "default": "C:\\JDK",
+                        "tip": "JDK or JRE home on Siebel Server",
+                        "type": "input"
+                    },
+                    "ROWS": {
+                        "label": "Number of Rows",
+                        "default": "200",
+                        "tip": "Number of rows for SQL statements",
+                        "type": "input"
+                    },
+                }
+            },
             "StartSARM": {
                 "seq": 16,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_StartSARM") == "false" ? false : true,
@@ -1482,6 +1589,18 @@ BCRMCreateDebugMenu = function () {
                 },
                 "showtoggle": true,
                 "img": redwood[Math.floor((Math.random() * redwood.length))]
+            },
+            "DarkMode": {
+                "seq": 26,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_DarkMode") == "false" ? false : true,
+                "label": "Toggle Dark Mode",
+                "title": "check blacksheep.css for details",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMToggleDarkMode();
+                    return r;
+                },
+                "img": "images/sitemap-50.png"
             },
             "SiebelHub": {
                 "seq": 20,
@@ -1867,6 +1986,9 @@ BCRMCreateDebugMenu = function () {
                                 }
                                 if (id == "Silent") {
                                     BCRMRunSilentXRay();
+                                }
+                                if (id == "analyzer") {
+                                    BCRMAnalyzerDialog();
                                 }
                             },
                             Save: function () {
@@ -3238,17 +3360,17 @@ BCRMWSHelper = function () {
             BCRMApplyDefaultBreakFree();
 
             //default Redwood Banner
-			if (typeof(localStorage.BCRMBANNERTIMER) === "undefined"){
-				BCRMApplyDefaultRedwoodBanner();
-				localStorage.BCRMBANNERTIMER = 10;
-			}
-            else{
-				localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
-				if (localStorage.BCRMBANNERTIMER <= 0){
-					BCRMApplyDefaultRedwoodBanner();
-					localStorage.BCRMBANNERTIMER = 10;
-				}
-			}
+            if (typeof (localStorage.BCRMBANNERTIMER) === "undefined") {
+                BCRMApplyDefaultRedwoodBanner();
+                localStorage.BCRMBANNERTIMER = 10;
+            }
+            else {
+                localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
+                if (localStorage.BCRMBANNERTIMER <= 0) {
+                    BCRMApplyDefaultRedwoodBanner();
+                    localStorage.BCRMBANNERTIMER = 10;
+                }
+            }
 
             //devpops storage view mod
             if (vn == "Business Service Script Editor View") {
@@ -3274,6 +3396,36 @@ BCRMWSHelper = function () {
 };
 
 SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
+
+//blacksheep dark theme
+BCRMToggleDarkMode = function () {
+    var css = $("<link type='text/css' href='files/custom/blacksheep.css' rel='stylesheet'>");
+    if ($("link[href*='blacksheep.css']").length == 0) {
+        $("head").append(css);
+        localStorage.BCRMDARKMODE = "true";
+    }
+    else {
+        $("link[href*='blacksheep.css']").remove();
+        localStorage.BCRMDARKMODE = "false";
+    }
+}
+//preload
+BCRMPreLoad = function () {
+    if (localStorage.BCRMDARKMODE == "true") {
+        var css = $("<link type='text/css' href='files/custom/blacksheep.css' rel='stylesheet'>");
+        if ($("link[href*='blacksheep.css']").length == 0) {
+            $("head").append(css);
+        }
+    }
+}
+
+//register preload listener
+try {
+    SiebelApp.EventManager.addListner("preload", BCRMPreLoad, this);
+}
+catch (e) {
+    console.log("Error in BCRM devpops extension: " + e.toString());
+}
 
 //START XRAY21*******************************************************
 //everything below this line should go into a separate utility file
@@ -3348,8 +3500,10 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.LabelReset = function (context) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
+
             var tp, cs, le, uit;
             if (pm) {
+                var ae = ut.GetAppletElem(pm);
                 pm.SetProperty("C_ToggleCycle", "Reset");
                 tp = ut.GetAppletType(pm);
                 if (tp == "form" || tp == "list") {
@@ -3369,10 +3523,72 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
                         }
                     }
+                    //clean up xray dom elements
+                    ae.find("div[id^='xray_']").remove();
                 }
             }
         };
 
+        //show XR data in new DOM element
+        BCRMUtils.prototype.ShowXRData = function (c, nl, context, options) {
+            var ut = new SiebelAppFacade.BCRMUtils();
+            var pm = ut.ValidateContext(context);
+            var where = "";
+            if (typeof (options) !== "undefined") {
+                where = options.where
+            }
+            else {
+                where = "after"  //alternative: "before"
+            }
+            if (pm) {
+                var pr = pm.GetRenderer();
+                var at = ut.GetAppletType(pm);
+                if (at == "list") {
+                    ut.SetLabel(c, nl, pm);
+                }
+                if (at == "form") {
+                    var cel = pr.GetUIWrapper(c).GetEl();
+                    if (typeof (cel) !== "undefined") {
+                        var ipn = c.GetInputName();
+                        var ae = ut.GetAppletElem(pm);
+                        var tc = pm.Get("C_ToggleCycle");
+
+
+
+                        var xrelid = "xray_" + ipn;
+                        var xrelc = $("<div id='" + xrelid + "'></div>");
+                        var xreld = $("<span></span>");
+                        xreld.html(nl);
+                        xrelc.append(xreld);
+
+                        switch (tc) {
+                            case "ShowControls": xreld.css("color", "blue");
+                                break;
+                            case "ShowBCFields": xreld.css("color", "red");
+                                break;
+                            case "ShowTableColumns": xreld.css("color", "green");
+                                break;
+                            default: xreld.attr("style", "");
+                                break;
+                        }
+
+                        if (tc != "Reset" && ae.find("#" + xrelid).length == 0) {
+                            if (where == "after") {
+                                cel.parent().after(xrelc);
+                            }
+                            if (where == "before") {
+                                cel.parent().before(xrelc);
+                            }
+                        }
+                        if (tc == "Reset") {
+                            ae.find("#" + xrelid).remove();
+                        }
+                    }
+
+                }
+
+            }
+        }
         //set label for a control
         BCRMUtils.prototype.SetLabel = function (c, nl, context) {
             var ut = new SiebelAppFacade.BCRMUtils();
@@ -3380,6 +3596,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var le;
             var tc, otitle;
             if (pm) {
+                var ae = ut.GetAppletElem(pm);
+
+
                 le = ut.GetLabelElem(c, pm);
                 if (le) {
                     tc = pm.Get("C_ToggleCycle");
@@ -3534,12 +3753,13 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var pm = ut.ValidateContext(context);
             var bc, fm, cs, tp, fn, fd, lovtype;
             var fdt, fln, fcl, frq;
-            var nl, an, cn, bcn, fi;
+            var nl, an, ae, cn, bcn, fi;
             var vn = SiebelApp.S_App.GetActiveView().GetName();
             var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
+            var osd = "";
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "ShowBCFields");
-
+                ae = ut.GetAppletElem(pm);
                 bc = pm.Get("GetBusComp");
                 fm = bc.GetFieldMap();
                 tp = ut.GetAppletType(pm);
@@ -3556,9 +3776,17 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 }
                 xrd = BCRM_XRAY_DATA[an]["Controls"];
 
+                if (typeof (localStorage.BCRM_OPT_Silent_OSD) !== "undefined") {
+                    osd = localStorage.BCRM_OPT_Silent_OSD;
+                }
+                else {
+                    osd = "Replace Label Text";
+                }
 
-                //Form Applet treatment
                 if (tp == "form" || tp == "list") {
+                    //clean up xray dom elements
+                    ae.find("div[id^='xray_']").remove();
+
                     cs = pm.Get("GetControls");
                     for (c in cs) {
                         if (cs.hasOwnProperty(c)) {
@@ -3598,10 +3826,23 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                         nl = nl + "<br>LOV_TYPE: " + lovtype;
                                         xrd[cn]["BC Field LOV Type"] = lovtype;
                                     }
-                                    ut.SetLabel(cs[c], nl, pm);
+
+
+                                    if (osd == "Replace Label Text") {
+                                        ut.SetLabel(cs[c], nl, pm);
+                                    }
+                                    if (osd == "Show Below Control") {
+                                        ut.ShowXRData(cs[c], nl, pm, { where: "after" });
+                                    }
+
                                 }
                                 else {
-                                    ut.SetLabel(cs[c], fn, pm);
+                                    if (osd == "Replace Label Text") {
+                                        ut.SetLabel(cs[c], fn, pm);
+                                    }
+                                    if (osd == "Show Below Control") {
+                                        ut.ShowXRData(cs[c], fn, pm, { where: "after" });
+                                    }
                                 }
                             }
                         }
@@ -3761,7 +4002,6 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         //SiebelApp.Utils.Alert("X-Ray data copied to clipboard.");
                     }, 500)
                 }, 500);
-
             }
         };
 
@@ -4142,7 +4382,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.ShowControls = function (context) {
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
-            var an, apd, tp, cs, cn, uit, pop;
+            var an, ae, apd, tp, cs, cn, uit, pop;
             var bcn, fi;
             var nl;
             var xrd;
@@ -4152,12 +4392,25 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "ShowControls");
                 an = pm.GetObjName();
+                ae = ut.GetAppletElem(pm);
                 bcn = pm.Get("GetBusComp").GetName();
                 fi = pm.Get("GetFullId");
                 apd = ut.GetAppletData(an);
                 tp = ut.GetAppletType(pm);
-                //currently supporting form applets only
+                var osd = "";
+
+                if (typeof (localStorage.BCRM_OPT_Silent_OSD) !== "undefined") {
+                    osd = localStorage.BCRM_OPT_Silent_OSD;
+                }
+                else {
+                    osd = "Replace Label Text";
+                }
+
                 if (tp == "form" || tp == "list") {
+
+                    //clean up xray dom elements
+                    ae.find("div[id^='xray_']").remove();
+
                     cs = pm.Get("GetControls");
 
                     //ahansal: 2022-02-25: collect all XRAY data for later visualization/export
@@ -4228,7 +4481,13 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             if (pop != "") {
                                 nl += "<br>" + pop;
                             }
-                            ut.SetLabel(cs[cn], nl, pm);
+
+                            if (osd == "Replace Label Text") {
+                                ut.SetLabel(cs[cn], nl, pm);
+                            }
+                            if (osd == "Show Below Control") {
+                                ut.ShowXRData(cs[cn], nl, pm, { where: "after" });
+                            }
                         }
                     }
                 }
@@ -4241,13 +4500,23 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var pm = ut.ValidateContext(context);
             var table, column, mvlink, mvfield, mvbc, join;
             var bcd2;
-            var bc, bcd, bcn, fm, cs, tp, fn, fd, an;
+            var bc, bcd, bcn, fm, cs, tp, fn, fd, an, ae;
             var fdt, fln, fcl, frq, fi;
             var nl;
             var vn = SiebelApp.S_App.GetActiveView().GetName();
             var bo = SiebelApp.S_App.GetActiveBusObj().GetName();
+            var osd = "";
+
+            if (typeof (localStorage.BCRM_OPT_Silent_OSD) !== "undefined") {
+                osd = localStorage.BCRM_OPT_Silent_OSD;
+            }
+            else {
+                osd = "Replace Label Text";
+            }
+
             if (pm) {
                 pm.SetProperty("C_ToggleCycle", "ShowTableColumns");
+                ae = ut.GetAppletElem(pm);
                 bc = pm.Get("GetBusComp");
                 bcn = bc.GetName();
                 //get RR CLOB Data from BCRM RR Reader service
@@ -4258,6 +4527,8 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                 fi = pm.Get("GetFullId");
 
                 if (tp == "form" || tp == "list") {
+                    //clean up xray dom elements
+                    ae.find("div[id^='xray_']").remove();
 
                     //ahansal: 2022-02-25: collect all XRAY data for later visualization/export
                     if (typeof (BCRM_XRAY_DATA[an]) === "undefined") {
@@ -4403,7 +4674,15 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                         nl = "System: " + fn + " (" + fdt + "/" + fln + ")" + frq + fcl;
                                     }
                                 }
-                                ut.SetLabel(cs[cn], nl, pm);
+
+
+                                if (osd == "Replace Label Text") {
+                                    ut.SetLabel(cs[cn], nl, pm);
+                                }
+                                if (osd == "Show Below Control") {
+                                    ut.ShowXRData(cs[cn], nl, pm, { where: "after" });
+                                }
+
                             }
                         }
                     }
@@ -8735,6 +9014,237 @@ BCRMShowSitemap = function (options) {
         $("#bcrm_sitemap").find("#bcrm_sm_recent").find(".ui-accordion-content").show();
     }
 };
+
+//Support Analyzers
+
+BCRMGetAnalyzerList = function () {
+    var an_home;
+    var an_tmp;
+    var an_list;
+    var retval = [];
+    //analyzer home: after download from MOS, extract all of them in one folder, keeping the zip name for the folder
+
+    if (typeof (localStorage.BCRM_OPT_analyzer_ANHOME) !== "undefined") {
+        an_home = localStorage.BCRM_OPT_analyzer_ANHOME;
+    }
+    else {
+        an_home = "C:\\Siebel\\analyzer";
+    }
+
+    if (typeof (localStorage.BCRM_OPT_analyzer_TEMP) !== "undefined") {
+        an_tmp = localStorage.BCRM_OPT_analyzer_TEMP;
+    }
+    else {
+        an_tmp = devpops_config.ses_home + "\\temp\\";
+    }
+
+    BCRMRunCmd("dir /B " + an_home + " > " + an_tmp + "an_dir.out");
+    an_list = BCRMReadFile(an_tmp + "an_dir.out");
+    if (an_list != "") {
+        an_list = an_list.split("\r\n");
+    }
+    else {
+        SiebelApp.Utils.Alert("No analyzers found in " + an_home + "\nPlease check your setup.");
+    }
+    for (var i = 0; i < an_list.length; i++) {
+        if (an_list[i] != "") {
+            retval.push(an_list[i]);
+        }
+    }
+    return retval;
+};
+
+BCRMAnalyzerDialog = function () {
+    var dlg = $("<div id='bcrm_an'>");
+    var an;
+    var an_list = BCRMGetAnalyzerList();
+    var run_list = [];
+    var zips;
+    if (an_list.length > 0) {
+        for (var i = 0; i < an_list.length; i++) {
+            an = $("<div id='" + an_list[i] + "' style='font-size:1.2em;margin-top:6px;'><span><input type='checkbox'></span><span>" + an_list[i] + "</span><span><div id='status' style='display:inline-block;width:20px;height:20px;background-size:contain;margin-left:10px;'></div></span></div>");
+            dlg.append(an);
+        }
+    }
+    else {
+        an = $("<div>No Analyzers found.</div>");
+        dlg.append(an);
+    }
+    dlg.dialog({
+        title: "Analyzer Launchpad",
+        width: 500,
+        height: 400,
+        buttons: {
+            "Run": function () {
+                run_list = [];
+                $(this).dialog().find("input[type='checkbox']").each(function (x) {
+                    if ($(this).prop("checked")) {
+                        var p = $(this).parent().parent();
+                        run_list.push(p.attr("id"));
+                        p.find("#status").css("background-image", "url(images/pf_wait.gif)");
+                    }
+                });
+                setTimeout(function () {
+                    zips = BCRMRunAnalyzer(run_list);
+                    for (var i = 0; i < zips.length; i++) {
+                        var t = [];
+                        t.push(zips[i]);
+                        BCRMGetAnalyzerReports(t);
+                    }
+                }, 200);
+            },
+            "Cancel": function () {
+                $(this).dialog("destroy");
+            }
+        }
+    })
+};
+
+BCRMGetAnalyzerReports = function (zips) {
+    var dir = "";
+    var ai_root = (localStorage.BCRM_OPT_analyzer_AIHOME ? localStorage.BCRM_OPT_analyzer_AIHOME : "C:\\Siebel\\ai");;
+    var zip = "";
+    var cmd = "";
+    var f = "";
+    var url = "";
+    var urls = [];
+    var r;
+    var tb;
+    for (var i = 0; i < zips.length; i++) {
+        dir = zips[i].split("HAF\\")[0] + "HAF\\report";
+        zip = zips[i].split("HAF\\")[1];
+        f = zip.split(".")[0];
+        cmd = "unzip -o \"" + zips[i] + "\" -d \"" + dir + "\"";
+        BCRMRunCmd(cmd);
+        cmd = "robocopy " + dir + " " + ai_root + "\\applicationcontainer_external\\webapps\\ROOT\\report" + " /E";
+        BCRMRunCmd(cmd);
+        //robocopy C:/Siebel/analyzer/workflow_analyzer_200.1/HAF/report C:\Siebel\ai\applicationcontainer_external\webapps\ROOT\report /MIR
+        url = location.origin + "/report/" + f + "/" + f + ".html";
+        urls.push(url);
+        //r = BCRMReadFile(html);
+        //TODO: extract info from r (HTML)
+        window.open(url);
+        //tb.document.write(r);
+    }
+    //window.open(location.origin + "/report/SBL Workflow_01-Mar-2022_173535/SBL Workflow_01-Mar-2022_173535.html");
+}
+BCRMRunAnalyzer = function (an_list, param_list) {
+    var cmd = "";
+    var an_name = "";
+    var zip = "";
+    var zips = [];
+    var tblo = (localStorage.BCRM_OPT_analyzer_TBLO ? localStorage.BCRM_OPT_analyzer_TBLO : "SIEBEL");
+    var tblopw = (localStorage.BCRM_OPT_analyzer_TBLOPW ? localStorage.BCRM_OPT_analyzer_TBLOPW : "Welcome1");
+    var dbconn = (localStorage.BCRM_OPT_analyzer_DBCONN ? localStorage.BCRM_OPT_analyzer_DBCONN : "jdbc:oracle:thin:@localhost:1521:orcl");
+    var fs = (localStorage.BCRM_OPT_analyzer_FS ? localStorage.BCRM_OPT_analyzer_FS : "C:\\Siebel\\fs");
+    var java = (localStorage.BCRM_OPT_analyzer_JDK ? localStorage.BCRM_OPT_analyzer_JDK : "C:\\JDK");
+    var rows = (localStorage.BCRM_OPT_analyzer_ROWS ? localStorage.BCRM_OPT_analyzer_ROWS : "200");
+    var anhome = (localStorage.BCRM_OPT_analyzer_ANHOME ? localStorage.BCRM_OPT_analyzer_ANHOME : "C:\\Siebel\\analyzer");
+    var tmp = (localStorage.BCRM_OPT_analyzer_TEMP ? localStorage.BCRM_OPT_analyzer_TEMP : devpops_config.ses_home + "\\temp\\");
+    var sm_user = (localStorage.BCRM_OPT_analyzer_SMUSER ? localStorage.BCRM_OPT_analyzer_SMUSER : "SADMIN");
+    var sm_pass = (localStorage.BCRM_OPT_analyzer_SMPASS ? localStorage.BCRM_OPT_analyzer_SMPASS : "Welcome1");
+    var sm_gw = (localStorage.BCRM_OPT_analyzer_SMGW ? localStorage.BCRM_OPT_analyzer_SMGW : "localhost:2320");
+    var ent = (localStorage.BCRM_OPT_analyzer_ENT ? localStorage.BCRM_OPT_analyzer_ENT : "Siebel");
+    var sm_home = (localStorage.BCRM_OPT_analyzer_SMHOME ? localStorage.BCRM_OPT_analyzer_SMHOME : "C:\\Siebel\\ses\\siebsrvr");
+    if (typeof (param_list) === "undefined") {
+        param_list = {
+            tblo: tblo,
+            tblopw: tblopw,
+            db: dbconn,
+            fs: fs,
+            java: java,
+            rows: rows,
+            an_home: anhome,
+            tmp: tmp,
+            sm_user: sm_user,
+            sm_pass: sm_pass,
+            sm_gw: sm_gw,
+            ent: ent,
+            sm_home: sm_home
+        };
+    }
+
+    for (var i = 0; i < an_list.length; i++) {
+        var ts = Date.now();
+        console.log("Analyzer Start: " + an_list[i]);
+        an_name = an_list[i];
+        an_name = an_name.split("_");
+        an_name.pop();
+        an_name = an_name.join("_");
+        //create cmd file
+        cmd = "";
+        cmd += "set SIEBEL_TABLEOWNER=" + param_list.tblo + " & ";
+        cmd += "set SIEBEL_TABLEOWNER_PASSWORD=" + param_list.tblopw + " & ";
+        cmd += "set SIEBEL_DB_CONNECTION_STRING=" + param_list.db + " & ";
+        cmd += "set SIEBEL_FS_ROOT=" + param_list.fs.replaceAll("\\", "\\\\") + " & ";
+        cmd += "set JAVA_HOME=" + param_list.java.replaceAll("\\", "\\\\") + " & ";
+        cmd += "set SIEBEL_REGISTRY_USERNAME=" + param_list.sm_user + " & ";
+        cmd += "set SIEBEL_REGISTRY_PASSWORD=" + param_list.sm_pass + " & ";
+        cmd += "set SIEBEL_GATEWAY_CONNECTION_STRING=" + param_list.sm_gw + " & ";
+        cmd += "set SIEBEL_ENTERPRISE_NAME=" + param_list.ent + " & ";
+        cmd += "set SIEBEL_HOME=" + param_list.sm_home.replaceAll("\\", "\\\\") + " & ";
+        //cmd += "echo " + param_list.rows + ">" + param_list.tmp.replaceAll("\\","\\\\") + "rows.txt" + " & ";
+        cmd += "cd " + param_list.an_home.replaceAll("\\", "\\\\") + "\\\\" + an_list[i] + "\\\\HAF" + " & ";
+        cmd += "run_analyzer.bat -Danalyzer=\"" + param_list.an_home.replaceAll("\\", "\\\\") + "\\\\" + an_list[i] + "\\\\HAF\\\\resource\\\\" + an_name + ".xml\"";
+        cmd += "<" + param_list.tmp.replaceAll("\\", "\\\\") + "rows.txt";
+
+
+        var tmp_filepath = param_list.tmp + "rows.txt";
+        tmp_filepath = tmp_filepath.replaceAll("\\", "\\\\");
+        BCRMInvokeServiceMethod({
+            "service": "EAI File Transport",
+            "method": "Send",
+            "inputs": {
+                "<Value>": param_list.rows,
+                "FileName": tmp_filepath,
+                "CharSetConversion": "UTF-8"
+            }
+        });
+
+        var out_filepath = param_list.tmp + an_name + ".out";
+        out_filepath = out_filepath.replaceAll("\\", "\\\\");
+
+        var success = BCRMRunCmd(cmd + ">" + out_filepath);
+        if (success) {
+            $("[id='" + an_list[i] + "']").find("#status").css("background-image", "url(images/green_success.gif)");
+            var output = BCRMReadFile(out_filepath);
+            var ors = output.split("\r\n");
+            for (var j = 0; j < ors.length; j++) {
+                if (ors[j].indexOf("zipped") > -1) {
+                    zip = ors[j].split("zipped at: ")[1];
+                }
+            }
+            zips.push(param_list.an_home + "\\" + an_list[i] + "\\HAF\\" + zip);
+        }
+        console.log("Analyzer Finish: " + an_list[i]);
+        console.log("Time elapsed (ms): " + (Date.now() - ts));
+    }
+    return zips;
+
+    /*Example cmd script (Windows)
+    set SIEBEL_TABLEOWNER=SIEBEL
+    set SIEBEL_TABLEOWNER_PASSWORD=Welcome1
+    set SIEBEL_DB_CONNECTION_STRING=jdbc:oracle:thin:@localhost:1521:orcl
+    set SIEBEL_FS_ROOT=C:\Siebel\fs
+    set JAVA_HOME=C:\JDK
+    set SIEBEL_REGISTRY_USERNAME=SADMIN
+    set SIEBEL_REGISTRY_PASSWORD=Welcome1
+    set SIEBEL_GATEWAY_CONNECTION_STRING=siebtraining.vcn.oraclevcn.com:2320
+    set SIEBEL_ENTERPRISE_NAME=TRAINING
+    set SIEBEL_HOME=C:\Siebel\siebsrvr
+    REM echo 200 > C:\Siebel\rows.txt
+    REM *System Analyzer*
+    cd C:\Siebel\analyzer\system_admin_analyzer_200.3\HAF
+    run_analyzer.bat -Danalyzer="C:\Siebel\analyzer\system_admin_analyzer_200.3\HAF\resource\system_admin_analyzer.xml"<C:\Siebel\rows.txt
+    cd C:\Siebel
+    pause
+    */
+
+
+};
+
+
+
 
 //prototype: Applet Layout Editor 3.0
 //REST graveyard
