@@ -8,7 +8,9 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
-Features: https://youtu.be/xenmD6euvPU
+22.10 Update: https://youtu.be/zocUBVYdM2k
+
+Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
 
 Installation: https://youtu.be/gl7PljwLbbo
 
