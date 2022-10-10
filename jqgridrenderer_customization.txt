@@ -10,7 +10,10 @@ ShowUI: add after first line
 
 //START devpops Customization: Auto Resize Columns
 try{
-    BCRMAddAutoResizeButton(this.GetPM());
+    //nothing happens here
+    //commented because of weird behavior during query in web tools
+    //DO NOT USE!!!
+    //BCRMAddAutoResizeButton(this.GetPM());
 }
 catch(e){
     //do nothing
