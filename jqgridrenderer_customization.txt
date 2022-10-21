@@ -10,10 +10,7 @@ ShowUI: add after first line
 
 //START devpops Customization: Auto Resize Columns
 try{
-    //nothing happens here
-    //commented because of weird behavior during query in web tools
-    //DO NOT USE!!!
-    //BCRMAddAutoResizeButton(this.GetPM());
+    BCRMAddAutoResizeButton(this.GetPM());
 }
 catch(e){
     //do nothing
@@ -27,7 +24,10 @@ BindData: add at the end of function body
 
 //START devpops Customization: Auto Resize Columns
 try{
-    BCRMAutoResizeHandler(this.GetPM());
+    //nothing happens here
+    //commented because of weird behavior during query in web tools
+    //DO NOT USE!!!
+    //BCRMAutoResizeHandler(this.GetPM());
 }
 catch(e){
     //do nothing
