@@ -24,6 +24,8 @@ Dark Mode/Toggle CSS demo
 
 Web Tools: Stretched popup applets (Inject CSS feature demo)
 
+22.10.1: Added xapuk.com About View 2.0 ( http://xapuk.com/index.php?topic=145 )
+
 # Update to 22.10
 
 Copy postload.js to vanilla postload.js
