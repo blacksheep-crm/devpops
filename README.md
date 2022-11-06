@@ -14,17 +14,13 @@ Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
 
 Installation: https://youtu.be/gl7PljwLbbo
 
-# What's New in 22.10?
+# What's New in 22.11?
 
-X-Ray: Display option for form applets (replace labels or show below control)
+Lizard 2.0: List Applet Column Wizard enhanced
 
-List Applets: Column auto-resize (requires PR changes)
+Repository Write-Back: Save Lizard column width to writable dev workspace
 
-Dark Mode/Toggle CSS demo
-
-Web Tools: Stretched popup applets (Inject CSS feature demo)
-
-22.10.1: Added xapuk.com About View 2.0 ( http://xapuk.com/index.php?topic=145 )
+CSS Injector
 
 # Update to 22.10
 
@@ -36,7 +32,7 @@ Copy blacksheep.css to files/custom
 
 To implement column auto-resize, refer to jqgridrenderer_customization.txt
 
-# Features (22.2 and earlier)
+# Features (22.10 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -84,6 +80,16 @@ X-Ray Silent: Export X-Ray Data to clipboard (CSV, HTML or paste to Excel/format
 
 Psych Map (Right-click Site Map toolbar button and get psyched)
 
+X-Ray: Display option for form applets (replace labels or show below control)
+
+List Applets: Column auto-resize (requires PR changes)
+
+Dark Mode/Toggle CSS demo
+
+Web Tools: Stretched popup applets (Inject CSS feature demo)
+
+Added xapuk.com About View 2.0 ( http://xapuk.com/index.php?topic=145 )
+
 # Installation
 
 1. Import all SIFs
@@ -107,7 +113,7 @@ Psych Map (Right-click Site Map toolbar button and get psyched)
 
 9. If you want to use Responsibility Check, register BCRM View Helper business service with Responsibility in Business Service Access (for REST API)
 
-10. Copy SiebelQueryLang.js file to $AI_APPLICATIONCONTAINER$/webapps/siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
+10. Copy SiebelQueryLang.js file to /siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
 
 11. Copy code from postload.js to vanilla postload.js
 
@@ -117,7 +123,7 @@ Psych Map (Right-click Site Map toolbar button and get psyched)
 
 14. Copy blacksheep.css to files/custom
 
-15. To implement column auto-resize, refer to jqgridrenderer_customization.txt
+15. To implement Lizard button on list applets, refer to jqgridrenderer_customization.txt
 
 # Pre-Requisites
 
