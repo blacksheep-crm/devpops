@@ -1,7 +1,7 @@
 devpops 22.10
-custom extension for vanilla jqgridrenderer.js
+custom extension for list applet PR: Auto Resize Columns (Button and popup auto resize)
 EDUCATIONAL ONLY!!! DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS
-add below code to jqgridrenderer.js
+add below code to jqgridrenderer.js or custom list applet PR
 
 ShowUI: add after first line
 (SiebelAppFacade.JQGridRenderer.superclass.ShowUI.call(this);)
@@ -9,13 +9,17 @@ ShowUI: add after first line
 
 
 //START devpops Customization: Auto Resize Columns
-try{
-    BCRMAddAutoResizeButton(this.GetPM());
-}
-catch(e){
-    //do nothing
-}
+					try{
+                        //exclude web tools since it acts up
+						if (location.pathname.indexOf("webtools") == -1) {
+							BCRMAddAutoResizeButton(this.GetPM());
+						}
+					}
+					catch(e){
+						//do nothing
+					}
 //END devpops Customization: Auto Resize Columns
+
 
 
 
@@ -23,13 +27,13 @@ BindData: add at the end of function body
 
 
 //START devpops Customization: Auto Resize Columns
-try{
-    //nothing happens here
-    //commented because of weird behavior during query in web tools
-    //DO NOT USE!!!
-    //BCRMAutoResizeHandler(this.GetPM());
-}
-catch(e){
-    //do nothing
-}
+                    try{
+                        //exclude web tools since it acts up
+						if (location.pathname.indexOf("webtools") == -1) {
+                            BCRMAutoResizeHandler(this.GetPM());
+                        }
+                    }
+                    catch(e){
+                        //do nothing
+                    }
 //END devpops Customization: Auto Resize Columns
