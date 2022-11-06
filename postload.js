@@ -317,6 +317,9 @@ BCRMGetCredentials = function (next) {
                     var m = $("#bcrm_screen_menu");
                     m.find("a.ui-button").click();
                 }
+                if (next == "updlistcols") {
+                    BCRMUpdateListColumns(BULC_PM, BULC_FMAP, true, true);
+                }
             },
             Cancel: function (e, ui) {
                 $(this).dialog("destroy");
@@ -1217,9 +1220,10 @@ BCRMAutoResizeColumns = function (pm) {
         try {
             var pr = pm.GetRenderer();
             var pm = pr.GetPM();
+            var an = pm.GetObjName();
             var rs = pm.Get("GetRecordSet");
             var cs = pm.Get("GetControls");
-            var r, field, record, cn;
+            var r, field, record, cn, fn;
             var padding = 20;
             var maxwidth = 500;
             var nw;
@@ -1228,15 +1232,25 @@ BCRMAutoResizeColumns = function (pm) {
             var cm = ch.GetColMap();
             var minwidth = new Map();
 
-            //add display names as virtual record (column header should not be truncated)
+
+            //22.10.2: write back to repository
+            var cf = ch.GetColField();
+            var lcn;
+            var repowidth = new Map();
+            var listcols = {};
+
+
             var nr = rs.length;
             if (nr > 0) {
+                //add display names as virtual record (column header should not be truncated)
                 rs[nr] = {};
                 for (ct in cs) {
-                    if (cs[ct].GetFieldName() != "" && cs[ct].GetDisplayName() != "") {
-                        rs[nr][cs[ct].GetFieldName()] = cs[ct].GetDisplayName();
+                    fn = cs[ct].GetFieldName();
+                    if (fn != "" && cs[ct].GetDisplayName() != "") {
+                        rs[nr][fn] = cs[ct].GetDisplayName();
                     }
                 }
+
 
                 for (r in rs) {
                     record = rs[r];
@@ -1244,6 +1258,9 @@ BCRMAutoResizeColumns = function (pm) {
                         //find col name
                         for (col in cm) {
                             if (cm[col] == field) {
+                                //get repository name of list column
+                                lcn = cf[field];
+                                //get PR colum name
                                 cn = col;
                                 break;
                             }
@@ -1253,6 +1270,9 @@ BCRMAutoResizeColumns = function (pm) {
                             //add to map
                             if (!minwidth.has(cn)) {
                                 minwidth.set(cn, 0);
+                            }
+                            if (!repowidth.has(field)) {
+                                repowidth.set(field, 0);
                             }
 
                             /* this is accurate but slow
@@ -1274,9 +1294,13 @@ BCRMAutoResizeColumns = function (pm) {
                                 nw = maxwidth;
                             }
 
+                            //round up to next 10 as Int
+                            nw = Math.ceil(parseInt(nw)/10)*10;
+
                             //overwrite map if new width is greater than existing entry
                             if (minwidth.get(cn) < nw) {
                                 minwidth.set(cn, nw);
+                                repowidth.set(field, nw);
                             }
                         }
                     }
@@ -1289,9 +1313,17 @@ BCRMAutoResizeColumns = function (pm) {
                         if (colname == "Writable") {
                             newwidth = 100;
                         }
-                        BCRMResizeCol(pm, colname, newwidth);
+                        if (newwidth > 0){
+                            BCRMResizeCol(pm, colname, newwidth);
+                        }
                     }
                 });
+
+                //call repo update function
+                if (sessionStorage.BCRMCurrentWorkspaceStatus == "Edit-In-Progress") {
+                    BCRMUpdateListColumns(pm, repowidth);
+                }
+
             }
         }
         catch (e) {
@@ -1299,6 +1331,187 @@ BCRMAutoResizeColumns = function (pm) {
         }
     }
 }
+
+//Persist List Column Width to Repository
+var BULC_PM;
+var BULC_FMAP;
+BCRMUpdateListColumns = function (pm, fields, skipDisplay = false, go = false) {
+    BULC_PM = pm;
+    BULC_FMAP = fields;
+    var ws = sessionStorage.BCRMCurrentWorkspace;
+    var wss = sessionStorage.BCRMCurrentWorkspaceStatus;
+    var pr = pm.GetRenderer();
+    var ch = pr.GetColumnHelper();
+    var cm = ch.GetColMap();
+    var cf = ch.GetColField();
+    var cs = pm.Get("GetControls");
+    var an = pm.GetObjName();
+    var lcols = new Map();
+    var ucol = {
+        "Name": "",
+        "HTML Width": ""
+    };
+    var requestOptions;
+    var myHeaders = new Headers();
+
+    if (wss == "Edit-In-Progress") {
+        var dlg = $("<div>");
+        var hdr = $("<h3>" + "Applet: " + an + "</h3><h4>" + "Workspace: " + ws + "</h4>");
+        var grid = $("<div style='display:grid;height:300px;overflow-y:auto;grid-auto-rows: min-content;'>");
+        dlg.append(hdr);
+
+        //map fields to list columns
+        fields.forEach((w, fn) => {
+            lcols.set(cf[fn], w);
+        });
+        //generate dialog
+        fields.forEach((w, fn) => {
+            let dn;
+            let prcol;
+            for (c in cs) {
+                if (cs[c].GetFieldName() == fn) {
+                    dn = cs[c].GetDisplayName();
+                    break;
+                }
+            }
+            for (col in cm) {
+                if (cm[col] == fn) {
+                    prcol = col;
+                    break;
+                }
+            }
+            let row = $("<div style='display: grid;grid-template-columns: 60% auto;height:24px;margin-bottom: 4px;'>");
+            let lbl = $("<div>" + dn + ":</div>");
+            let val = $("<input id='" + prcol + "' colname='" + cf[fn] + "' fn='" + fn + "' oldval='" + w + "' type='number' step='5' style='width:45px;height:18px;'>");
+            val.val(w);
+            if (typeof (prcol) !== "undefined") {
+                row.append(lbl);
+                row.append(val);
+                grid.append(row);
+            }
+        });
+
+        dlg.append(grid);
+        if (!skipDisplay) {
+            dlg.dialog({
+                width: 400,
+                height: 500,
+                title: "🦎 Lizard",
+                buttons: {
+                    "Preview": function () {
+                        $(this).dialog().find("input").each(function (x) {
+                            if (parseInt($(this).val()) != parseInt($(this).attr("oldval"))) {
+                                let colname = $(this).attr("id");
+                                BCRMResizeCol(pm, colname, parseInt($(this).val()));
+                            }
+                        });
+                    },
+                    "Save to Workspace": function (e, ui) {
+                        $(this).dialog().find("input").each(function (x) {
+                            if (parseInt($(this).val()) > 0) {
+                                let fn = $(this).attr("fn");
+                                fields.set(fn, parseInt($(this).val()));
+                            }
+                        });
+                        BULC_FMAP = fields;
+                        BCRMUpdateListColumns(pm, fields, true, true);
+                    },
+                    "Close": function () {
+                        $(this).dialog("destroy");
+                    }
+                }
+            });
+            //go = SiebelApp.Utils.Confirm("The following List Columns will be updated:\n" + msg);
+        }
+        if (go) {
+            if (BCRM_BASIC_AUTH == "") {
+                BCRMGetCredentials("updlistcols");
+            }
+            else {
+                myHeaders.append("Content-Type", "application/json");
+                myHeaders.append("Authorization", BCRM_BASIC_AUTH);
+
+                //touch applet
+                //get original comments
+                var url = location.origin + "/siebel/v1.0/workspace/" + ws + "/Applet/" + an + "?fields=Comments&childlinks=none";
+                var ocom;
+                var ncom;
+                let today = new Date().toISOString().slice(0, 10);
+                var icom = "devpops_lizard_" + today + "_" + ws;
+                var qd = $.ajax({
+                    dataType: "json",
+                    url: url,
+                    async: false,
+                    method: "GET",
+                    headers: {
+                        "Authorization": BCRM_BASIC_AUTH
+                    },
+                });
+                if (typeof (qd.responseJSON) !== "undefined") {
+                    if (typeof (qd.responseJSON["Comments"]) !== "undefined") {
+                        ocom = qd.responseJSON["Comments"]
+                        if (ocom.indexOf(icom) == -1) {
+                            //comments do not include lizard tag
+                            //not touched in this workspace today, let's touch it then
+                            ncom = ocom + " | " + icom;
+                            var cdata = JSON.stringify({
+                                "Name": an,
+                                "Comments": ncom
+                            });
+                            url = location.origin + "/siebel/v1.0/workspace/" + ws + "/Applet/" + an;
+                            qd = $.ajax({
+                                dataType: "json",
+                                url: url,
+                                async: false,
+                                method: "PUT",
+                                data: cdata,
+                                headers: {
+                                    "Authorization": BCRM_BASIC_AUTH,
+                                    "Content-Type": "application/json"
+                                },
+                            });
+                        }
+                    }
+                }
+
+                //update List Columns
+                lcols.forEach((newwidth, colname) => {
+                    if (newwidth > 0){
+                        ucol["Name"] = colname;
+                        ucol["HTML Width"] = newwidth.toString();
+                        requestOptions = {
+                            method: 'PUT',
+                            headers: myHeaders,
+                            body: JSON.stringify(ucol),
+                            redirect: 'follow'
+                        };
+                        fetch(location.origin + "/siebel/v1.0/workspace/" + ws + "/Applet/" + an + "/List/List/List Column", requestOptions)
+                            .then(response => response.text())
+                            .then(result => {
+                                console.log(colname + " updated");
+                                $("input[colname='" + colname + "']").parent().css("background","lightgreen");
+                            })
+                            .catch(error => console.log('error', error));
+                    }
+                });
+            }
+        }
+    }
+    else {
+        SiebelApp.Utils.Alert("Workspace '" + ws + "' is not editable.");
+    }
+}
+//Add Lizard button
+BCRMAddLizardButton = function(){
+    var btn = $('<div id="devpops_lizard" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops Lizard: Auto-resize List Columns"><li id="devpops_1" class="siebui-toolbar-enable" role="menuitem" title="devpops Lizard: Auto-resize List Columns" aria-label="devpops Lizard: Auto-resize List Columns" name="devpops Lizard: Auto-resize List Columns">🦎</li></ul></div>');
+    if ($("#devpops_lizard").length == 0){
+        $("div#siebui-toolbar-settings").after(btn);
+        btn.on("click",function(){
+            let pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
+            BCRMAutoResizeColumns(pm);
+        })
+    }
+};
 
 //main postload function for Web Tools
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
@@ -1323,21 +1536,25 @@ BCRMWTHelper = function () {
             BCRMSetToolsHelpContent();
 
             //Redwood Banner, because we can
-            if (typeof (localStorage.BCRMBANNERTIMER) === "undefined") {
+            if (typeof (sessionStorage.BCRMBANNERTIMER) === "undefined") {
                 BCRMPrettifyBanner();
-                localStorage.BCRMBANNERTIMER = 10;
+                sessionStorage.BCRMBANNERTIMER = 10;
             }
             else {
-                localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
-                if (localStorage.BCRMBANNERTIMER <= 0) {
+                sessionStorage.BCRMBANNERTIMER = sessionStorage.BCRMBANNERTIMER - 1;
+                if (sessionStorage.BCRMBANNERTIMER <= 0) {
                     BCRMPrettifyBanner();
-                    localStorage.BCRMBANNERTIMER = 10;
+                    sessionStorage.BCRMBANNERTIMER = 10;
                 }
             }
 
             //Inject CSS for wide popups
             //uses :has pseudo-class: check caniuse.com for browser support
             BCRMInjectCSS("devpops1", ".ui-dialog.ui-corner-all.ui-widget.ui-widget-content.ui-front.ui-draggable.ui-resizable:has(.siebui-list){min-width:75vw!important;max-width:900px!important;}");
+            
+            //Add Lizard
+            BCRMAddLizardButton();
+
             console.log("BCRM devpops extension for Siebel Web Tools loaded");
         }
     }
