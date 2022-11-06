@@ -43,9 +43,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "22.10";
-var devpops_version = 55;
-var devpops_tag = "Anton Zeilinger";
+var devpops_dver = "22.11";
+var devpops_version = 56;
+var devpops_tag = "Konrad Lorenz";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -1578,6 +1578,41 @@ BCRMCreateDebugMenu = function () {
                 "showtoggle": true,
                 "img": "images/grid_matte_formwrench.png"
             },
+            "lizard": {
+                "seq": 19,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_lizard") == "false" ? false : true,
+                "label": "🦎 Lizard",
+                "title": "Lizard: The List Column Wizard!",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    let pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
+                    BCRMAutoResizeColumns(pm);
+                    return r;
+                },
+                "img": "images/Accounts_Large_Highlight.png"
+            },
+            "injectCSS": {
+                "seq": 19,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_injectCSS") == "false" ? false : true,
+                "label": "CSS Injector",
+                "title": "Just a little prick.",
+                "onclick": function () {
+                    var r = BCRMCloseDebugMenu();
+                    BCRMInjectCSSDialog();
+                    return r;
+                },
+                "img": "images/hm_pg_pharmacy_locator_sm.jpg",
+                "showoptions": true,
+                "options": {
+                    "Persistence": {
+                        "label": "Persistence",
+                        "default": "none",
+                        "tip": "Store or forget injected CSS",
+                        "type": "select",
+                        "lov": ["none", "localStorage"]
+                    }
+                }
+            },
             "RedwoodBanner": {
                 "seq": 25,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_RedwoodBanner") == "false" ? false : true,
@@ -1643,7 +1678,7 @@ BCRMCreateDebugMenu = function () {
     BCRMCustomizeDebugMenu();
 
     var hasresp = true;
-    var ul_main = $("<ul style='width: auto;text-align:left;background:#29303f;' class='depth-0'></ul>");
+    var ul_main = $("<ul style='width: auto;text-align:left;background:#29303f;z-index: 11111;' class='depth-0'></ul>");
 
     //create small toolbar on top of menu
     //detach (done), rotate (done), config (enable/disable items (done), sequence items (TODO))
@@ -1990,6 +2025,9 @@ BCRMCreateDebugMenu = function () {
                                 }
                                 if (id == "analyzer") {
                                     BCRMAnalyzerDialog();
+                                }
+                                if (id == "injectCSS") {
+                                    BCRMInjectCSSDialog();
                                 }
                             },
                             Save: function () {
@@ -3361,15 +3399,15 @@ BCRMWSHelper = function () {
             BCRMApplyDefaultBreakFree();
 
             //default Redwood Banner
-            if (typeof (localStorage.BCRMBANNERTIMER) === "undefined") {
+            if (typeof (sessionStorage.BCRMBANNERTIMER) === "undefined") {
                 BCRMApplyDefaultRedwoodBanner();
-                localStorage.BCRMBANNERTIMER = 10;
+                sessionStorage.BCRMBANNERTIMER = 10;
             }
             else {
-                localStorage.BCRMBANNERTIMER = localStorage.BCRMBANNERTIMER - 1;
-                if (localStorage.BCRMBANNERTIMER <= 0) {
+                sessionStorage.BCRMBANNERTIMER = sessionStorage.BCRMBANNERTIMER - 1;
+                if (sessionStorage.BCRMBANNERTIMER <= 0) {
                     BCRMApplyDefaultRedwoodBanner();
-                    localStorage.BCRMBANNERTIMER = 10;
+                    sessionStorage.BCRMBANNERTIMER = 10;
                 }
             }
 
@@ -3417,6 +3455,9 @@ BCRMPreLoad = function () {
         if ($("link[href*='blacksheep.css']").length == 0) {
             $("head").append(css);
         }
+    }
+    if (localStorage.BCRM_OPT_injectCSS_Persistence == "localStorage") {
+        BCRMInjectCSS("preload",localStorage.BCRM_CSS_INJECTION);
     }
 }
 
@@ -4244,6 +4285,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         BCRMUtils.prototype.RemoveLinkOverlay = function () {
             $("[bcrm-bc]").css("border", "inherit");
             $("[id^='bcrm_bc_info']").remove();
+            $("[id^='bcrm_applet_info']").remove();
         };
 
         BCRMUtils.prototype.LinkOverlay = function () {
@@ -4422,6 +4464,15 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         BCRM_XRAY_DATA[an]["Controls"] = {};
                     }
                     xrd = BCRM_XRAY_DATA[an]["Controls"];
+
+                    //22.10.2 Applet Info Box
+                    var aid = "bcrm_applet_info_" + fi;
+                    var ainf = $('<div id="' + aid + '" style="border: 2px solid blue; background:#eee; font-size:1.2em; width:fit-content; padding: 2px; border-radius:8px">');
+                    ainf.html("Applet: " + an + "<br>" + "Bus Comp: " + bcn);
+                    if (ae.find("#" + aid).length == 0) {
+                        //ae.find(".siebui-applet-header").prepend(ainf);
+                        ae.prepend(ainf);
+                    }
 
                     for (c in cs) {
                         pop = "";
@@ -9557,7 +9608,82 @@ BCRMShowSitemap = function (options) {
     }
 };
 
-//Support Analyzers
+//CSS Injector
+BCRMInjectCSSDialog = function (alias, css) {
+    if (typeof (css) === "undefined") {
+        css = "";
+        if (typeof(localStorage.BCRM_CSS_INJECTION) !== "undefined") {
+            css = localStorage.BCRM_CSS_INJECTION;
+        }
+        if (css == ""){
+            css = "*{\n   font-family:monospace!important;\n}";
+        }
+    }
+    if (typeof (alias) === "undefined") {
+        alias = Date.now();
+    }
+    var dlg = $("<div id='bcrm_fopt_dlg' style='overflow:auto;'>");
+    var ta = $("<div id='bcrm_cm'>");
+    dlg.append(ta);
+    dlg.dialog({
+        title: "CSS Injector",
+        width: 450,
+        height: 450,
+        buttons: {
+            "Preview (10s)": function () {
+                var css = $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.getValue();
+                var timer = 10;
+                var t;
+                var dlg = this;
+                BCRMInjectCSS(alias, css);
+                t = setInterval(function () {
+                    timer--;
+                    $($(dlg).parent().find("button")[1]).text("Preview (" + timer + "s)");
+                    if (timer == 0) {
+                        $("style[bcrm-temp-style_" + alias + "]").remove();
+                        $($(dlg).parent().find("button")[1]).text("Preview (10s)");
+                        clearInterval(t);
+                    }
+                }, 1000);
+            },
+            "Apply": function () {
+                var css = $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.getValue();
+                BCRMInjectCSS(alias, css);
+                if (typeof (localStorage.BCRM_OPT_injectCSS_Persistence) !== "undefined") {
+                    if (localStorage.BCRM_OPT_injectCSS_Persistence == "localStorage") {
+                        localStorage.BCRM_CSS_INJECTION = localStorage.BCRM_CSS_INJECTION ? localStorage.BCRM_CSS_INJECTION + css : css;
+                    }
+                }
+            },
+            "Clear Storage": function(){
+                localStorage.BCRM_CSS_INJECTION = "";
+            },
+            "Close": function () {
+                $(this).dialog("destroy");
+            }
+        },
+        open: function () {
+            var val = css.replaceAll("\"", "");
+            val = val.replaceAll("\\n", "\n");
+            //val = JSON.stringify(JSON.parse(val), null, 4);
+            CodeMirror($("#bcrm_cm")[0], {
+                value: val,
+                mode: "css",
+                lineNumbers: true
+            });
+            $(".CodeMirror-scroll").height(150);
+            $(".CodeMirror.cm-s-default").height(200);
+            $(this).parent().find(".ui-dialog-buttonset").find("button").each(function (x) {
+                var und;
+                $(this).attr("id", btoa($(this).text()));
+                var ata = BCRM$(this.outerHTML, und, true);
+                $(this).attr(ata);
+            });
+        }
+    })
+}
+
+//Support Analyzers, not quite done yet
 
 BCRMGetAnalyzerList = function () {
     var an_home;
