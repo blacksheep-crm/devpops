@@ -1757,7 +1757,7 @@ BCRMCreateDebugMenu = function () {
 
             if (i == "devpops") {
                 var dv_title = "devpops " + devpops_dver + " (" + devpops_tag + ")\nSiebel Version: " + localStorage.BCRM_SIEBEL_VERSION + "\nLearn more about blacksheep-crm devpops and contribute on github.";
-                if (devpops_uv > devpops_version) {
+                if (parseInt(devpops_uv) > devpops_version) {
                     dv.css("color", "#14ca21");
                     dv.attr("title", "Updates available!\n" + dv_title);
                 }
@@ -3145,22 +3145,31 @@ BCRMApplyDefaultRedwoodBanner = function () {
 };
 
 //version checker
-BCRMCheckVersion = function () {
-    if (!devpops_vcheck) {
-        var vd = $.ajax({
-            dataType: "json",
-            url: "https://raw.githubusercontent.com/blacksheep-crm/devpops/main/v",
-            async: false
-        });
-        devpops_vcheck = true;
-        devpops_uv = vd.responseJSON;
-    }
+async function BCRMCheckVersion() {
     //check FWK version
     if (FWK_VERSION == 0) {
         FWK_VERSION = BCRMGetFWKVersion();
         if (FWK_VERSION < fwk_min_ver) {
             SiebelApp.Utils.Alert("FWK Runtime business service is out of date.\nInstall latest FWK Runtime version to avoid devpops malfunction.");
         }
+    }
+
+    //check devpops version on github
+    if (!devpops_vcheck) {
+        devpops_vcheck = true;
+        var url = "https://raw.githubusercontent.com/blacksheep-crm/devpops/main/v";
+
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow',
+            body: null,
+            headers: {
+                "accept": "text/html"
+            }
+        };
+
+        const response = await fetch(url, requestOptions);
+        devpops_uv = await response.text();
     }
 }
 
@@ -3372,8 +3381,10 @@ BCRMWSHelper = function () {
             //View tracing
             BCRMTraceView();
 
-            //Version chack
-            BCRMCheckVersion();
+            //Version check
+            BCRMCheckVersion().catch(error => {
+                console.log("BCRMCheckVersion failed: ", error.message);
+            });
 
             //experimental: include chart.js
             var cjs = $('<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>');
@@ -3457,7 +3468,7 @@ BCRMPreLoad = function () {
         }
     }
     if (localStorage.BCRM_OPT_injectCSS_Persistence == "localStorage") {
-        BCRMInjectCSS("preload",localStorage.BCRM_CSS_INJECTION);
+        BCRMInjectCSS("preload", localStorage.BCRM_CSS_INJECTION);
     }
 }
 
@@ -9612,10 +9623,10 @@ BCRMShowSitemap = function (options) {
 BCRMInjectCSSDialog = function (alias, css) {
     if (typeof (css) === "undefined") {
         css = "";
-        if (typeof(localStorage.BCRM_CSS_INJECTION) !== "undefined") {
+        if (typeof (localStorage.BCRM_CSS_INJECTION) !== "undefined") {
             css = localStorage.BCRM_CSS_INJECTION;
         }
-        if (css == ""){
+        if (css == "") {
             css = "*{\n   font-family:monospace!important;\n}";
         }
     }
@@ -9655,7 +9666,7 @@ BCRMInjectCSSDialog = function (alias, css) {
                     }
                 }
             },
-            "Clear Storage": function(){
+            "Clear Storage": function () {
                 localStorage.BCRM_CSS_INJECTION = "";
             },
             "Close": function () {
