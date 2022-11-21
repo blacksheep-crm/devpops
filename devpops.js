@@ -3566,7 +3566,8 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                             le = ut.GetLabelElem(cs[c], pm);
                             //look for "custom" labels
                             if (le && le.attr("bcrm-custom-label") != "") {
-                                if (le.parent().hasClass("siebui-btn-grp-applet")) {
+                                //thanks to Arnaud
+                                if (le.parent().hasClass("siebui-btn-grp-applet") || le.parent().hasClass("siebui-btn-grp-search")) {
                                     ut.SetLabel(cs[c], "", pm);
                                 }
                                 else {
@@ -3578,6 +3579,8 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     }
                     //clean up xray dom elements
                     ae.find("div[id^='xray_']").remove();
+                    //thanks to Arnaud
+                    ut.RemoveLinkOverlay();
                 }
             }
         };
