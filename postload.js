@@ -1320,8 +1320,8 @@ BCRMAutoResizeColumns = function (pm) {
                 });
 
                 //call repo update function
-                if (SiebelApp.sessionStorage.BCRMCurrentWorkspaceStatus == "Edit-In-Progress") {
-                    if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools") {
+                if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools") {
+                    if (sessionStorage.BCRMCurrentWorkspaceStatus == "Edit-In-Progress") {
                         BCRMUpdateListColumns(pm, repowidth);
                     }
                 }
