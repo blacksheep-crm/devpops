@@ -14,6 +14,16 @@ Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
 
 Installation: https://youtu.be/gl7PljwLbbo
 
+# Planned for 23.1
+
+Web Tools: Drilldown from Workspace Dashboard
+
+Web Tools: Workflow Editor - Open Business Service (Code and Methods)
+
+Web Tools: Open Script Editor/Debugger via button
+
+About View: Show Workspace History/Open in Web Tools
+
 # What's New in 22.11?
 
 Lizard 2.0: List Applet Column Wizard enhanced
