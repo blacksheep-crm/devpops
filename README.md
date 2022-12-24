@@ -24,6 +24,8 @@ Web Tools: Open Script Editor/Debugger via button
 
 About View: Show Workspace History/Open in Web Tools
 
+Quick Navigation for all objects in a workspace
+
 # What's New in 22.11?
 
 Lizard 2.0: List Applet Column Wizard enhanced
