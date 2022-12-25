@@ -24,6 +24,8 @@ Web Tools: Open Script Editor/Debugger via button
 
 Web Tools: Bring back Change Records
 
+Web Tools: Form (3-Applet View) record navigation
+
 About View: Show Workspace History/Open in Web Tools
 
 Quick Navigation for all objects in a workspace
