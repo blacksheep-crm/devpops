@@ -30,6 +30,8 @@ Application: About View: Show Workspace History/Open in Web Tools
 
 Web Tools/Application: Quick Navigation for all objects in a workspace
 
+Web Tools/Application: Pretty banner is still pretty (but Redwood banner retired)
+
 Application: Open View in new tab for printing
 
 # What's New in 22.11?
