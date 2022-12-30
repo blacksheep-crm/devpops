@@ -32,6 +32,8 @@ Web Tools/Application: Quick Navigation for all objects in a workspace
 
 Web Tools/Application: Pretty banner is still pretty (but Redwood banner retired)
 
+Web Tools/Application: Custom style for custom (devpops) dialogs
+
 Application: Open View in new tab for printing
 
 # What's New in 22.11?
