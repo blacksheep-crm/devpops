@@ -16,19 +16,21 @@ Installation: https://youtu.be/gl7PljwLbbo
 
 # Planned for 23.1
 
-Web Tools: Drilldown from Workspace Dashboard
+Web Tools: Drilldown from Workspace Dashboard (same or different workspace)
 
 Web Tools: Workflow Editor - Open Business Service (Code and Methods)
 
 Web Tools: Open Script Editor/Debugger via button
 
-Web Tools: Bring back Change Records
+Web Tools: Change Records (yep)
 
 Web Tools: Form (3-Applet View) record navigation
 
-About View: Show Workspace History/Open in Web Tools
+Application: About View: Show Workspace History/Open in Web Tools
 
-Quick Navigation for all objects in a workspace
+Web Tools/Application: Quick Navigation for all objects in a workspace
+
+Application: Open View in new tab for printing
 
 # What's New in 22.11?
 
