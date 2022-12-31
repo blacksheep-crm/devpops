@@ -1,49 +1,277 @@
-* {
-    color-scheme: dark!important;
-    accent-color: papayawhip;
-    background-color: #353535!important;
-    color: papayawhip!important;
-    /*border-color: papayawhip!important;*/
-    font-size: 1.2rem!important;
-}
-a.drilldown{
-	color: #7fbfdf!important;
-	background-color: transparent!important;
-	
-}
-.ui-jqgrid .ui-jqgrid-btable .ui-state-highlight td {
-    background-color: #7c7459 !important;
-}
-.ui-dialog {
-    border: 8px solid papayawhip!important;
-}
-textarea {
-    min-width: 300px!important;
-    min-height: 100px!important;
-}
-.siebui-mask-overlay {
-     background-color: rgb(226 193 95 / 20%)!important;
-}
-.mceGridLabel.siebui-label.mceLabel span {
-    color: papayawhip!important;
-}
-input[type=checkbox] {
-    width: 20px!important;
-    height: 20px!important;
-}
-.btn-plain,.appletButtonDis,.appletButtonDis:hover,.appletButtonDis:focus,.appletButtonDis:active,.siebui-view .ui-body-g .ui-btn,.siebui-view-navs .siebui-nav-tabScreen .ui-tabs-nav li a,.siebui-subview-navs .siebui-nav-tabScreen .ui-tabs-nav li a,.siebui-subview-screennavs .siebui-nav-tabScreen .ui-tabs-nav li a,.siebui-nav-hb.siebui-view-navs .siebui-nav-tabView,.siebui-nav-hb.siebui-subview-screennavs .siebui-nav-tabView,.siebui-nav-hb.siebui-subview-navs .siebui-nav-tabScreen,.siebui-nav-hb.siebui-subview-navs .siebui-nav-tabView,.siebui-button-toolbar span.ToolbarButtonOn,.siebui-navigation-tree .siebui-subview-navs .fancytree-container li .fancytree-title,.siebui-toolbar-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-settings-popup .siebui-tb-item-btn .appletButton,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .appletButton,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .appletButton,.siebui-toolbar-settings-popup .siebui-tb-item-btn .appletButtonDis,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .appletButtonDis,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .appletButtonDis,.siebui-toolbar-settings-popup .siebui-tb-item-btn .siebui-button-secondary,.siebui-toolbar-mobilesettings-popup .siebui-tb-item-btn .siebui-button-secondary,.siebui-toolbar-send-communication-popup .siebui-tb-popup .siebui-tb-popup-bottom .siebui-tb-item-btn .siebui-button-secondary,.siebui-sub-applets .siebui-subview-screennavs .siebui-nav-tabView .ui-tabs-nav li a,.siebui-button-toolbar span.ToolbarButtonOff,.siebui-catalogview-table .siebui-catalog-tile-container .siebui-tile .siebui-catalog-tile-right-col.siebui-catalog-tabs ul.ui-tabs-nav li a,.siebui-catalogview-table .siebui-catalog-grid-layout .siebui-tile .siebui-catalog-tile-right-col.siebui-catalog-tabs ul.ui-tabs-nav li a,.siebui-button-toolbar .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-enabled,.siebui-chat-pane .siebui-chat .siebui-chat-wrap .siebui-chat-tabs .siebui-chat-tab-head .siebui-chat-tab-head-items .siebui-chat-tab-head-item a,.siebui-comm-panel-container .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-enabled,.siebui-toolbar-custom-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-consumer-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-toolbar-consumerprelogin-settings-popup .siebui-tb-item-btn .siebui-ctrl-btn,.siebui-checkout-view-wrapper #siebui-sscheckout-paymentapplet .ui-tabs-nav li a,.siebui-button-toolbar .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-disabled,.siebui-comm-panel-container .siebui-tb-cti-container .siebui-tb-cti .siebui-tb-cti-btn-img-disabled { 
-    background-color: #7c7459!important;
-    border-color: transparent!important;
-    border-top-left-radius: 6px;
-    margin-right: 1px;
-}
-.ui-tabs .ui-tabs-nav li a,
-button {
-    border: none!important;
-}
-select#j_s_sctrl_tabScreen,
-select#j_s_sctrl_tabView,
-select#j_s_vctrl_div_tabScreen,
-select#j_s_vctrl_div_tabView{
-	border:none;
-}
+/*devpops dark mode example*/
+/*source: Super Dark Mode Chrome extension*/
+:root {
+    --bg-color: rgb(15, 15, 15);
+    --text-color: rgb(183, 183, 183);
+    --a-color: rgb(27, 109, 168);
+    --a-visited-color: rgb(165, 99, 13);
+    --a-hover-color: #acc;
+    --input-border-color: rgba(211, 211, 211, 0.2);
+    --input-placeholder-color: rgb(103, 103, 103);
+    --dialog-bg-color: rgba(36, 36, 36, 0.95);
+    --bg-image: linear-gradient(rgb(15, 15, 15), rgb(15, 15, 15));
+    --header-color: #00b786;
+  }
+  
+  *::-webkit-scrollbar,
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-button,
+  div::-webkit-scrollbar {
+    width: 8px !important;
+    height: 5px !important;
+    background-color: var(--bg-color) !important;
+    border: none !important;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--input-border-color) !important;
+    border: none !important;
+  }
+  *::-webkit-scrollbar-button {
+    display: none !important;
+  }
+  html,
+  body {
+    background: var(--bg-color) !important;
+    background-image: var(--bg-image) !important;
+    background-color: var(--bg-color) !important;
+  }
+  img {
+    background-color: transparent !important;
+  }
+  
+  html,
+  body,
+  body
+    *:not(a):not(h1):not(h2):not(h3):not(h4):not(h5):not([class*="title"]):not([id*="title"]) {
+    color: var(--text-color) !important;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  *[class*="title"],
+  *[id*="title"] {
+    color: var(--header-color) !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+  html *:not(body):not(span):not(a):not([style*=background-image]):not([style*=background-color]):not([style*=url]):not(figure):not(svg):not(img):not([class*=dialog]):not([id*=dialog]):not([class*=Dialog]):not([id*=Dialog]):not([role*=dialog]):not([class*=sub-items]):not([class=sbsb_b]):not(input):not(select):not(textarea):not(option):not([style*=background-position]):not([class*=menu]):not([class*=logo]):not([class*=Menu]):not([class*=Header]):not([class*=header]):not([role*=menuitem]):not([aria-labelledby*=menu]):not([class*=msg-overlay]):not([class*=dropdown-options]):not([class*=rsdc-dual-month]):not([class*=popup]):not([class*=bui-calendar__content]):not([class*=tooltip]):not(header):not([class*=playControls__control ]):not([class*=playControls__elements]):not([class=now-playing-bar-container]):not([class*=flowtip-flyout-modal]):not([data-tl-id=FeaturedTopNav-FeaturedTopNavFlyout]):not([for*=variant-swatcher-item-]):not([class*=masthead]):not([class*=fbDockChatTabFlyout]):not([role=banner]):not([class*=Footer_graphikFont_2aDKW]):not([class=css-kp204g]):not([class=nova-c-dropdown__body]):not([class*=nova-c-card__body]):not([class*=StoreNavDropdown--fullWidthLifestyleImgs]):not(dd):not([class*=jfk-radiobutton-radio]):not([class*=jfk-checkbox-checkmark]):not([class*=nova-c-modal__body]):not([class*=repeatControl]):not([class*=playbackTimeline__progressBackground]):not([class*=playbackTimeline__progressBar]):not([class=trb_nh_un_ulw]):not([class=trb_nh_uw]):not([class=trb_nh_lw]):not([class=trb_nh_sf]):not([class=uc-corpNav-flyout]):not([class*=js_global-nav-wrap]):not([class=container__3tWa1zW_F3ZU29BQPEWw9Q]):not([class*=ms-bg-color-white]):not([class=h-c-header__bar]):not([class=h-c-header__nested-nav-list]):not([class=glue-c-zippy__content-container]):not([class=fixed-tabs]):not([class*=nova-c-modal__footer--spacing-inherit]):not([class*=bigsearch-area]):not([id=hplogo]):not([class*=user-form-overlay]):not([class*=modal-overlay]):not([class*=rapid-nonanchor-lt]):not([class*=JPdR6b]):not([class*=wds-dropdown-level-2__content]):not([class*=wds-dropdown__content]):not([class*=wds-global-navigation]):not([class*=wds-global-navigation-wrapper]):not(artdeco-typeahead-deprecated-results-container):not([class*=dropdownMenu]):not([class*=search-result]):not([class*=dropdown]):not([class*=Dropdown]):not([role=navigation]):not([class=clearfix]):not([class*=navigation]):not([class*=Navigation]):not([class*=cookie]):not([class*=fixed]):not([class*=drop-]):not([class=variant-swatch]):not([class=level-one-list]):not([class*=sc-hd-ms-panel]):not([class*=sc-hd-ms-hover]):not([class*=sc-hd-panel]):not([class*=sc-hd-ms-full-ver]):not([class*=networknav__hovernav-wrapper]):not([class=icbu-simple-shopping-cart-panel]):not([class*=_icon]):not([class*=hamburger__bar]):not([class*=j-select-opts]):not([class*=J-search-suggest]):not([class=aside-floating]):not([class*=floating-account]):not([class=floating-w]):not([class=desktop-categoryContainer]):not([class=desktop-userActions]):not([class*=gws-flights-widgets-]):not([class*=ReactModal__Content--after-open]):not([class=nav-background-static]):not([role='img'])/*:not([data-grammarly-part=dictionary-card])*/:not([class*="planGrid__planLabel"]):not([class*="nf-loading-spinner"]):not([class=aajZCb]):not([class="sitemap screen-only"]):not([class=TGGJzf]):not(section[class*=js-react-root]){
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+    background: none !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+  }
+  span[class="jfk-radiobutton-radio"]::after {
+    background-color: gray !important;
+  }
+  /*if set background color -> change to default*/
+  *[style*="background-color"] {
+    background-color: var(--bg-color) !important;
+  }
+  svg {
+    fill: var(--text-color) !important;
+  }
+  html
+    *[class*="menu"]:not([class*="primary-menu"]):not([class*="dropdownMenu"]) {
+    color: var(--text-color) !important;
+    /* border:none !important; */
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  
+  /*checking*/
+  html * [class*="header"],
+  html *[class*="menu"]:not([class*="modal-backdrop"]),
+  html *[class*="Menu"],
+  html *[class*="search-result"],
+  html *[class*="dropdown"],
+  html *[class*="Dropdown"],
+  html *[role="navigation"],
+  html *[class="clearfix"],
+  html *[class*="navigation"]:not([class*="modal-backdrop"]),
+  html *[class*="Navigation"],
+  html *[class*="cookie"],
+  html *[class*="fixed"],
+  html *[class*="drop-"] {
+    background-color: var(--bg-color) !important;
+  }
+  .star.display-inline-block {
+    filter: invert(70%) sepia(300%) saturate(200%);
+  }
+  
+  html
+    span:not([class*="ms-fwt-r"]):not([class*="jfk-radiobutton-radio"]):not([class*="jfk-checkbox-checkmark"]):not([class*="_icon"]):not([class*="hamburger__bar"]):not([class*="Button"]):not([class*="button"]):not([class*="planGrid__selectorLabel"]):not([class*="planGrid__planLabel"]):not([class*="nf-loading-spinner"]) {
+    color: var(--text-color) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+  }
+  span[class*="Button"],
+  span[class*="button"] {
+    background-color: var(--dialog-bg-color) !important;
+  }
+  html span[class~="logo"],
+  html span[class~="img"],
+  html a[class~="logo"],
+  html div[class~="logo"] {
+    background-image: none !important;
+    background: none !important;
+  }
+  *[class*="logo"] {
+    background-color: transparent !important;
+  }
+  
+  a:not([class*="ResponsiveHeader-logo"]) {
+    color: var(--a-color) !important;
+    /* border:none !important; */
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+  }
+  
+  /*------------->>>>>>>>Important<<<<<<<<<<<<<--------------------*/
+  section[class*="section"],
+  div[class*="section"]:not([class*="section-popular-image"]),
+  section[class],
+  section[id],
+  section {
+    background: none !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+  }
+  div::before,
+  div::after,
+  section::before,
+  section::after,
+  li::before,
+  li::after,
+  header::before,
+  header::after,
+  span:not([class*="_icon"])::before,
+  span:not([class*="_icon"])::after,
+  article::before,
+  article::after,
+  a:not([class*="sc-button-play"])::after,
+  a:not([class*="sc-button-play"])::before,
+  ul:before,
+  ul:after {
+    background: none !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  li:not([class*="menu"]):not([id*="menu"]):hover {
+    background-color: var(--bg-color) !important;
+  }
+  
+  a,
+  a:link,
+  a.fl,
+  a.fl:link,
+  .departments-facet-desktop .dept-head-list-heading a,
+  .departments-facet-desktop .dept-head-list-heading a:link,
+  a *,
+  a:link * {
+    color: var(--a-color) !important;
+  }
+  
+  * a:visited,
+  * a.fl:visited,
+  a:visited,
+  a:visited * {
+    color: var(--a-visited-color) !important;
+  }
+  a:hover,
+  a.fl:hover,
+  a *:hover {
+    color: var(a-hover-color) !important;
+  }
+  
+  h4 a {
+    color: var(--header-color) !important;
+  }
+  
+  ul[class*="menu"],
+  li[class*="menu"],
+  div[class*="menu-"]:not([class="material-menu-backdrop"]):not([class*="modal-backdrop"]),
+  a[class*="menu"],
+  a[id*="menu"],
+  a[class*="Menu"],
+  div[class*="Menu"],
+  ul[class*="sub-items"],
+  div[class*="Header"]:not([class="HeaderedGrid__header"]):not([data-tl-id="categorypage-CuratedCategoryCarousel-ModuleHeader"]):not([class*="HomeSlideHeader_"]):not([class*="HeaderTitle_headerTitle"]):not([class*="Header_logoProviderWrapper"]),
+  *[role*="menuitem"],
+  div[aria-labelledby*="menu"],
+  ul[class*="dropdown-options"],
+  *[role="dialog"],
+  *[class*="popup"],
+  div[class*="bui-calendar__content"],
+  div[class*="tooltip"],
+  header,
+  button[class*="playControls__control"],
+  footer.now-playing-bar-container,
+  div.fbDockChatTabFlyout,
+  div[role="banner"],
+  div.nova-c-dropdown__body,
+  div.nova-c-card__body,
+  *[class*="StoreNavDropdown--fullWidthLifestyleImgs"] {
+    background-color: var(--bg-color) !important;
+  }
+  
+  header {
+    background: var(--bg-color) !important;
+  }
+  
+  #J_popCtn,
+  dl dd {
+    background-color: var(--dialog-bg-color) !important;
+  }
+  
+  header,
+  nav:before,
+  nav:after {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  *[class*="masthead"]:not([class*="c-masthead__"]),
+  #nav__plain-header {
+    background-color: var(--bg-color) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--input-placeholder-color) !important;
+  }
+  div[class*="dialog"],
+  div[id*="dialog"],
+  div[role*="dialog"] {
+    background: var(--dialog-bg-color) !important;
+  }
+  div[class*="Dialog"],
+  div[id*="Dialog"] {
+    background: var(--bg-color) !important;
+  }
+  *[class*="msg-overlay"] {
+    background-color:var(--dialog-bg-color) !important;
+  }
+  input,
+  select,
+  textarea,
+  #CountryUrlChooser {
+    border: 0.5px solid var(--input-border-color) !important;
+    background: none !important;
+    color: var(--text-color) !important;
+    background-color:var(--dialog-bg-color) !important;
+  }
+  select option {
+    color: var(--text-color) !important;
+    background-color: var(--dialog-bg-color) !important;
+    border: 1px solid var(--input-border-color) !important;
+  }
+  
