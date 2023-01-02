@@ -8,7 +8,7 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
-23.1 Sneak Preview (Siebel Friday 12/20/22): https://youtu.be/g--vHWgDg28?t=965
+23.1 Sneak Preview (Siebel Friday 30-Dec-22): https://youtu.be/g--vHWgDg28?t=965
 
 22.10 Update: https://youtu.be/zocUBVYdM2k
 
