@@ -30,6 +30,8 @@ Web Tools: Form (3-Applet View) record navigation
 
 Application: About View: Show Workspace History/Open in Web Tools
 
+Application: About View: Get Lucky with real-time viewer
+
 Web Tools/Application: Quick Navigation for all objects in a workspace
 
 Web Tools/Application: Pretty banner is still pretty (but Redwood banner retired)
