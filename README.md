@@ -118,7 +118,7 @@ Added xapuk.com About View 2.0 ( http://xapuk.com/index.php?topic=145 )
 
 # Installation
 
-1. Import all SIFs
+1. Import all SIFs: devpops_Vxx.sif first, then any other.
 
 2. Add BCRM Modified Objects List View to a screen of your choice.
 
