@@ -153,6 +153,8 @@ Added xapuk.com About View 2.0 ( http://xapuk.com/index.php?topic=145 )
 
 # Pre-Requisites
 
+Siebel CRM 20.12 or higher
+
 Siebel Inbound REST API enabled for anonymous authentication or Basic Authentication
 
 Ability to load 3rd-Party code via internet (CDN)
