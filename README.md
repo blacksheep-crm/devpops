@@ -16,7 +16,7 @@ Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
 
 Installation: https://youtu.be/gl7PljwLbbo
 
-# Planned for 23.1
+# What's New in 23.1
 
 Web Tools: Drilldown from Workspace Dashboard (same or different workspace)
 
@@ -30,7 +30,7 @@ Web Tools: Form (3-Applet View) record navigation
 
 Application: About View: Show Workspace History/Open in Web Tools
 
-Application: About View: Get Lucky with real-time viewer
+Application: About View Deluxe: Get Lucky with real-time viewer
 
 Web Tools/Application: Quick Navigation for all objects in a workspace
 
@@ -40,15 +40,9 @@ Web Tools/Application: Custom style for custom (devpops) dialogs
 
 Application: Open View in new tab for printing
 
-# What's New in 22.11?
+# Update to 23.1
 
-Lizard 2.0: List Applet Column Wizard enhanced
-
-Repository Write-Back: Save Lizard column width to writable dev workspace
-
-CSS Injector
-
-# Update to 22.11
+Import IO_Base BCRM Modified Object.sif and deliver
 
 Copy postload.js to vanilla postload.js
 
@@ -56,9 +50,7 @@ Copy devpops.js to siebel/custom
 
 Copy blacksheep.css to files/custom
 
-To implement column auto-resize, refer to jqgridrenderer_customization.txt
-
-# Features (22.10 and earlier)
+# Features (22.11 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -98,7 +90,7 @@ User Responsibility Check
 
 Tools Online Help in Web Tools
 
-Redwood Banner
+Pretty Banner
 
 Property Set Viewer (beta)
 
@@ -116,9 +108,15 @@ Web Tools: Stretched popup applets (Inject CSS feature demo)
 
 Added xapuk.com About View 2.0 ( http://xapuk.com/index.php?topic=145 )
 
+Lizard 2.0: List Applet Column Wizard enhanced
+
+Repository Write-Back: Save Lizard column width to writable dev workspace
+
+CSS Injector
+
 # Installation
 
-1. Import all SIFs: devpops_Vxx.sif first, then any other.
+1. Import all SIFs: devpops_Vxx.sif first, then any other sif file.
 
 2. Add BCRM Modified Objects List View to a screen of your choice.
 
