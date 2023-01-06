@@ -43,9 +43,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "22.11";
-var devpops_version = 56;
-var devpops_tag = "Konrad Lorenz";
+var devpops_dver = "23.1";
+var devpops_version = 57;
+var devpops_tag = "Neil Armstrong";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -163,14 +163,30 @@ BCRMWSUpdateWSBanner = function (ws, ver, status) {
     if ($("#SiebComposerConfig").find("a").length > 0) {
         $("div.applicationMenu").parent().find("#bcrm_wsui_name").remove();
         var c = BCRMWSGenerateWSBanner(ws, ver, status, "banner");
+        var t = c.attr("title");
+        var nt = "";
         $("div.applicationMenu").after(c);
-        if (!(BCRM_WORKSPACE.WS == sessionStorage.BCRMCurrentWorkspace && BCRM_WORKSPACE.VER == sessionStorage.BCRMCurrentWorkspaceVersion)) {
-            c.on("dblclick", function () {
-                BCRMWSFastInspect(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
-            });
-            c.attr("title", c.attr("title") + "\nDouble-click to reload");
+        c.off("click");
+        c.on("click", function (e) {
+            BCRMDisplayObjectsForWS();
+        });
+        if (t.indexOf("Show modified objects") == -1) {
+            nt += (typeof (t) === "undefined" ? "" : t) + "\nLeft-click: Show modified objects";
         }
+        if (!(BCRM_WORKSPACE.WS == sessionStorage.BCRMCurrentWorkspace && BCRM_WORKSPACE.VER == sessionStorage.BCRMCurrentWorkspaceVersion)) {
+            c.off("contextmenu");
+            c.on("contextmenu", function (e) {
+                BCRMWSFastInspect(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+                return false;
+            });
+            if (t.indexOf("Re-inspect workspace") == -1) {
+                nt += "\nRight-click: Re-inspect workspace";
+            }
+        }
+        c.attr("title",nt);
+        c.css("cursor","pointer");
     }
+    //BCRMEnhanceWSBanner();
 };
 
 //workspace-helper
@@ -228,9 +244,12 @@ BCRMWSFastInspect = function (ws, ver, status) {
     setTimeout(function () {
         ops = svc.InvokeMethod("FastInspect", ips);
         if (ops.GetProperty("Status") == "OK") {
+            BCRMGetWSContext();
+            /*no longer needed
             sessionStorage.BCRMCurrentWorkspace = ws;
             sessionStorage.BCRMCurrentWorkspaceVersion = ver;
             sessionStorage.BCRMCurrentWorkspaceStatus = status;
+            */
             if (vreload) {
                 //check for Screen update, which indicates a likely new view
                 try {
@@ -261,7 +280,7 @@ BCRMWSFastInspect = function (ws, ver, status) {
             else {
                 location.reload();
             }
-            BCRMWSUpdateWSBanner(ws, ver, status);
+            BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
         }
     }, 300);
 };
@@ -403,6 +422,14 @@ BCRMWSGetObjectDef = function (cell) {
             title: "Object Metadata",
             width: 800,
             height: 600,
+            classes: {
+                "ui-dialog": "bcrm-dialog"
+            },
+            buttons: {
+                "Close": function (e, ui) {
+                    $(this).dialog("destroy");
+                }
+            },
             close: function (e, ui) {
                 $(this).dialog("destroy");
             }
@@ -568,9 +595,12 @@ BCRMWSFastInspectDialog = function () {
         title: "Welcome to FastInspect",
         width: 650,
         height: 550,
+        classes: {
+            "ui-dialog": "bcrm-dialog"
+        },
         modal: true,
         buttons: {
-            "Continue": function () {
+            "Save": function () {
                 //save values
                 var rad = $(this).find("input[name='fio']:checked").val();
                 var curv = $(this).find("#bcrm_fi_v_cb").prop("checked");
@@ -904,6 +934,9 @@ BCRMRunSilentXRay = function () {
                     title: "X-Ray Export",
                     width: 300,
                     height: "auto",
+                    classes: {
+                        "ui-dialog": "bcrm-dialog"
+                    },
                     buttons: {
                         "OK": function () {
                             BCRM_XRAY_APPLETS = [];
@@ -1616,15 +1649,15 @@ BCRMCreateDebugMenu = function () {
             "RedwoodBanner": {
                 "seq": 25,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_RedwoodBanner") == "false" ? false : true,
-                "label": "Redwood Banner",
-                "title": "Relax with Redwood",
+                "label": "Prettify Banner",
+                "title": "Pimp my application banner",
                 "onclick": function () {
                     var r = BCRMCloseDebugMenu();
                     BCRMPrettifyBanner();
                     return r;
                 },
                 "showtoggle": true,
-                "img": redwood[Math.floor((Math.random() * redwood.length))]
+                "img": "enu/help/oxygen-webhelp/template/variants/tree/oracle/resources/images/tealblue_top_banner.jpg"
             },
             "DarkMode": {
                 "seq": 26,
@@ -1638,23 +1671,28 @@ BCRMCreateDebugMenu = function () {
                 },
                 "img": "images/sitemap-50.png"
             },
+            "viewpop": {
+                "seq": 20,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_viewpop") == "false" ? false : true,
+                "label": "Surprise Me",
+                "title": "I dare you.",
+                "onclick": function () {
+                    BCRMPopoutView();
+                    return BCRMCloseDebugMenu();
+                },
+                "img": "images/grid_matte_megaphone.png"
+            },
             "SiebelHub": {
                 "seq": 20,
-                "enable": localStorage.getItem("BCRM_MENU_ENABLE_SiebelHub") == "false" ? false : true,
+                "enable": false,
                 "label": "Siebel Hub",
                 "title": "Get your Siebel kicks on da hub with a random page (might require login).",
                 "onclick": function () {
                     var hub = [
-                        "https://www.siebelhub.com/main/siebel-crm-training/siebel-20-21-workshop",
                         "https://www.siebelhub.com/main/siebel-crm-training",
                         "https://www.siebelhub.com/main/bsl",
                         "https://www.siebelhub.com/main/books-media/siebel-crm-timeline",
-                        "https://www.siebelhub.com/main/product-category/siebel_20_21_workshop/overview/update-summaries",
-                        "https://www.siebelhub.com/main/product/siebel-crm-20-21-blue-book",
-                        "https://www.youtube.com/playlist?list=PL8ytufPqZPFHWvrqqZVRmRELuqOJoyKKY",
-                        "https://www.youtube.com/playlist?list=PL8ytufPqZPFEyhv4Nj5ZghltdfxvV5esI",
-                        "https://www.siebelhub.com/main/blog",
-                        "https://www.siebelhub.com/main/2021/01/learn-siebel-crm-21-with-the-siebel-hub.html"
+                        "https://www.siebelhub.com/main/blog"
                     ];
                     window.open(hub[Math.floor((Math.random() * hub.length))]);
                     return BCRMCloseDebugMenu();
@@ -1738,8 +1776,9 @@ BCRMCreateDebugMenu = function () {
     //main loop to create menu
     for (i in BCRM_MENU) {
         if (true) {
-            var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='height:32px;font-size:0.9em;font-family:cursive;margin-right:4px;margin-left:4px;margin-bottom:2px;'></li>");
+            var li = $("<li class='bcrm-dbg-item' id='" + i + "' style='height:32px;font-size:0.9em;color:papayawhip;font-family:Roboto;margin-right:4px;margin-left:4px;font-weight:300'></li>");
             var dv = BCRM$("<div id='" + i + "_dv' style='height:32px;padding-bottom:6px;' title='" + BCRM_MENU[i].title + "'>" + BCRM_MENU[i].label + "</div>");
+            //var dv = BCRM$("<div id='" + i + "_dv' title='" + BCRM_MENU[i].title + "'>" + BCRM_MENU[i].label + "</div>");
             if (sessionStorage.BCRMToggleCycle == i || sessionStorage.BCRMTracingCycle == i || sessionStorage.BCRMSARMCycle == i) {
                 dv.addClass("ui-state-disabled");
             }
@@ -1808,7 +1847,7 @@ BCRMCreateDebugMenu = function () {
                         var checked = $("input#" + ip).prop("checked");
                         if (checked) {
                             sessionStorage.BCRM_REDWOOD_BANNER = "true";
-                            $("#bcrm_debug_msg").text("Redwood Banner set as default");
+                            $("#bcrm_debug_msg").text("Pretty banner set as default");
                         }
                         else {
                             sessionStorage.BCRM_REDWOOD_BANNER = "false";
@@ -1867,7 +1906,7 @@ BCRMCreateDebugMenu = function () {
             }
             if (hasresp && BCRM_MENU[i].showoptions) {
                 var opt = $('<span style="float: right; margin-right: 6px;height:32px;" title="Options"><span style="height:32px" class="miniBtnUIC"></span></span>');
-                var optb = BCRM$('<button type="button" id="options_' + i + '" style="background: transparent;border: 0;" class="siebui-appletmenu-btn"><span style="height:32px;">Options</span></button>');
+                var optb = BCRM$('<button type="button" id="options_' + i + '" style="background:transparent;border:0;color:papayawhip;" class="siebui-appletmenu-btn"><span style="height:32px;">Options</span></button>');
                 $(opt).find(".miniBtnUIC").append(optb);
                 $(opt).find(".miniBtnUIC").find("button").on("click", function (e, ui) {
                     var id = $(this).attr("id").split("_")[1];
@@ -1961,6 +2000,11 @@ BCRMCreateDebugMenu = function () {
                     }
                     dlg.dialog({
                         title: BCRM_MENU[id].label + " Options",
+                        width: 400,
+                        height: 400,
+                        classes: {
+                            "ui-dialog": "bcrm-dialog"
+                        },
                         buttons: {
                             "Save & Go": function () {
                                 $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -2071,7 +2115,7 @@ BCRMAddDebugButton = function () {
     //var next_to = $("#siebui-toolbar-settings");
     if ($("#bcrm_debug").length == 0) {
         //inject CSS
-        var togglecss = ".bcrm-dock-ug:before{content:'\\f004';font-family:'oracle';} .bcrm-dock-rot:before{content:'\\e94a';font-family:'oracle';} #bcrm_dbg_menu ul.bcrm-tb li.bcrm-dbg-item div.ui-state-disabled {background-size: cover!important;mix-blend-mode: soft-light;} .bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';	position: absolute;	top: 1px;	left: 1px;	width: 13px; height: 13px;background: #fff;	border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
+        var togglecss = ".bcrm-dock-ug:before{content:'\\f004';font-family:'oracle';} .bcrm-dock-rot:before{content:'\\e94a';font-family:'oracle';} #bcrm_dbg_menu ul.bcrm-tb li.bcrm-dbg-item div.ui-state-disabled {background-size: cover!important;mix-blend-mode: soft-light;} .bcrm-dock-edit:before{content:'\\e634';font-family:'oracle'} .bcrm-dock-save:before{content:'\\e691';font-family:'oracle'} .bcrm-dock-close:before{content:'\\e63a';font-family:'oracle'} .bcrm-dock-toggle-pin:before{ content: '\\e6cf';font-family:'oracle'} label.bcrm-toggle-label:after {content: '';position: absolute;	top: 1px;left: 1px;	width: 13px; height: 13px;background: papayawhip;border-radius: 90px;	transition: 0.3s;}input.bcrm-toggle:checked + label {	background: #489ed6!important;}input.bcrm-toggle:checked + label:after {	left: calc(100% - 1px);	transform: translateX(-100%);}";
         togglecss += " li#bcrm_debug_li:active{background: radial-gradient(red, transparent);color: black;border-radius: 50%;}";
         togglecss += " .bcrm-recent-view a {background:transparent;text-decoration:none!important;font-size: 14px!important; padding-top: 2px!important; padding-bottom: 0px!important; margin-top: 0px!important; line-height: 19px!important; font-weight: normal!important; }";
         togglecss += " #bcrm_sitemap li a:hover{color:white;background:#5277b8;}";
@@ -2135,7 +2179,7 @@ BCRMAddDebugButton = function () {
     if ($("#bcrm_debug_msg").length == 0) {
         var ms = $('<div id="bcrm_debug_msg" style="float: left;margin-top: 10px;padding-left: 20px;color: lightsteelblue;width: fit-content;">');
         $(".applicationMenu").after(ms);
-        $("#bcrm_debug_msg").text("BCRM devpops loaded. Let's crush some bugs!");
+        $("#bcrm_debug_msg").text("devpops " + devpops_dver + " loaded.");
         setTimeout(function () {
             $("#bcrm_debug_msg").text("");
         }, 5000);
@@ -2185,6 +2229,9 @@ BCRMViewLog = function () {
         title: "Trace File Viewer",
         width: 1300,
         height: 600,
+        classes: {
+            "ui-dialog": "bcrm-dialog"
+        },
         modal: false,
         draggable: true,
         autoOpen: true,
@@ -2197,8 +2244,17 @@ BCRMViewLog = function () {
                     var cdata = BCRMShowTraceStats("chart");
                     BCRMChartEngine("Query Stats", "horizontalBar", cdata.labels, cdata.data);
                     $("#bcrm_chart").dialog({
+                        title: "Trace Stats Visualizer",
                         width: 800,
                         height: 500,
+                        classes: {
+                            "ui-dialog": "bcrm-dialog"
+                        },
+                        buttons: {
+                            "Close": function () {
+                                $(this).dialog("destroy");
+                            }
+                        },
                         modal: false
                     });
                 }
@@ -3368,9 +3424,12 @@ BCRMWSHelper = function () {
             BCRMAddDebugButton();
 
             //xray handler
+            //retired
+            /*
             for (a in am) {
                 ut.AddXrayHandler(a);
             }
+            */
 
             //default xray toggle
             BCRMApplyDefaultXray();
@@ -3410,6 +3469,7 @@ BCRMWSHelper = function () {
             BCRMApplyDefaultBreakFree();
 
             //default Redwood Banner
+            //(retired the redwood-ish backgrounds but keep the name)
             if (typeof (sessionStorage.BCRMBANNERTIMER) === "undefined") {
                 BCRMApplyDefaultRedwoodBanner();
                 sessionStorage.BCRMBANNERTIMER = 10;
@@ -3429,13 +3489,9 @@ BCRMWSHelper = function () {
 
             //site map menu
             BCRMEnableMagicSitemap();
-            //multiselect
-            /*
-            var mjs = $('<script src="scripts/siebel/custom/ui.multiselect.js"></script>');
-            if ($("script[src*='ui.multiselect.js']").length == 0) {
-                $("head").append(mjs);
-            }
-            */
+
+            //dialog style
+            BCRMInjectDialogStyle();
         }
 
     }
@@ -3569,6 +3625,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                                 //thanks to Arnaud
                                 if (le.parent().hasClass("siebui-btn-grp-applet") || le.parent().hasClass("siebui-btn-grp-search")) {
                                     ut.SetLabel(cs[c], "", pm);
+                                    if (le.attr("bcrm-orig-label") != "") {
+                                        ut.SetLabel(cs[c], le.attr("bcrm-orig-label"), pm);
+                                    }
                                 }
                                 else {
                                     ut.SetLabel(cs[c], cs[c].GetDisplayName(), pm);
@@ -3653,8 +3712,6 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             var tc, otitle;
             if (pm) {
                 var ae = ut.GetAppletElem(pm);
-
-
                 le = ut.GetLabelElem(c, pm);
                 if (le) {
                     tc = pm.Get("C_ToggleCycle");
@@ -3665,6 +3722,14 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     if (otitle.indexOf(nl) == -1) {
                         otitle += "\n|_" + tc + ": " + nl;
                     }
+
+                    //preserve original label for buttons with text
+                    if ((le.hasClass("appletButton") || le.hasClass("appletButtonDis")) && le.find("span:visible").length == 1) {
+                        if (typeof (le.attr("bcrm-orig-label")) === "undefined") {
+                            le.attr("bcrm-orig-label", le.text());
+                        }
+                    }
+
                     le.html(nl);
                     le.attr("title", otitle);
                     //mark label as changed
@@ -6213,6 +6278,9 @@ BCRMSrvrMgr = function (command, fromdialog) {
                 title: "Server Manager Output",
                 width: 1200,
                 height: 800,
+                classes: {
+                    "ui-dialog": "bcrm-dialog"
+                },
                 buttons: {
                     Submit: function () {
                         var output = BCRMSrvrMgr($("#bcrm_sm_ta").val(), true);
@@ -6499,11 +6567,14 @@ if (typeof (SiebelAppFacade.BCRMPopupPW) === "undefined") {
                     //xray handler
                     setTimeout(function () {
                         BCRMApplyDefaultXray();
+                        //retire doubleclick handler
+                        /*
                         var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
                         var ut = new SiebelAppFacade.BCRMUtils();
                         for (a in am) {
                             ut.AddXrayHandler(a);
                         }
+                        */
                     }, 300);
                 }
                 return BCRMPopupPW;
@@ -6828,6 +6899,9 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
                 title: "Layout Options for " + fn,
                 width: 450,
                 height: 450,
+                classes: {
+                    "ui-dialog": "bcrm-dialog"
+                },
                 buttons: {
                     "Preview": function () {
                         var inp = ae.find(".mceGridField[data-iname='" + iname + "']").find("input");
@@ -7604,93 +7678,8 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
     }());
 }
 
-//Experimental/sunsetted: show unmapped fields for an applet
-//uses jquery plugin "multiselect" (see WSHelper)
-//but /workspace REST API doesn't play well when creating controls
-//leaving this here to document the multiselect plugin
-/*
-BCRMShowUnmappedFields = function (context) {
-    var ut = new SiebelAppFacade.BCRMUtils();
-    var pm = ut.ValidateContext(context);
-    var mapped = [];
-    var unmapped = {};
-    if (pm) {
-        var an = pm.GetObjName();
-        var bc = pm.Get("GetBusComp").GetName();
-        var bcd = ut.GetBCData(bc);
-        var cs = pm.Get("GetControls");
-        var fields = bcd["Fields"];
-        for (c in cs) {
-            if (cs[c].GetFieldName() != "") {
-                mapped.push(cs[c].GetFieldName());
-            }
-        }
-        for (f in fields) {
-            if (mapped.indexOf(f) == -1) {
-                unmapped[f] = {};
-                unmapped[f]["Type"] = fields[f]["Type"];
-                unmapped[f]["Text Length"] = fields[f]["Text Length"];
-            }
-        }
-    }
-    var ct = $("<div id='bcrm_ms_container'><div class='row' style='display:flex'></div></div>");
-    var c1 = $("<div class='col-sm-5'>Available/Unmapped</div>");
-    var ms = $("<select style='height:500px;width:280px' id='multiselect' class='form-control' size='8' multiple='multiple' name='from[]'>");
-    for (u in unmapped) {
-        var opt = $("<option value='" + u + "'>" + u + "</option>");
-        ms.append(opt);
-    }
-    c1.append(ms);
-    var c2 = $("<div class='col-sm-2' style='display:grid;height:fit-content;margin:10px;'></div>");
-    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_rightAll" class="btn btn-block">&gt;&gt</button>');
-    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_rightSelected" class="btn btn-block">&gt;</button>');
-    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_leftSelected" class="btn btn-block">&lt;</button>');
-    c2.append('<button type="button" style="font-size:1.2em;margin:4px;" id="multiselect_leftAll" class="btn btn-block">&lt;&lt;</button>');
-
-    var c3 = $("<div class='col-sm-5'>Selected</div>");
-    c3.append('<select name="to[]" style="height:500px;width:280px" id="multiselect_to" class="form-control" size="8" multiple="multiple"></select>');
-    c3.append('<div class="row" style="display:flex;margin-top:4px;"><div style="margin:auto;" class="col-sm-6"><button type="button" id="multiselect_move_up" class="btn btn-block">Move Up</button></div><div style="margin:auto;" class="col-sm-6"><button type="button" id="multiselect_move_down" class="btn btn-block col-sm-6">Move Down</button></div></div>');
-    ct.find(".row").append(c1);
-    ct.find(".row").append(c2);
-    ct.find(".row").append(c3);
-    
-    ct.dialog({
-        title: "Add Fields to " + an,
-        width:650,
-        height:650,
-        buttons:{
-            Apply: function () {
-                var resp = SiebelApp.Utils.Confirm("Controls will be added to the applet in the current workspace.\nYou must use Siebel Web Tools to complete the layout.\nContinue?");
-                if (resp){
-                    //ISSUE: REST API PUT/POST not working for Controls (Field and Caption not inserted)
-                    $(this).dialog("destroy");
-                }
-                else{
-                    //do nothing
-                }
-            },
-            Cancel: function (e, ui) {
-                $(this).dialog("destroy");
-            }
-        }
-    })
-
-    setTimeout(function(){
-        $("#multiselect").multiselect({
-            search: {
-                left: '<input type="text" name="q" style="width:270px;font-size:1.2em;margin-bottom:4px;" placeholder="Search..." />'
-            },
-            fireSearch: function(value) {
-                return value.length > 0;
-            }
-        });
-    },100);
-}
-*/
-
-//get server and component status through undocumented SMC REST API
+//get server and component status through CGW REST API
 //do not try this at home!
-
 var BCRM_ENT = "";
 var BCRM_SERVERS = [];
 var BCRM_COMPS = [];
@@ -7819,7 +7808,7 @@ BCRMDisplayServer = function () {
                             cm.css("margin-left", "6px");
                             switch (cstate) {
                                 case "Running":
-                                case "Online": cm.css("font-weight", "bold"); break;
+                                case "Online": cm.attr("style", "margin-left:6px;font-weight:bold!important;"); break;
                             }
                             sv.after(cm);
                         }
@@ -7829,6 +7818,14 @@ BCRMDisplayServer = function () {
             }
             dlg.dialog({
                 title: "Server Component Status",
+                classes: {
+                    "ui-dialog": "bcrm-dialog"
+                },
+                buttons: {
+                    "Close": function () {
+                        $(this).dialog("destroy");
+                    }
+                },
                 width: 800,
                 height: 600
             });
@@ -8569,28 +8566,6 @@ BCRMBusinessServiceRunner = function () {
         }
     });
 }
-
-//Workspace Banner
-//Vanilla business service to the rescue
-BCRMGetWSContext = function () {
-    try {
-        var svwecp = SiebelApp.S_App.GetService("Web Engine Client Preferences");
-        var ip = SiebelApp.S_App.NewPropertySet();
-        if (typeof (svwecp.InvokeMethod) === "function") {
-            var op = svwecp.InvokeMethod("GetActiveWSContext", ip);
-            if (typeof (op) !== "undefined") {
-                op = op.GetChildByType("ResultSet");
-                sessionStorage.BCRMCurrentWorkspaceVersion = op.GetProperty("WSVersion");
-                sessionStorage.BCRMCurrentWorkspace = op.GetProperty("WSName");
-                sessionStorage.BCRMCurrentWorkspaceStatus = op.GetProperty("ActiveWSStatus");
-                BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
-            }
-        }
-    }
-    catch (e) {
-        console.log("Error in BCRMGetWSContext: " + e.toString());
-    }
-};
 
 SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
 
@@ -9380,6 +9355,117 @@ var BCRM_SM_INT = setInterval(function () {
     BCRMGetSitemap();
 }, 1000);
 
+//check for About View Applet
+var BCRM_AV_INT = setInterval(function () {
+    BCRMEnhanceAboutViewApplet();
+}, 1000);
+
+BCRMEnhanceAboutViewApplet = function () {
+    var cm = SiebelAppFacade.ComponentMgr;
+    if (cm.FindComponent("About View Applet") != null) {
+        //clearInterval(BCRM_AV_INT);
+        var pm = cm.FindComponent("About View Applet").GetPM();
+        if (pm.Get("BCRM_ENHANCED") !== "true") {
+            var fi = pm.Get("GetFullId");
+            var ae = $("#" + fi);
+            var i_one = setInterval(function () {
+                if ($("div[title-preserved='About View']").length > 0) {
+                    clearInterval(i_one);
+                    ae.find(".scField div[role='document']").each(function (x) {
+                        var ot = $(this).attr("aria-label");
+                        if (ot == "Screen" || ot == "View" || ot == "Business Object") {
+                            var rn = $(this).text();
+                            if (rn.indexOf("[NEO]: ") > -1) {
+                                rn = rn.split("[NEO]: ")[1];
+                            }
+                            $(this).css("cursor", "pointer");
+                            $(this).css("color", "darkblue");
+                            $(this).attr("bcrm-rn", rn);
+                            $(this).off("click");
+                            $(this).off("contextmenu");
+                            $(this).attr("title", "Left-click: show workspace history\nRight-click: save to clipboard");
+                            $(this).on("click", function (e) {
+                                BCRMDisplayWSHistory(rn, ot);
+                                e.stopImmediatePropagation();
+                            })
+
+                            //copy to clipboard
+                            $(this).on("contextmenu", function () {
+                                let rn = $(this).attr("bcrm-rn");
+                                navigator.clipboard.writeText(rn);
+                                return false;
+                            });
+                        }
+                        //a bit more difficult for those indexed lists:
+                        if (ot == "Applets" || ot == "Business Components") {
+                            if ($(this).parent().find(".bcrm-list").length == 0) {
+                                var ct = $("<div class='bcrm-list'>");
+                                ot = ot.substring(0, ot.length - 1); //get rid of the plural
+                                var list = $(this).text();
+                                var arr = list.split(";");
+                                var rn = "";
+                                for (var i = 0; i < arr.length; i++) {
+                                    var t = arr[i].trim();
+                                    rn = t.split("]: ")[1];
+                                    var item = $("<div>" + t + "</div>");
+                                    item.attr("bcrm-rn", rn);
+                                    item.attr("bcrm-ot", ot);
+                                    item.css("cursor", "pointer");
+                                    item.css("color", "darkblue");
+                                    item.attr("title", "Left-click: show workspace history\nRight-click: save to clipboard");
+                                    item.off("click");
+                                    item.off("contextmenu");
+                                    item.on("click", function (e) {
+                                        let rn = $(this).attr("bcrm-rn");
+                                        let ot = $(this).attr("bcrm-ot");
+                                        BCRMDisplayWSHistory(rn, ot);
+                                        e.stopImmediatePropagation();
+                                    });
+                                    item.on("contextmenu", function () {
+                                        let rn = $(this).attr("bcrm-rn");
+                                        navigator.clipboard.writeText(rn);
+                                        return false;
+                                    });
+                                    ct.append(item);
+                                }
+                                $(this).parent().find("div").not(".bcrm-list").hide();
+                                $(this).parent().append(ct);
+                                pm.SetProperty("BCRM_ENHANCED", "true");
+                            }
+                        }
+                    });
+                    //fool around with the title
+                    var tt = ae.parent().parent().parent().find(".ui-dialog-title");
+                    var ms = 700;
+                    setTimeout(function () {
+                        tt.text("About Vie");
+                        setTimeout(function () {
+                            tt.text("About Vi");
+                            setTimeout(function () {
+                                tt.text("About V");
+                                setTimeout(function () {
+                                    tt.text("About");
+                                    setTimeout(function () {
+                                        tt.text("About time for devpops goodness");
+                                    }, ms);
+                                }, ms);
+                            }, ms);
+                        }, ms);
+                    }, ms);
+
+                    //Add a button
+                    var btn = $("<button class='appletButton'>Get Lucky</button>");
+                    btn.attr("title","It's all about the view\nBrought to you by devpops");
+                    btn.on("click",function(){
+                        BCRMAboutTime();
+                    });
+                    ae.find(".siebui-popup-button").prepend(btn);
+                }
+            }, 200);
+        }
+    }
+}
+
 BCRMGetSitemap = function () {
     var sm;
     if (typeof (BCRM_SITEMAP) === "undefined") {
@@ -9473,6 +9559,9 @@ BCRMShowSitemap = function (options) {
                 $(opt).find(".miniBtnUIC").on("click", function () {
                     dlg.dialog({
                         title: "Psych Map Options",
+                        classes: {
+                            "ui-dialog": "bcrm-dialog"
+                        },
                         buttons: {
                             Save: function () {
                                 $("#bcrm_options_dlg").find(".bcrm-option").each(function (x) {
@@ -9622,6 +9711,124 @@ BCRMShowSitemap = function (options) {
     }
 };
 
+//22.12 Web Tools SSO Navigation
+//recommend SSO-enabled Web Tools OM (e.g. DBSSO)
+var swt;
+BCRMOpenWebTools = function (ws, ver, rn, ot) {
+    try {
+        //amend as necessary for your environment
+        var wturl = location.origin + "/siebel/app/webtools/sso?SWECmd=GotoView&SWEView=WSUI+Dashboard+View&SWERF=1&SWEHo=&SWEBU=1"
+        if (typeof (swt) === "undefined") {
+            //open in new tab
+            console.log("BCRMOpenWebTools: Step 1: Open Web Tools in new tab");
+            swt = window.open(wturl, "_blank");
+            //wait for web tools to be fully loaded
+            var c1 = 1;
+            var i_one = setInterval(function () {
+                console.log("BCRMOpenWebTools i_one: " + c1);
+                c1++;
+                if (typeof (swt.SiebelApp) !== "undefined") {
+                    if (typeof (swt.SiebelApp.S_App) !== "undefined") {
+                        if (typeof (swt.SiebelApp.S_App.GetActiveView) !== "undefined") {
+                            if (typeof (swt.SiebelApp.S_App.GetActiveView()) !== "undefined") {
+                                if (swt.SiebelApp.S_App.GetActiveView().GetName() == "WSUI Dashboard View") {
+                                    clearInterval(i_one);
+                                    //step 1 done, now call again for step 2
+                                    console.log("BCRMOpenWebTools: Step 1: Web Tools open, call self");
+                                    BCRMOpenWebTools(ws, ver, rn, ot);
+                                }
+                            }
+                        }
+                    }
+                }
+            }, 1000);
+        }
+        else {
+            //step 2: web tools already open and in DB View
+            swt.focus();
+            console.log("BCRMOpenWebTools: Step 2: Query Workspace");
+            if (swt.SiebelApp.S_App.GetActiveView().GetName() == "WSUI Dashboard View") {
+                swt.BCRMGetWSContext();
+                var in_ws = ws + "/" + ver;
+                var curr_ws = swt.sessionStorage.BCRMCurrentWorkspace + "/" + swt.sessionStorage.BCRMCurrentWorkspaceVersion;
+                if (in_ws != curr_ws) {
+                    //must open workspace
+                    console.log("BCRMOpenWebTools: Step 2: Opening Workspace");
+                    swt.BCRMQueryWSList(ws, ws, ver);
+                    setTimeout(function () {
+                        swt.BCRMWorkspaceAction("Open");
+                        //wait for WS Dashboard
+                        var c2 = 1;
+                        var i_two = setInterval(function () {
+                            console.log("BCRMOpenWebTools i_two: " + c2);
+                            c2++;
+                            if (typeof (swt.SiebelApp) !== "undefined") {
+                                if (typeof (swt.SiebelApp.S_App) !== "undefined") {
+                                    if (typeof (swt.SiebelApp.S_App.GetActiveView) !== "undefined") {
+                                        if (typeof (swt.SiebelApp.S_App.GetActiveView()) !== "undefined") {
+                                            if (swt.SiebelApp.S_App.GetActiveView().GetName() == "WSUI Dashboard View") {
+                                                console.log("BCRMOpenWebTools: Step 2: WS Open and reloaded");
+                                                clearInterval(i_two);
+                                                var vn = "WT Repository " + ot + " List View";
+                                                swt.sessionStorage.BCRM_DBNAV_VIEW = vn;
+                                                swt.sessionStorage.BCRM_DBNAV_RN = rn;
+                                                swt.sessionStorage.BCRM_DBNAV_GO = "open";
+                                                console.log("BCRMOpenWebTools: Step 2: Navigating to target view/open");
+                                                swt.SiebelApp.S_App.GotoView(vn, null, "SWEKeepContext=1");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }, 1000);
+                    }, 1000)
+                }
+                else {
+                    //WS Dashboard already open
+                    console.log("BCRMOpenWebTools: Step 2: Navigating to target view/yes");
+                    var vn = "WT Repository " + ot + " List View";
+                    swt.sessionStorage.BCRM_DBNAV_VIEW = vn;
+                    swt.sessionStorage.BCRM_DBNAV_RN = rn;
+                    swt.sessionStorage.BCRM_DBNAV_GO = "yes";
+                    swt.SiebelApp.S_App.GotoView(vn, null, "SWEKeepContext=1");
+                }
+
+            }
+            else {
+                //step 3: not in WS Dashboard
+                console.log("BCRMOpenWebTools: Step 3: Opening WS Dashboard");
+                swt.sessionStorage.BCRM_DBNAV_VIEW = "";
+                swt.sessionStorage.BCRM_DBNAV_GO = "";
+                //go to dashboard via click
+                swt.$("#SiebComposerConfig").find("a").click();
+                setTimeout(function () {
+                    //wait for web tools to be fully loaded
+                    var c3 = 1;
+                    var i_three = setInterval(function () {
+                        console.log("BCRMOpenWebTools i_three: " + c3);
+                        c3++;
+                        if (typeof (swt.SiebelApp) !== "undefined") {
+                            if (typeof (swt.SiebelApp.S_App) !== "undefined") {
+                                if (typeof (swt.SiebelApp.S_App.GetActiveView) !== "undefined") {
+                                    if (typeof (swt.SiebelApp.S_App.GetActiveView()) !== "undefined") {
+                                        if (swt.SiebelApp.S_App.GetActiveView().GetName() == "WSUI Dashboard View") {
+                                            console.log("BCRMOpenWebTools: Step 3: WS Dashboard open, call self");
+                                            clearInterval(i_three);
+                                            BCRMOpenWebTools(ws, ver, rn, ot);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }, 1000);
+                }, 4000);
+            }
+        }
+    }
+    catch (e) {
+        console.log("BCRMOpenWebTools: Error: " + e.toString());
+    }
+};
 //CSS Injector
 BCRMInjectCSSDialog = function (alias, css) {
     if (typeof (css) === "undefined") {
@@ -9643,6 +9850,9 @@ BCRMInjectCSSDialog = function (alias, css) {
         title: "CSS Injector",
         width: 450,
         height: 450,
+        classes: {
+            "ui-dialog": "bcrm-dialog"
+        },
         buttons: {
             "Preview (10s)": function () {
                 var css = $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.getValue();
@@ -9921,40 +10131,141 @@ BCRMRunAnalyzer = function (an_list, param_list) {
     cd C:\Siebel
     pause
     */
-
-
 };
 
-
-
-
-//prototype: Applet Layout Editor 3.0
-//REST graveyard
-//get field list from BC
-//https://siebtraining.vcn.oraclevcn.com/siebel/v1.0/workspace/MAIN/Business Component/Contact/Field?childlinks=none&uniformresponse=Y&searchspec=[Inactive]="N"&fields=Name,Type,Comments,Calculated
-//create applet control
-//does not use Field!
-/*
-var myHeaders = new Headers();
-myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
-myHeaders.append("Content-Type", "application/json");
-
-var raw = JSON.stringify({
-  "Name": "REST Control 2",
-  "Field": "Location",
-  "Field Type": "BC Field",
-  "Caption - String Override": "REST API"
-});
-
-var requestOptions = {
-  method: 'PUT',
-  headers: myHeaders,
-  body: raw,
-  redirect: 'follow'
+//23.1 viewpops demo
+//felt cute, might enhance later
+BCRMGetBookmark = function (pm) {
+    //so far, this only works for the "primary" applet
+    var bm = location.href;
+    var vn = SiebelApp.S_App.GetActiveView().GetName();
+    bm = bm.split("?")[0];
+    bm += "?SWECmd=GotoView&SWEView=";
+    bm += vn.replaceAll(" ", "+");
+    bm += "&SWERF=1&SWEHo=&SWEBU=1";
+    bm += "&SWEApplet0=";
+    bm += pm.GetObjName().replaceAll(" ", "+");
+    bm += "&SWERowId0=";
+    bm += pm.Get("GetRawRecordSet")[0]["Id"];
+    return bm;
 };
 
-fetch("https://siebtraining.vcn.oraclevcn.com/siebel/v1.0/workspace/dev_sadmin_202112190947/Applet/SIS Account Entry Applet/Control", requestOptions)
-  .then(response => response.text())
-  .then(result => console.log(result))
-  .catch(error => console.log('error', error));
-  */
+//no, this is not a replacement for "a publisher"
+//code intentionally left dumb
+BCRMPopoutView = function () {
+    var all = $("[id^='S_A'");
+    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    var wham = [];
+    var pm, cs, ct;
+    var maxw = 0;
+    var lsa = [];
+    var ut = new SiebelAppFacade.BCRMUtils();
+    //wham is the wholesome applet map (sorted as applets appear in the view)
+    all.each(function (x) {
+        for (a in am) {
+            var pm = am[a].GetPModel();
+            var fi = pm.Get("GetFullId");
+            if ($(this).attr("id") == fi) {
+                wham.push(fi);
+                break;
+            }
+        }
+    });
+
+    //open new tab
+    var w = window.open("", "_blank");
+
+    var dt = new Date();
+    var hdr = $("<div id='bcrm_header'>");
+    var rt = $("<div>").text(document.title);
+    var rd = $("<div>").text(dt.toLocaleString());
+    var pt = $('<div title="Print" class="no-print" style="cursor:pointer;" onclick="javascript:document.designMode=\'off\';print();"></div>');
+    pt.append("<img style='border-radius:50%;' src='" + location.origin + "/siebel/images/hm_pg_print_doc.jpg" + "'>");
+    var ed = $('<div title="Toggle Edit Mode" class="no-print" style="cursor:pointer;" onclick="javascript:(document.designMode==\'off\'?document.designMode=\'on\':document.designMode=\'off\');(document.designMode==\'on\'?document.getElementById(\'bcrm_header\').style.background=\'red\':void(0));"></div>');
+    ed.append("<img style='border-radius:50%;' src='" + location.origin + "/siebel/images/hm_pg_init_enroll.jpg" + "'>");
+    hdr.append(rt);
+    hdr.append(rd);
+    hdr.append(ed);
+    hdr.append(pt);
+
+    hdr.css({
+        "display": "flex", "justify-content": "space-between", "font-family": "arial,sans-serif", "font-weight": "600", "font-size": "32px", "background": "#0d47a1", "padding": "8px", "color": "white", "border-top-right-radius": "22px", "border-top-left-radius": "22px"
+    });
+    w.document.write(hdr[0].outerHTML);
+
+    for (var i = 0; i < wham.length; i++) {
+        //form applets: regenerate with HTML (grid/flex)
+        var type = ut.GetAppletType(wham[i]);
+        if (type == "form") {
+            pm = ut.ValidateContext(wham[i]);
+            cs = pm.Get("GetControls");
+            ct = $("<div id='bcrm_" + pm.Get("GetFullId") + "' style='font-family:arial,sans-serif;font-size:22px;border:1px solid darkgrey;padding:10px; width:auto;'>");
+            ct.css("display", "grid");
+            ct.css("grid-template-columns", "auto auto auto auto");
+            for (c in cs) {
+                var f = $("<div style='display:flex;'>")
+                if (cs[c].GetFieldName() != "" && cs[c].GetDisplayName() != "") {
+                    var lbl = $("<div style='padding-right:4px;'>").text(cs[c].GetDisplayName() + ":");
+                    var fv = $("<div>").text(pm.ExecuteMethod("GetFormattedFieldValue", cs[c]));
+                    f.append(lbl);
+                    f.append(fv);
+                    ct.append(f);
+                }
+            }
+            lsa.push(ct);
+        }
+
+        //for list applets, re-generate simple HTML table
+        if (type == "list") {
+            var lcl = $("#" + wham[i]).clone();
+            pm = ut.ValidateContext(wham[i]);
+            var sel = pm.Get("GetSelection");
+            var ttl = lcl.find(".siebui-applet-title").text();
+            var cntr = lcl.find(".siebui-row-counter").text();
+            ct = $("<div id='bcrm_" + pm.Get("GetFullId") + "' style='font-family:arial,sans-serif;font-size:22px;border:1px solid darkgrey;padding:10px'>");
+            var lh = $("<div>");
+            lh.text(ttl + " (" + cntr + ")");
+            lh.css("font-size", "26px");
+            lh.css("background", "#90caf9");
+            ct.append(lh);
+            //get HTML table from PM raw data
+            var tbl = BCRMGetTableFromListPM(pm);
+            tbl.addClass("bcrm-table");
+            tbl.css("font-family", "arial,sans-serif");
+            tbl.css("font-size", "18px");
+            tbl.find("th").css("text-align", "left");
+            tbl.find("th").css("padding-right", "14px");
+            tbl.find("td").css("padding-right", "14px");
+            tbl.find("tbody").find("tr").each(function (x) {
+                if (x == sel) {
+                    $(this).addClass("bcrm-selected");
+                }
+            })
+            ct.append(tbl);
+            lsa.push(ct);
+        }
+    }
+
+    for (var j = 0; j < lsa.length; j++) {
+        lsa[j].css("margin-bottom", "10px");
+        w.document.write(lsa[j][0].outerHTML);
+    }
+
+    //bookmark
+    var bm = BCRMGetBookmark(ut.ValidateContext(wham[0]));
+    //var bma = $("<div class='no-print' onclick='javascript:window.opener.location.href=\"" + bm + "\"'>Go to bookmark in original window</div>");
+    //bma.css({"font-family": "arial,sans-serif","font-size":"20px","text-align": "center","color": "#0d47a1","text-decoration": "underline","cursor": "pointer"});
+    var bma2 = $("<a href='" + bm + "'>Bookmark: " + bm + "</a>");
+    bma2.css({ "font-family": "arial,sans-serif", "font-size": "14px" });
+
+    //w.document.write(bma[0].outerHTML);
+    w.document.write(bma2[0].outerHTML);
+
+    //icing on the cake
+    var css = "@media print{.no-print{display:none;}} .bcrm-table tr:nth-child(even) td,.ui-jqgrid .ui-jqgrid-btable tr:nth-child(even) td {background-color: #f5f5f5;} .bcrm-selected td{background-color:#e3f2fd!important;}";
+    var head = w.document.getElementsByTagName('HEAD')[0];
+    var st = w.document.createElement('style');
+    st.innerHTML = css;
+    head.appendChild(st);
+    w.document.title = document.title;
+};
