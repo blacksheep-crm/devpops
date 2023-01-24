@@ -3451,6 +3451,14 @@ BCRMWSHelper = function () {
                 $("head").append(cjs);
             }
 
+            //fix missing CodeMirror in app (Siebel Update 23.1 and higher)
+            if (typeof(CodeMirror) != "function"){
+                var cmscript = $('<script src="scripts/3rdParty/codemirror/lib/codemirror.js"></script>');
+                var cmcss = $('<link type="text/css" href="scripts/3rdParty/codemirror/lib/codemirror.css" rel="stylesheet">');
+                $("head").append(cmscript);
+                $("head").append(cmcss);
+            }
+            
             //show current workspace
             //if (typeof (sessionStorage.BCRMCurrentWorkspace) !== "undefined") {
             if (BCRM_SIEBEL_VERSION != "") {
