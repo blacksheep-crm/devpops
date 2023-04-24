@@ -8,6 +8,8 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
+23.5 Update: https://youtu.be/GPLWjfsheV0
+
 23.1 Sneak Preview (Siebel Friday 30-Dec-22): https://youtu.be/g--vHWgDg28?t=965
 
 22.10 Update: https://youtu.be/zocUBVYdM2k
@@ -16,31 +18,13 @@ Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
 
 Installation: https://youtu.be/gl7PljwLbbo
 
-# What's New in 23.1
+# What's New in 23.5
 
-Web Tools: Drilldown from Workspace Dashboard (same or different workspace)
+shoelace menu and UX demos
 
-Web Tools: Workflow Editor - Open Business Service (Code and Methods)
+Cross-session history tracking (experimental/beta)
 
-Web Tools: Open Script Editor/Debugger via button
-
-Web Tools: Change Records (yep)
-
-Web Tools: Form (3-Applet View) record navigation
-
-Application: About View: Show Workspace History/Open in Web Tools
-
-Application: About View Deluxe: Get Lucky with real-time viewer
-
-Web Tools/Application: Quick Navigation for all objects in a workspace
-
-Web Tools/Application: Pretty banner is still pretty (but Redwood banner retired)
-
-Web Tools/Application: Custom style for custom (devpops) dialogs
-
-Application: Open View in new tab for printing
-
-# Update to 23.1
+# Update to 23.5
 
 Import IO_Base BCRM Modified Object.sif and deliver
 
@@ -50,7 +34,7 @@ Copy devpops.js to siebel/custom
 
 Copy blacksheep.css to files/custom
 
-# Features (22.11 and earlier)
+# Features (23.1 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -113,6 +97,28 @@ Lizard 2.0: List Applet Column Wizard enhanced
 Repository Write-Back: Save Lizard column width to writable dev workspace
 
 CSS Injector
+
+Web Tools: Drilldown from Workspace Dashboard (same or different workspace)
+
+Web Tools: Workflow Editor - Open Business Service (Code and Methods)
+
+Web Tools: Open Script Editor/Debugger via button
+
+Web Tools: Change Records (yep)
+
+Web Tools: Form (3-Applet View) record navigation
+
+Application: About View: Show Workspace History/Open in Web Tools
+
+Application: About View Deluxe: Get Lucky with real-time viewer
+
+Web Tools/Application: Quick Navigation for all objects in a workspace
+
+Web Tools/Application: Pretty banner is still pretty (but Redwood banner retired)
+
+Web Tools/Application: Custom style for custom (devpops) dialogs
+
+Application: Open View in new tab for printing
 
 # Installation
 
