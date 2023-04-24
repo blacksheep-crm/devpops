@@ -67,7 +67,13 @@ var bcrm_help_map = {
     "23.3": "F26413_39",
     "23.4": "F26413_40",
     "23.5": "F26413_41",
-    "23.6": "F26413_42"
+    "23.6": "F26413_42",
+    "23.7": "F26413_43",
+    "23.8": "F26413_44",
+    "23.9": "F26413_45",
+    "23.10": "F26413_46",
+    "23.11": "F26413_47",
+    "23.12": "F26413_48",
 };
 
 var icon_map = new Map();
@@ -94,43 +100,6 @@ icon_map.set("View", "📈");
 icon_map.set("Web Page", "🕸");
 icon_map.set("Web Template", "🍕");
 icon_map.set("Workflow Process", "🍽");
-
-//Online Help URL
-//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
-BCRMGetToolsHelpURL = function () {
-    var retval;
-    var seblver;
-    var url1 = "https://docs.oracle.com/cd/";
-    var url2 = "/portalres/pages/other_toolshelp.htm";
-    if (typeof (localStorage.BCRM_SIEBEL_VERSION) === "undefined") {
-        alert("Siebel version information not found. Please log in to a Siebel application session with devpops in the same browser and try again.");
-    }
-    else {
-        seblver = localStorage.BCRM_SIEBEL_VERSION.split(".")[0] + "." + localStorage.BCRM_SIEBEL_VERSION.split(".")[1];
-        retval = url1 + bcrm_help_map[seblver] + url2;
-    }
-    return retval;
-};
-
-//Online Help Menu
-//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
-BCRMSetToolsHelpContent = function () {
-    var url = BCRMGetToolsHelpURL();
-    if (typeof (url) != "undefined") {
-        $("[data-caption='&Help']").find("a").each(function (x) {
-            if ($(this).text().indexOf("Contents") != -1) {
-                $(this).off("click");
-                $(this).parent().off("click");
-                $(this).attr("href", url);
-                $(this).attr("target", "_blank");
-                $(this).text("Online Help");
-                $(this).on("click", function (e) {
-                    e.stopImmediatePropagation();
-                });
-            }
-        });
-    }
-};
 
 //Banner prettifier
 var bannerint;
@@ -2998,6 +2967,317 @@ BCRMAboutTime = function () {
     })
 };
 
+
+//shoelace experiment
+var BCRM_SL_LOADED = false;
+//Inject shoelace
+if (!BCRM_SL_LOADED) {
+    if ($("link[href*='shoelace']").length == 0) {
+        let slcss = $('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0/dist/themes/light.css" />');
+        let sljs = $('<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0/dist/shoelace.js"></script>');
+        $("head").append(slcss);
+        $("head").append(sljs);
+        //shoelace toast CSS
+        BCRMInjectCSS("shoelace1", ".sl-toast-stack{top: unset;bottom: 0;display: flex;flex-direction: column-reverse;}");
+        BCRM_SL_LOADED = true;
+    }
+}
+//add pretty tooltips
+BCRMTooltipMod = function () {
+    setTimeout(function () {
+        $("li[title],button[title]").each(function () {
+            let t = $(this).attr("title");
+            $(this).attr("title", "");
+            let slt = $("<sl-tooltip placement='bottom' content='" + t + "'></sl-tooltip>");
+            $(this).wrap(slt);
+        })
+    }, 300);
+};
+//toast á la shoelace
+BCRMToast = function (message, variant = 'primary', icon = 'info-circle', duration = 3000) {
+    const toastme = Object.assign(document.createElement('sl-alert'), {
+        variant,
+        closable: true,
+        duration: duration,
+        innerHTML: `
+        <sl-icon name="${icon}" slot="icon"></sl-icon>
+        ${message}
+      `
+    });
+
+    document.body.append(toastme);
+    return toastme.toast();
+};
+
+BCRMShowDrawer = function () {
+    const tree = BCRMGetDrawerTree();
+    if ($(".dp-drawer-main").length == 0) {
+        let drawer = $('<sl-drawer label="devpops ' + devpops_dver + '" contained placement="start" class="dp-drawer-main" style="--size: 20rem;"><sl-icon-button class="dp-drawer-edit" slot="header-actions" name="pencil" title="Edit"></sl-icon-button><sl-icon-button style="display:none;" class="dp-drawer-save" slot="header-actions" name="save" title="Save"></sl-icon-button><sl-button class="dp-drawer-closebtn" slot="footer" variant="primary">Close</sl-button></sl-drawer>');
+        $("#_sweview").prepend(drawer);
+        const closebtn = drawer[0].querySelector('.dp-drawer-closebtn');
+        closebtn.addEventListener('click', () => {
+            $(".dp-drawer-main")[0].hide();
+            $("#bcrm_sl_drawer_btn").show();
+        });
+        const editbtn = drawer[0].querySelector('.dp-drawer-edit');
+        editbtn.addEventListener("click", () => {
+            $(".dp-drawer-main").find(".dp-tree-item").each(function () {
+                $(this).show();
+                $(this)[0].expanded = true;
+            });
+            $(".dp-drawer-main").find(".dp-drawer-save").show();
+            $(".dp-drawer-main").find(".dp-drawer-edit").hide();
+            $(".dp-drawer-main").find(".dp-cbox").show();
+        });
+        const savebtn = drawer[0].querySelector('.dp-drawer-save');
+        savebtn.addEventListener("click", () => {
+            $(".dp-drawer-main").find(".dp-drawer-save").hide();
+            $(".dp-drawer-main").find(".dp-drawer-edit").show();
+            $(".dp-drawer-main").find("#drawer_tree").empty();
+            $(".dp-drawer-main").find("#drawer_tree").append(BCRMGetDrawerTree());
+        });
+        drawer[0].addEventListener('sl-hide', event => {
+            $("#bcrm_sl_drawer_btn").show();
+        });
+        $(".dp-drawer-main").append("<div id='drawer_tree'>");
+        $(".dp-drawer-main").find("#drawer_tree").append(tree);
+    }
+    else {
+        $(".dp-drawer-main").find("#drawer_tree").empty();
+        $(".dp-drawer-main").find("#drawer_tree").append(tree);
+    }
+    $(".dp-drawer-main")[0].open = true;
+};
+
+ShowOptionsSL = function (m) {
+    let BCRM_MENU_SL = BCRMGetSLMenu();
+    const opt = BCRM_MENU_SL[m].options;
+    let prefix = "BCRM_OPT_" + m + "_";
+    let title = BCRM_MENU_SL[m].label + " Options";
+    let dlg = $("<sl-dialog id='" + prefix + "' label='" + title + "'><sl-button class='dlg-savego-btn' slot='footer' variant='primary'>Save + Go</sl-button><sl-button class='dlg-save-btn' slot='footer' variant='primary'>Save</sl-button><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Cancel</sl-button></sl-dialog>");
+    const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+    closeButton.addEventListener('click', () => dlg.hide());
+    const saveButton = dlg[0].querySelector('sl-button.dlg-save-btn');
+    saveButton.addEventListener('click', () => {
+        $("#" + prefix).find(".bcrm-option").each(function (x) {
+            let sn = $(this).attr("id");
+            localStorage.setItem(sn, $(this).val().replaceAll("__", " "));
+        });
+        dlg.hide();
+    });
+    const saveGoButton = dlg[0].querySelector('sl-button.dlg-savego-btn');
+    saveGoButton.addEventListener('click', () => {
+        $("#" + prefix).find(".bcrm-option").each(function (x) {
+            let sn = $(this).attr("id");
+            localStorage.setItem(sn, $(this).val().replaceAll("__", " "));
+        });
+        BCRM_MENU_SL[m].saveandgo();
+        dlg.hide();
+    });
+    for (o in opt) {
+        var sn = prefix + o;
+        var def = localStorage.getItem(sn) ? localStorage.getItem(sn) : opt[o].default;
+        if (opt[o].type == "select") {
+            let lov = opt[o].lov;
+
+            let sel = "<sl-select class='bcrm-option' id='" + sn + "' style='margin-bottom:12px;' label='" + opt[o].label + "' value='" + def.replaceAll(" ", "__") + "' help-text='" + opt[o].tip + "'>";
+            for (var i = 0; i < lov.length; i++) {
+                sel += "<sl-option value='" + lov[i].replaceAll(" ", "__") + "'>" + lov[i] + "</sl-option>";
+            }
+            sel += "</sl-select>";
+            dlg.append(sel);
+        }
+        else {
+            let ip = "<sl-input class='bcrm-option' id='" + sn + "' type='" + opt[o].type + "' style='margin-bottom:12px' label='" + opt[o].label + "' value='" + def + "' help-text='" + opt[o].tip + "'></sl-input>";
+            dlg.append(ip);
+        }
+    }
+    $("#" + prefix).remove();
+    $("body").append(dlg);
+    $("#" + prefix)[0].show();
+};
+
+BCRMGetDrawerTree = function () {
+    let tree = $("<sl-tree></sl-tree>");
+    let p = 1;
+    let BCRM_MENU_SL = BCRMGetSLMenu();
+    for (i in BCRM_MENU_SL) {
+        let pos = BCRM_MENU_SL[i].pos;
+
+        //root level
+        if (pos.indexOf(".") == -1) {
+            let me = BCRM_MENU_SL[i];
+            let selected = "";
+            let expanded = "";
+            let dpdefaultexpand = false;
+            var root_enabled = me.enable;
+            if (pos == "1") {
+                selected = "selected";
+                expanded = "expanded";
+                dpdefaultexpand = true;
+            }
+            let mec = $("<div style='display:flex;justify-content:space-between;width:160px;'>");
+            let cbox = $("<div><sl-checkbox style='display:none;' class='dp-cbox root' dp-for='" + i + "'></sl-checkbox></div>");
+            cbox.find(".dp-cbox")[0].addEventListener("sl-change", event => {
+                event.stopImmediatePropagation();
+                let item = $(event.target).attr("dp-for");
+                let id = "BCRM_MENU_ENABLE_" + item;
+                var ischecked = event.target.checked;
+                localStorage.setItem(id, ischecked);
+                /*
+                $("#" + item + ".dp-tree-item").find(".dp-cbox").each(function(){
+                    this.checked = ischecked;
+                });
+                */
+            });
+            let melbl = $("<div class='tree-item-label'>");
+            melbl.append("<span>").text(me.label);
+            if (typeof (me.onclick) !== "undefined") {
+                melbl.on("click", me.onclick);
+            }
+            mec.append(melbl);
+
+            let item = $("<sl-tree-item id='" + i + "' class='dp-tree-item root' " + selected + " " + expanded + "></sl-tree-item>");
+            if (dpdefaultexpand) {
+                item.addClass("dpdefaultexpand");
+            }
+            item.attr("title", me.title);
+            item.append(cbox);
+            item.append(mec);
+            p = 1;
+            //find nested items, only one child level supported by now
+            let spos = pos + "." + p;
+            for (ni in BCRM_MENU_SL) {
+                let t = BCRM_MENU_SL[ni];
+                if (t.pos == spos) {
+                    if (true) {
+                        let nc = $("<div style='display:flex;justify-content:space-between;width:150px;'>");
+                        let nclbl = $("<div class='tree-item-label'>");
+                        nclbl.append("<span>").text(t.label);
+                        nclbl.on("click", t.onclick);
+                        nc.append(nclbl);
+                        let nitem = $("<sl-tree-item id='" + ni + "' class='dp-tree-item leaf'></sl-tree-item>");
+                        nitem.attr("title", t.title);
+                        let nicbox = $("<div><sl-checkbox style='display:none;' class='dp-cbox' dp-for='" + ni + "'></sl-checkbox></div>");
+                        nicbox.find(".dp-cbox")[0].addEventListener("sl-change", event => {
+                            event.stopImmediatePropagation();
+                            let item = $(event.target).attr("dp-for");
+                            let id = "BCRM_MENU_ENABLE_" + item;
+                            let ischecked = event.target.checked;
+                            localStorage.setItem(id, ischecked);
+                            return false;
+                        });
+                        if (t.showtoggle) {
+                            let tgln = "toggle_" + ni;
+                            let tgl = $("<div id='" + tgln + "'><sl-switch size='medium' style='--thumb-size:14px;'></sl-switch></div>");
+                            tgl.attr("title", "Enable permanently");
+                            if (sessionStorage[tgln] === "true") {
+                                tgl.find("sl-switch")[0].checked = true;
+                            }
+                            tgl.find("sl-switch")[0].addEventListener("sl-change", event => {
+                                let tgl = event.target;
+                                let is_checked = tgl.checked;
+                                let tglname = $(tgl).parent().attr("id");
+                                let mname = tglname.split("_")[1];
+                                sessionStorage[tglname] = is_checked;
+                                if (is_checked) {
+                                    if (typeof (BCRM_MENU_SL[mname].toggle_exclude) !== "undefined") {
+                                        BCRMToast("X-Ray default set to: " + mname, "primary", "toggle-on");
+                                        sessionStorage.BCRM_TOGGLE_DEFAULT = mname;
+                                        let elist = BCRM_MENU_SL[mname].toggle_exclude;
+                                        for (let i = 0; i < elist.length; i++) {
+                                            let eln = "toggle_" + elist[i];
+                                            $(".dp-drawer-main").find("#" + eln).find("sl-switch")[0].checked = false;
+                                            sessionStorage[eln] = false;
+                                        }
+                                    }
+                                }
+                                else {
+                                    if (typeof (BCRM_MENU_SL[mname].toggle_exclude) !== "undefined") {
+                                        sessionStorage.BCRM_TOGGLE_DEFAULT = "";
+                                    }
+                                }
+                            });
+                            nc.append(tgl);
+                        }
+                        if (t.showoptions) {
+                            let on = "options_" + ni;
+                            let obtn = $("<div id='" + on + "'><sl-icon-button name='gear' label='Options'></sl-icon-button></div>");
+                            obtn.attr("title", "Settings");
+                            obtn.find("sl-icon-button")[0].addEventListener("click", event => {
+                                let btn = event.target;
+                                let id = $(btn).parent().attr("id");
+                                let mname = id.split("_")[1];
+                                ShowOptionsSL(mname);
+                            });
+                            nc.append(obtn);
+                        }
+
+                        nitem.append(nicbox);
+                        nitem.append(nc);
+                        item.append(nitem);
+                        if (!t.enable || !root_enabled) {
+                            nitem.hide();
+                            nitem.addClass("dp-hidden");
+                        }
+                        if (t.enable) {
+                            nitem.find(".dp-cbox")[0].checked = true;
+                        }
+                    }
+                    p++;
+                    spos = pos + "." + p;
+                }
+            }
+            tree.append(item);
+            if (!root_enabled) {
+                item.hide();
+                item.addClass("dp-hidden");
+            }
+            else {
+                item.find(".dp-cbox")[0].checked = true;
+            }
+        }
+    }
+    return tree;
+};
+
+//Online Help URL
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMGetToolsHelpURL = function () {
+    var retval;
+    var seblver;
+    var url1 = "https://docs.oracle.com/cd/";
+    var url2 = "/portalres/pages/other_toolshelp.htm";
+    if (typeof (localStorage.BCRM_SIEBEL_VERSION) === "undefined") {
+        alert("Siebel version information not found. Please log in to a Siebel application session with devpops in the same browser and try again.");
+    }
+    else {
+        seblver = localStorage.BCRM_SIEBEL_VERSION.split(".")[0] + "." + localStorage.BCRM_SIEBEL_VERSION.split(".")[1];
+        retval = url1 + bcrm_help_map[seblver] + url2;
+    }
+    return retval;
+};
+
+//Online Help Menu
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
+BCRMSetToolsHelpContent = function () {
+    var url = BCRMGetToolsHelpURL();
+    if (typeof (url) != "undefined") {
+        $("[data-caption='&Help']").find("a").each(function (x) {
+            if ($(this).text().indexOf("Contents") != -1) {
+                $(this).off("click");
+                $(this).parent().off("click");
+                $(this).attr("href", url);
+                $(this).attr("target", "_blank");
+                $(this).text("Online Help");
+                $(this).on("click", function (e) {
+                    e.stopImmediatePropagation();
+                });
+            }
+        });
+    }
+};
+
 //main postload function for Web Tools
 //THIS FUNCTION MUST BE IN VANILLA postxload.js to work in Web Tools!
 BCRMWTHelper = function () {
@@ -3130,6 +3410,9 @@ BCRMWTHelper = function () {
                 //Query Focus, uncomment at your own peril
                 //BCRMQueryFocus();
 
+                //shoelace titles to tooltips
+                //BCRMTooltipMod();
+
                 console.log("BCRM devpops extension for Siebel Web Tools loaded");
 
                 //prevent double-loading
@@ -3152,4 +3435,123 @@ catch (e) {
     console.log("Error in BCRM devpops extension for Siebel Web Tools: " + e.toString());
 }
 
-//END WSTOOLS postload.js content
+//history tracker
+//TODO: fix bug with CheckAppletReady function (random error)
+var BCRM_HIST_APP = "BCRM_HISTORY_" + location.pathname.replaceAll("/", "_");
+var BCRM_HISTORY = [];
+var BCRM_HISTORY_MAX = 100;
+//restore BCRM_HISTORY from localStorage 
+if (typeof (localStorage[BCRM_HIST_APP]) !== "undefined") {
+    if (localStorage[BCRM_HIST_APP].split("|").length > 0) {
+        BCRM_HISTORY = localStorage[BCRM_HIST_APP].split("|");
+    }
+}
+
+//source: https://stackoverflow.com/questions/3522090/event-when-window-location-href-changes
+const BCRMTrackHistory = () => {
+    let oldHref = document.location.href;
+    const body = document.querySelector("body");
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(() => {
+            if (oldHref !== document.location.href) {
+                oldHref = document.location.href;
+                let hitem = {
+                    time: Date.now(),
+                    href: oldHref,
+                    title: document.title,
+                    vn: oldHref.split("SWEView=")[1].split("&")[0].replaceAll("+", " "),
+                    srn: SiebelApp.S_App.GetSRN()
+                };
+                BCRMAddHistoryItem(hitem);
+            }
+        });
+    });
+    observer.observe(body, { childList: true, subtree: true });
+};
+
+BCRMAddHistoryItem = function (hitem) {
+    BCRM_HISTORY.push(JSON.stringify(hitem));
+    //max length
+    if (BCRM_HISTORY.length > BCRM_HISTORY_MAX) {
+        BCRM_HISTORY.shift();
+    }
+    localStorage[BCRM_HIST_APP] = BCRM_HISTORY.join("|");
+};
+
+BCRMGenerateHistoryList = function () {
+    BCRMInjectCSS("bcrmhist01", "sl-card.bcrm-current-session::part(body) {background: #3272a85c;}");
+    var hasdata = false;
+    let cont = $("<div id='bcrm_hist_container'>");
+    if (typeof (localStorage[BCRM_HIST_APP]) !== "undefined") {
+        if (localStorage[BCRM_HIST_APP].split("|").length > 0) {
+            hasdata = true;
+        }
+    }
+    if (hasdata) {
+        let ha = localStorage[BCRM_HIST_APP].split("|");
+        let srn = SiebelApp.S_App.GetSRN();
+        let isprior = false;
+        ha.reverse();
+        for (let i = 0; i < ha.length; i++) {
+            let card = $("<sl-card style='width:100%;cursor:pointer;'></sl-card>");
+            let hitem = JSON.parse(ha[i]);
+            let d = new Date(hitem.time);
+            card.append("<p id='bcrm_href' style='margin:0px;'><a href='" + hitem.href + "'>" + hitem.title + "</a></p>");
+            card.append("<p style='margin:0px;font-size:0.7em;text-align:right;'>" + d.toLocaleString() + "</p>");
+            card.attr("bcrm-vn", hitem.vn);
+            card.on("click", function () {
+                let url = $(this).find("#bcrm_href").find("a").attr("href");
+                let hitem = {
+                    time: Date.now(),
+                    href: url,
+                    title: $(this).find("#bcrm_href").text(),
+                    vn: $(this).attr("bcrm-vn"),
+                    srn: srn
+                };
+                BCRMAddHistoryItem(hitem);
+                try {
+                    top.CheckAppletReady = function (a, b) { return false; };
+                    top.Top = function () { return window; };
+                    window.location.replace(url);
+                }
+                catch (e) {
+                    console.error("BCRMHistory error: " + e.toString());
+                }
+            })
+            if (hitem.srn == srn) {
+                card.addClass("bcrm-current-session");
+                if (i == 0) {
+                    cont.append("<h4>Current Session</h4>")
+                }
+            }
+            else {
+                if (!isprior) {
+                    cont.append("<h4>Previous Sessions</h4>")
+                }
+                isprior = true;
+            }
+            cont.append(card);
+        }
+    }
+    else {
+        cont.append("<sl-card>No history data found.</sl-card>");
+    }
+    return cont;
+}
+
+BCRMShowHistoryList = function () {
+    let dlg = $("<sl-dialog id='bcrm_history' label='" + "BCRM History" + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
+    const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+    closeButton.addEventListener('click', () => dlg.hide());
+    const list = BCRMGenerateHistoryList();
+    dlg.append(list);
+    $("#bcrm_history").remove();
+    $("body").append(dlg);
+    $("#bcrm_history")[0].show();
+}
+window.onload = BCRMTrackHistory;
+//workaround errors
+top.CheckAppletReady = function (a, b) { return false; };
+top.Top = function () { return window; };
+
+//END devpops postload.js content
