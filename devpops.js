@@ -5,6 +5,814 @@
 //TODO: Test auto cache refresh when coming out of a test case with screen view changes
 //Issue: Fast Inspect loses the context of the record whereas the traditional method does not. (SWE Params?)
 
+//globals
+var defs = [];
+var dt = [];
+var trace_raw;
+var trace_parsed;
+var trace_norr;
+var devpops_dver = "23.5";
+var devpops_version = 59;
+var devpops_tag = "Michael Collins";
+var devpops_uv = 0;
+var fwk_min_ver = 52;
+var devpops_vcheck = false;
+var BCRCMETACACHE = {};
+var BCRM_SIEBEL_VERSION = "";
+var BCRM_SIEBEL_V = {};
+var BCRM_WORKSPACE = {};
+var FWK_VERSION = 0;
+var BCRM_XRAY_DATA = {};
+var BCRM_XRAY_APPLETS = [];
+var BCRM_XRAY_ADDVIEW = false;
+
+//module configuration, most defaults and other stuff can be controlled from here
+var devpops_config = {
+    ses_home: "C:\\Siebel\\ses\\siebsrvr"
+};
+
+//helper for SARM timestamps
+BCRMSARMTimeStamp = function (dt) {
+    var r = "";
+    r += dt.getFullYear();
+    r += "-";
+    r += (dt.getMonth() + 1) < 10 ? "0" + (dt.getMonth() + 1) : (dt.getMonth() + 1);
+    r += "-";
+    r += dt.getDate() < 10 ? "0" + dt.getDate() : dt.getDate();
+    r += " ";
+    r += dt.getHours() < 10 ? "0" + dt.getHours() : dt.getHours();
+    r += ":";
+    r += dt.getMinutes() < 10 ? "0" + dt.getMinutes() : dt.getMinutes();
+    r += ":";
+    r += dt.getSeconds() < 10 ? "0" + dt.getSeconds() : dt.getSeconds();
+    return r;
+};
+
+//shoelace menu
+BCRMGetSLMenu = function () {
+
+    let BCRM_MENU_SL = {
+        "xray": {
+            "pos": "1",
+            "label": "X-Ray",
+            "title": "X-Ray lets you see through applets",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_xray") == "false" ? false : true
+        },
+        "ShowControls": {
+            "pos": "1.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowControls") == "false" ? false : true,
+            "label": "Show Controls",
+            "title": "X-Ray: Toggle Form Applets to display Control information in labels",
+            "onclick": function (e, ui) {
+                if (!$(this).hasClass("ui-state-disabled")) {
+                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                    var ut = new SiebelAppFacade.BCRMUtils();
+                    ut.RemoveLinkOverlay();
+                    for (a in am) {
+                        ut.ShowControls(a);
+                    }
+                    sessionStorage.BCRMToggleCycle = "ShowControls";
+                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                        $($("li#ShowControls").find("div")[0]).addClass("ui-state-disabled");
+                        $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
+                    }
+                }
+                return BCRMCloseDebugMenu();
+            },
+            "showtoggle": true,
+            "toggle_exclude": ["ShowBCFields", "ShowTableColumns"],
+            "img": "images/grid_matte_webpagesearch.png"
+        },
+        "ShowBCFields": {
+            "pos": "1.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowBCFields") == "false" ? false : true,
+            "label": "Show BC Fields",
+            "title": "X-Ray: Toggle Form and List Applets to display BC Field information in labels",
+            "onclick": function () {
+                if (!$(this).hasClass("ui-state-disabled")) {
+                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                    var ut = new SiebelAppFacade.BCRMUtils();
+                    ut.RemoveLinkOverlay();
+                    for (a in am) {
+                        ut.ShowBCFields(a);
+                    }
+                    ut.LinkOverlay();
+                    sessionStorage.BCRMToggleCycle = "ShowBCFields";
+                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                        $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#ShowBCFields").find("div")[0]).addClass("ui-state-disabled");
+                        $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
+                    }
+                }
+                return BCRMCloseDebugMenu();
+            },
+            "showtoggle": true,
+            "toggle_exclude": ["ShowControls", "ShowTableColumns"],
+            "img": "images/grid_matte_barcode.png"
+        },
+        "ShowTableColumns": {
+            "pos": "1.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowTableColumns") == "false" ? false : true,
+            "label": "Show Columns",
+            "title": "X-Ray: Toggle Form and List Applets to display physical layer information",
+            "onclick": function () {
+                if (!$(this).hasClass("ui-state-disabled")) {
+                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                    var ut = new SiebelAppFacade.BCRMUtils();
+                    ut.RemoveLinkOverlay();
+                    for (a in am) {
+                        ut.ShowTableColumns(a);
+                    }
+                    sessionStorage.BCRMToggleCycle = "ShowTableColumns";
+                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                        $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#ShowTableColumns").find("div")[0]).addClass("ui-state-disabled");
+                        $($("li#Reset").find("div")[0]).removeClass("ui-state-disabled");
+                    }
+                }
+                return BCRMCloseDebugMenu();
+            },
+            "showtoggle": true,
+            "toggle_exclude": ["ShowControls", "ShowBCFields"],
+            "img": "images/grid_matte_book.png"
+        },
+        "Reset": {
+            "pos": "1.4",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_Reset") == "false" ? false : true,
+            "label": "Reset Labels",
+            "title": "X-Ray: Toggle Form and List Applets to display original labels",
+            "onclick": function () {
+                if (!$(this).hasClass("ui-state-disabled")) {
+                    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                    var ut = new SiebelAppFacade.BCRMUtils();
+                    ut.RemoveLinkOverlay();
+                    for (a in am) {
+                        ut.LabelReset(a);
+                    }
+                    sessionStorage.BCRMToggleCycle = "Reset";
+                    if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
+                        $($("li#ShowControls").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#ShowBCFields").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#ShowTableColumns").find("div")[0]).removeClass("ui-state-disabled");
+                        $($("li#Reset").find("div")[0]).addClass("ui-state-disabled");
+                    }
+                }
+                return BCRMCloseDebugMenu();
+            },
+            "img": "images/grid_matte_cycle_rtl.png"
+        },
+        "Silent": {
+            "pos": "1.5",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_Silent") == "false" ? false : true,
+            "label": "Silent Mode",
+            "title": "X-Ray: Complete scan, update tooltips only",
+            "onclick": function () {
+                BCRMRunSilentXRay();
+            },
+            "showoptions": true,
+            "options": {
+                "CopyXRay": {
+                    "label": "Copy X-Ray data to clipboard",
+                    "default": "true",
+                    "tip": "X-Ray data will be available for pasting as CSV, HTML or Excel",
+                    "type": "select",
+                    "lov": ["true", "false"]
+                },
+                "ClearXRay": {
+                    "label": "Clear X-Ray data",
+                    "default": "true",
+                    "tip": "Clear previous X-Ray data (only current view will be exported)",
+                    "type": "select",
+                    "lov": ["true", "false"]
+                },
+                "OSD": {
+                    "label": "On-Screen Display",
+                    "default": "Replace Label Text",
+                    "tip": "If result is displayed inline in applet, we can use labels or other means",
+                    "type": "select",
+                    "lov": ["Replace Label Text", "Show Below Control"]
+                }
+            },
+            "saveandgo": function () {
+                BCRMRunSilentXRay();
+            },
+            "img": "images/grid_matte_ship.png"
+        },
+        "tracing": {
+            "pos": "2",
+            "label": "Tracing",
+            "title": "Advanced Tracing (SQL and more)\nKudos to Jason",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_tracing") == "false" ? false : true
+        },
+        "StartTracing": {
+            "pos": "2.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_StartTracing") == "false" ? false : true,
+            "label": "Start Tracing",
+            "title": "Start SQL/Allocation Tracing",
+            "onclick": function () {
+                let tracetype = localStorage.BCRM_OPT_StartTracing_TraceType;
+                BCRMStartLogging();
+                BCRMToast("<div id='bcrm_trace_toast'>" + tracetype + " tracing in progress</div><br><div style='display:flex;justify-content:flex-end;'><sl-button id='bcrm_trace_stop' pill size='small'>Stop'n'View</sl-button></div>", "primary", "info-circle", 1200000);
+                setTimeout(function () {
+                    $("#bcrm_trace_stop").on("click", function (e) {
+                        BCRMStopLogging();
+                        $(this).parent().parent()[0].open = false;
+                        BCRMViewLog();
+                    });
+                }, 100);
+            },
+            "showoptions": true,
+            "options": {
+                "FilePath": {
+                    "label": "File Path",
+                    "default": devpops_config.ses_home + "\\temp\\",
+                    "tip": "Enter a valid server path (without file name)",
+                    "type": "text"
+                },
+                "RetainFile": {
+                    "label": "Retain File",
+                    "default": "false",
+                    "tip": "Retain (true) or delete (false) trace file after retrieval",
+                    "type": "select",
+                    "lov": ["true", "false"]
+                },
+                "TraceType": {
+                    "label": "Trace Type",
+                    "default": "SQL",
+                    "tip": "Trace Type: SQL or Allocation",
+                    "type": "select",
+                    "lov": ["SQL", "Allocation"]
+                },
+                "TraceEvents": {
+                    "label": "Additional Event Tracing",
+                    "default": "none",
+                    "tip": "Inject trace comments for application events.",
+                    "type": "select",
+                    "lov": ["none", "Presentation Model"]
+                },
+                "SlowQuery": {
+                    "label": "Slow Query Threshold (ms)",
+                    "default": "100",
+                    "tip": "Show slow query stats for queries that run longer than this.",
+                    "type": "number"
+                }
+            },
+            "saveandgo": function () {
+                let tracetype = localStorage.BCRM_OPT_StartTracing_TraceType;
+                BCRMStartLogging();
+                BCRMToast("<div id='bcrm_trace_toast'>" + tracetype + " tracing in progress</div><br><div style='display:flex;justify-content:flex-end;'><sl-button id='bcrm_trace_stop' pill size='small'>Stop'n'View</sl-button></div>", "primary", "info-circle", 1200000);
+                setTimeout(function () {
+                    $("#bcrm_trace_stop").on("click", function (e) {
+                        BCRMStopLogging();
+                        $(this).parent().parent()[0].open = false;
+                        BCRMViewLog();
+                    });
+                }, 100);
+            },
+            "img": "images/grid_matte_decline_rtl.png"
+        },
+        "ViewTracing": {
+            "pos": "2.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ViewTracing") == "false" ? false : true,
+            "label": "View Trace File",
+            "title": "View SQL/Allocation Trace File",
+            "onclick": function () {
+                BCRMViewLog();
+            },
+            "img": "images/grid_matte_financialinformation.png"
+        },
+        "StopTracing": {
+            "pos": "2.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_StopTracing") == "false" ? false : true,
+            "label": "Stop Tracing",
+            "title": "Stop SQL/Allocation Tracing",
+            "onclick": function () {
+                    BCRMStopLogging();
+                    $("#bcrm_trace_toast").parent()[0].open = false;
+            },
+            "img": "images/grid_matte_forklift.png"
+        },
+        "helpers": {
+            "pos": "3",
+            "label": "Helpers",
+            "title": "You will find these quite useful",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_helpers") == "false" ? false : true
+        },
+        "BSRunner": {
+            "pos": "3.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_BSRunner") == "false" ? false : true,
+            "label": "Service Runner",
+            "title": "meep meep",
+            "onclick": function () {
+                BCRMBusinessServiceRunner();
+                //return BCRMCloseDebugMenu();
+            },
+            "img": "images/grid_matte_generic.png"
+        },
+        "navigation": {
+            "pos": "4",
+            "label": "Navigation",
+            "title": "Going places",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_navigation") == "false" ? false : true
+        },
+        "GotoView1": {
+            "pos": "4.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_GotoView1") == "false" ? false : true,
+            "label": "Modified Objects View",
+            "title": "View modified object definitions (DR Only)",
+            "onclick": function () {
+                var r = BCRMCloseDebugMenu();
+                SiebelApp.S_App.GotoView("BCRM Modified Objects List View");
+                return r;
+            },
+            "img": "images/grid_matte_persongrid.png"
+        },
+        "GotoView2": {
+            "pos": "4.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_GotoView2") == "false" ? false : true,
+            "label": "devpops Storage",
+            "title": "View/edit devpops persistent storage",
+            "onclick": function () {
+                var r = BCRMCloseDebugMenu();
+                BCRMGotoStorageView();
+                return r;
+            },
+            "img": "images/grid_matte_pricetag.png"
+        },
+        "ClearCaches": {
+            "pos": "3.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ClearCaches") == "false" ? false : true,
+            "label": "Clear Caches",
+            "title": "Clear RTE, LOV and Responsibility Cache\n(c)xapuk.com",
+            "onclick": function () {
+                BCRMClearCaches();
+                //return BCRMCloseDebugMenu();
+            },
+            "img": "images/grid_matte_crystalball.png"
+        },
+        "AboutView": {
+            "pos": "3.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_AboutView") == "false" ? false : true,
+            "label": "About View 2.0",
+            "title": "Same, but on steroids ;-)\n(c)xapuk.com",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                try {
+                    //using V2.0
+                    BCRMSiebelAboutView2();
+                }
+                catch (e) {
+                    //nothing
+                }
+                //return r;
+            },
+            "img": "images/grid_matte_message.png"
+        },
+        "ScriptEditor": {
+            "pos": "3.4",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ScriptEditor") == "false" ? false : true,
+            "label": "eScript Playground",
+            "title": "Test eScript from the comfort of your browser\n(c)xapuk.com",
+            "onclick": function () {
+                BCRMScriptEditor();
+                //return BCRMCloseDebugMenu();
+            },
+            "img": "images/grid_matte_scroll_rtl.png"
+        },
+        "ExprEditor": {
+            "pos": "3.5",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ExprEditor") == "false" ? false : true,
+            "label": "Expression Playground",
+            "title": "Test Siebel Query Language Expressions from the comfort of your browser\n(c)xapuk.com",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                try {
+                    BCRMExprEditor();
+                }
+                catch (e) {
+                    //nothing
+                }
+                //return r;
+            },
+            "img": "images/grid_matte_scales.png"
+        },
+        "srvrmgmt": {
+            "pos": "5",
+            "label": "Server Management",
+            "title": "Crazy stuff!",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_srvrmgmt") == "false" ? false : true
+        },
+        "srvrmgr": {
+            "pos": "5.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_srvrmgr") == "false" ? false : true,
+            "label": "Server Manager",
+            "title": "Run Siebel Server Manager Commands (experimental)",
+            "onclick": function () {
+                $("body").css("cursor", "wait");
+                BCRMSrvrMgr();
+                $("body").css("cursor", "");
+                //return BCRMCloseDebugMenu();
+            },
+            "acl": ["Siebel Administrator"],
+            "img": "images/grid_matte_plan.png"
+        },
+        "serverstatus": {
+            "pos": "5.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_serverstatus") == "false" ? false : true,
+            "label": "Server Status",
+            "title": "Show Server Component Status via REST API (experimental)",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                BCRMDisplayServer();
+                //return r;
+            },
+            "img": "images/grid_matte_piechart.png"
+        },
+        "testauto": {
+            "pos": "5.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_testauto") == "false" ? false : true,
+            "label": "Test Automation Check",
+            "title": "Test for Test Automation readiness (experimental)",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                BCRMTestAutoSetup();
+                //return r;
+            },
+            "img": "images/grid_matte_checklist.png"
+        },
+        "analyzer": {
+            "pos": "5.4",
+            "enable": false, //localStorage.getItem("BCRM_MENU_ENABLE_analyzer") == "false" ? false : true,
+            "label": "Analyzer",
+            "title": "Run Siebel Support Analyzers. Check documentation for details.",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                BCRMAnalyzerDialog();
+                //return r;
+            },
+            "img": "images/hm_pg_check_payments.jpg",
+            "showoptions": true,
+            "options": {
+                "ANHOME": {
+                    "label": "Analyzer Home",
+                    "default": "C:\\Siebel\\analyzer",
+                    "tip": "Folder/UNC path where Support Analyzers are extracted",
+                    "type": "input"
+                },
+                "TEMP": {
+                    "label": "Temp Folder Path",
+                    "default": devpops_config.ses_home + "\\temp\\",
+                    "tip": "Enter a valid server path",
+                    "type": "input"
+                },
+                "SMHOME": {
+                    "label": "Siebel Server Home",
+                    "default": devpops_config.ses_home,
+                    "tip": "Siebel Server home",
+                    "type": "input"
+                },
+                "ENT": {
+                    "label": "Enterprise Name",
+                    "default": "TRAINING",
+                    "tip": "Siebel Enterprise Name",
+                    "type": "input"
+                },
+                "SMGW": {
+                    "label": "Siebel Gateway Connect String",
+                    "default": "localhost:2320",
+                    "tip": "Siebel Gateway Connect String, e.g. gw.domain.com:2320",
+                    "type": "input"
+                },
+                "SMUSER": {
+                    "label": "Siebel Gateway User Name",
+                    "default": "SADMIN",
+                    "tip": "Siebel Gateway User",
+                    "type": "input"
+                },
+                "SMPASS": {
+                    "label": "Siebel Gateway User Password",
+                    "default": "Welcome1",
+                    "tip": "Siebel Gateway User Password",
+                    "type": "input"
+                },
+                "AIHOME": {
+                    "label": "AI Home",
+                    "default": "C:\\Siebel\\ai",
+                    "tip": "Siebel AI home, preferably UNC path",
+                    "type": "input"
+                },
+                "TBLO": {
+                    "label": "Table Owner",
+                    "default": "SIEBEL",
+                    "tip": "Siebel DB Table Owner Name",
+                    "type": "input"
+                },
+                "TBLOPW": {
+                    "label": "Table Owner Password",
+                    "default": "Welcome1",
+                    "tip": "Siebel DB Table Owner Password",
+                    "type": "input"
+                },
+                "DBCONN": {
+                    "label": "DB Connect String",
+                    "default": "jdbc:oracle:thin:@localhost:1521:orcl",
+                    "tip": "DB JDBC Connect String",
+                    "type": "input"
+                },
+                "FS": {
+                    "label": "Siebel File System",
+                    "default": "C:\\Siebel\\fs",
+                    "tip": "Preferably UNC path to Siebel File System",
+                    "type": "input"
+                },
+                "JDK": {
+                    "label": "Java Home",
+                    "default": "C:\\JDK",
+                    "tip": "JDK or JRE home on Siebel Server",
+                    "type": "input"
+                },
+                "ROWS": {
+                    "label": "Number of Rows",
+                    "default": "200",
+                    "tip": "Number of rows for SQL statements",
+                    "type": "input"
+                },
+            },
+            "saveandgo": function () {
+                BCRMAnalyzerDialog();
+            }
+        },
+        "sarm": {
+            "pos": "6",
+            "label": "SARM",
+            "title": "SARM Power",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_sarm") == "false" ? false : true
+        },
+        "StartSARM": {
+            "pos": "6.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_StartSARM") == "false" ? false : true,
+            "label": "Start SARM",
+            "title": "Start SARM logging",
+            "onclick": function () {
+                BCRMSARMOn();
+                let duration = 1000 * parseInt(localStorage.BCRM_OPT_StartSARM_Duration);
+                BCRMToast("<div id='bcrm_sarm_toast'>Logging SARM data for '" + localStorage.BCRM_OPT_StartSARM_Duration + "' seconds</div><br><div style='display:flex;justify-content:flex-end;'><sl-button id='bcrm_sarm_stop' pill size='small'>Stop Now</sl-button></div>", "primary", "info-circle", duration);
+                setTimeout(function () {
+                    $("#bcrm_sarm_stop").on("click", function (e) {
+                        BCRMSARMOff();
+                        clearInterval(sarmintv);
+                        $(this).parent().parent()[0].open = false;
+                    });
+                }, 100);
+            },
+            "acl": ["Siebel Administrator"],
+            "showoptions": true,
+            "options": {
+                "FilePath": {
+                    "label": "File Path",
+                    "default": devpops_config.ses_home + "\\temp",
+                    "tip": "Enter a valid server path (without file name)",
+                    "type": "input"
+                },
+                "Component": {
+                    "label": "Component Alias",
+                    "default": "sccobjmgr_enu",
+                    "tip": "Select component alias",
+                    "type": "select",
+                    "lov": ["sccobjmgr_enu", "eaiobjmgr_enu", "sseobjmgr_enu", "ecommunicationsobjmgr_enu", "wfprocmgr", "xmlpreportserver"]
+                },
+                "Server": {
+                    "label": "Siebel Server",
+                    "default": "server01",
+                    "tip": "Select Siebel Server",
+                    "type": "select",
+                    "lov": ["server01", "server02"]
+                },
+                "Duration": {
+                    "label": "Duration (min 60 seconds)",
+                    "default": "300",
+                    "tip": "Stop SARM logging after time has elapsed",
+                    "type": "number",
+                    "min": 60
+                }
+            },
+            "saveandgo": function () {
+                BCRMSARMOn();
+                let duration = 1000 * parseInt(localStorage.BCRM_OPT_StartSARM_Duration);
+                BCRMToast("<div id='bcrm_sarm_toast'>Logging SARM data for '" + localStorage.BCRM_OPT_StartSARM_Duration + "' seconds</div><br><div style='display:flex;justify-content:flex-end;'><sl-button id='bcrm_sarm_stop' pill size='small'>Stop Now</sl-button></div>", "primary", "info-circle", duration);
+                setTimeout(function () {
+                    $("#bcrm_sarm_stop").on("click", function (e) {
+                        BCRMSARMOff();
+                        clearInterval(sarmintv);
+                        $(this).parent().parent()[0].open = false;
+                    });
+                }, 100);
+            },
+            "img": "images/grid_matte_video.png"
+        },
+        "StopSARM": {
+            "pos": "6.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_StopSARM") == "false" ? false : true,
+            "label": "Stop SARM",
+            "title": "Stop SARM logging",
+            "onclick": function () {
+                if (!$(this).hasClass("ui-state-disabled")) {
+                    BCRMSARMOff();
+                    clearInterval(sarmintv);
+                    $("#bcrm_sarm_toast").parent()[0].open = false;
+                }
+            },
+            "acl": ["Siebel Administrator"],
+            "img": "images/grid_matte_trophy.png"
+        },
+        "ShowSARM": {
+            "pos": "6.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowSARM") == "false" ? false : true,
+            "label": "Show SARM Stats",
+            "title": "Very limited demo, knock yourself out",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                BCRMShowSARM();
+                //return r;
+            },
+            "showoptions": true,
+            "options": {
+                "GroupBy": {
+                    "label": "Group By",
+                    "default": "area",
+                    "tip": "Aggregation level",
+                    "type": "select",
+                    "lov": ["area", "subarea", "workflow"]
+                },
+                "Type": {
+                    "label": "Output Type",
+                    "default": "chart",
+                    "tip": "Output type",
+                    "type": "select",
+                    "lov": ["chart", "classic"]
+                },
+                "StartTime": {
+                    "label": "Start Time",
+                    //default time range: last 10 minutes
+                    "default": BCRMSARMTimeStamp(new Date(Date.now() - 600000)),
+                    "tip": "Start Time Filter",
+                    "type": "input"
+                },
+                "EndTime": {
+                    "label": "End Time",
+                    "default": BCRMSARMTimeStamp(new Date(Date.now() + 600000)),
+                    "tip": "End Time Filter",
+                    "type": "input"
+                }
+            },
+            "saveandgo": function () {
+                BCRMShowSARM();
+            },
+            "acl": ["Siebel Administrator"],
+            "img": "images/grid_matte_gantt.png"
+        },
+        "demos": {
+            "pos": "7",
+            "label": "Demos",
+            "title": "Mind-bending Open UI demos",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_demos") == "false" ? false : true
+        },
+        "freeform": {
+            "pos": "7.1",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_freeform") == "false" ? false : true,
+            "label": "Break free!",
+            "title": "Liberate form applets from table layout. Enjoy...",
+            "onclick": function () {
+                var r = BCRMCloseDebugMenu();
+                var rwd = new SiebelAppFacade.BCRMRWDFactory();
+                var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+                var ut = new SiebelAppFacade.BCRMUtils();
+                for (a in am) {
+                    if (ut.GetAppletType(a) == "form") {
+                        rwd.BCRMMakeGridResponsive(a);
+                    }
+                }
+                return r;
+            },
+            "showtoggle": true,
+            "img": "images/grid_matte_formwrench.png"
+        },
+        "lizard": {
+            "pos": "7.2",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_lizard") == "false" ? false : true,
+            "label": "🦎 Lizard",
+            "title": "Lizard: The List Column Wizard!",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                let pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
+                BCRMAutoResizeColumns(pm);
+                //return r;
+            },
+            "img": "images/Accounts_Large_Highlight.png"
+        },
+        "injectCSS": {
+            "pos": "7.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_injectCSS") == "false" ? false : true,
+            "label": "CSS Injector",
+            "title": "Just a little prick.",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                BCRMInjectCSSDialog();
+                //return r;
+            },
+            "img": "images/hm_pg_pharmacy_locator_sm.jpg",
+            "showoptions": true,
+            "options": {
+                "Persistence": {
+                    "label": "Persistence",
+                    "default": "none",
+                    "tip": "Store or forget injected CSS",
+                    "type": "select",
+                    "lov": ["none", "localStorage"]
+                }
+            },
+            "saveandgo": function () {
+                BCRMInjectCSSDialog();
+            }
+        },
+        "RedwoodBanner": {
+            "pos": "7.4",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_RedwoodBanner") == "false" ? false : true,
+            "label": "Prettify Banner",
+            "title": "Pimp my application banner",
+            "onclick": function () {
+                //var r = BCRMCloseDebugMenu();
+                BCRMPrettifyBanner();
+                //return r;
+            },
+            "showtoggle": true,
+            "img": "enu/help/oxygen-webhelp/template/variants/tree/oracle/resources/images/tealblue_top_banner.jpg"
+        },
+        "DarkMode": {
+            "pos": "7.5",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_DarkMode") == "false" ? false : true,
+            "label": "Toggle Dark Mode",
+            "title": "check blacksheep.css for details",
+            "onclick": function () {
+                var r = BCRMCloseDebugMenu();
+                BCRMToggleDarkMode();
+                return r;
+            },
+            "img": "images/sitemap-50.png"
+        },
+        "viewpop": {
+            "pos": "7.6",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_viewpop") == "false" ? false : true,
+            "label": "Surprise Me",
+            "title": "I dare you.",
+            "onclick": function () {
+                BCRMPopoutView();
+            },
+            "img": "images/grid_matte_megaphone.png"
+        },
+        "ShowHistory": {
+            "pos":"7.7",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowHistory") == "false" ? false : true,
+            "label" : "🆕Show History",
+            "title" : "Show cross-session history",
+            "onclick" : function(){
+                BCRMShowHistoryList();
+            }
+        },
+        "SiebelHub": {
+            "pos": "4.3",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_SiebelHub") == "false" ? false : true,
+            "label": "Siebel Hub",
+            "title": "Get your Siebel kicks on da hub with a random page (might require login).",
+            "onclick": function () {
+                var hub = [
+                    "https://www.siebelhub.com/main/siebel-crm-training",
+                    "https://www.siebelhub.com/main/bsl",
+                    "https://www.siebelhub.com/main/books-media/siebel-crm-timeline",
+                    "https://www.siebelhub.com/main/blog"
+                ];
+                window.open(hub[Math.floor((Math.random() * hub.length))]);
+            },
+            "img": "images/grid_matte_megaphone.png"
+        },
+        "devpops": {
+            "pos": "8",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_devpops") == "false" ? false : true,
+            "label": "About devpops " + devpops_dver,
+            "title": "devpops " + devpops_dver + " (" + devpops_tag + ")\nSiebel Version: " + localStorage.BCRM_SIEBEL_VERSION + "\nLearn more about blacksheep-crm devpops and contribute on github.",
+            "onclick": function () {
+                window.open("https://github.com/blacksheep-crm/devpops");
+            },
+            "img": "images/grid_matte_puzzle.png"
+        }
+    };
+    return BCRM_MENU_SL;
+};
+
 BCRMCustomizeDebugMenu = function () {
     //put your menu customizations here
     //visit the BCRMCreateDebugMenu method to see pre-defined menu items
@@ -37,31 +845,7 @@ BCRMCustomizeDebugMenu = function () {
     */
 };
 
-//globals
-var defs = [];
-var dt = [];
-var trace_raw;
-var trace_parsed;
-var trace_norr;
-var devpops_dver = "23.1";
-var devpops_version = 57;
-var devpops_tag = "Neil Armstrong";
-var devpops_uv = 0;
-var fwk_min_ver = 52;
-var devpops_vcheck = false;
-var BCRCMETACACHE = {};
-var BCRM_SIEBEL_VERSION = "";
-var BCRM_SIEBEL_V = {};
-var BCRM_WORKSPACE = {};
-var FWK_VERSION = 0;
-var BCRM_XRAY_DATA = {};
-var BCRM_XRAY_APPLETS = [];
-var BCRM_XRAY_ADDVIEW = false;
 
-//module configuration, most defaults and other stuff can be controlled from here
-var devpops_config = {
-    ses_home: "C:\\Siebel\\ses\\siebsrvr"
-};
 
 //workspace-helper
 //get list of workspaces via REST
@@ -183,8 +967,8 @@ BCRMWSUpdateWSBanner = function (ws, ver, status) {
                 nt += "\nRight-click: Re-inspect workspace";
             }
         }
-        c.attr("title",nt);
-        c.css("cursor","pointer");
+        c.attr("title", nt);
+        c.css("cursor", "pointer");
     }
     //BCRMEnhanceWSBanner();
 };
@@ -339,9 +1123,12 @@ BCRMModStorageView = function () {
 BCRMReloadCache = function () {
     try {
         if (sessionStorage.BCRMReloadCache == "Y") {
+            /*
             $("#bcrm_debug_msg").text("Stand by for cache refresh");
             $("#bcrm_debug_msg").css("color", "red");
             $("#bcrm_debug_msg").css("font-weight", "bold");
+            */
+            BCRMToast("Stand by for cache refresh", "warning", "tencent-qq");
             $("#maskoverlay").show();
             setTimeout(function () {
                 BCRMClearCaches(true);
@@ -751,24 +1538,10 @@ BCRMWSIconEnhancer = function () {
 //START devpops Menu******************************************************
 //devpops MenuCreate Debugger Menu
 
-//helper for SARM timestamps
-BCRMSARMTimeStamp = function (dt) {
-    var r = "";
-    r += dt.getFullYear();
-    r += "-";
-    r += (dt.getMonth() + 1) < 10 ? "0" + (dt.getMonth() + 1) : (dt.getMonth() + 1);
-    r += "-";
-    r += dt.getDate() < 10 ? "0" + dt.getDate() : dt.getDate();
-    r += " ";
-    r += dt.getHours() < 10 ? "0" + dt.getHours() : dt.getHours();
-    r += ":";
-    r += dt.getMinutes() < 10 ? "0" + dt.getMinutes() : dt.getMinutes();
-    r += ":";
-    r += dt.getSeconds() < 10 ? "0" + dt.getSeconds() : dt.getSeconds();
-    return r;
-};
+
 
 BCRMCloseDebugMenu = function () {
+    $(".dp-drawer-main")[0].hide();
     if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
         return false;
     }
@@ -904,7 +1677,10 @@ BCRMButtonizeDebugMenu = function () {
 };
 
 BCRMRunSilentXRay = function () {
+    /*
     $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
+    */
+    BCRMToast("X-Ray silent scan started. Please wait.", "warning", "flower1");
     setTimeout(function () {
 
         if (!$("#bcrm_dbg_menu").hasClass("ui-draggable")) {
@@ -919,11 +1695,15 @@ BCRMRunSilentXRay = function () {
         }
 
         BCRMdevpopsTest("xray");
+        /*
         $("#bcrm_debug_msg").text("X-Ray silent scan complete. Check tooltips.");
 
         setTimeout(function () {
             $("#bcrm_debug_msg").text("");
         }, 5000);
+        */
+        //toast
+        BCRMToast("X-Ray silent scan complete", "success", "flower1");
 
         if (typeof (localStorage.BCRM_OPT_Silent_CopyXRay) === "undefined" || localStorage.BCRM_OPT_Silent_CopyXRay == "true") {
             setTimeout(function () {
@@ -1152,7 +1932,7 @@ BCRMCreateDebugMenu = function () {
                             BCRMStopLogging();
                             sessionStorage.BCRMTracingCycle = "StopTracing";
                             if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
-                                $($("li#StopTracing").find("div")[0]).addClass("ui-state-disabled");
+                                $($("li#StopTracing").find("div")[BCRMSARMCycle0]).addClass("ui-state-disabled");
                                 $($("li#StartTracing").find("div")[0]).removeClass("ui-state-disabled");
                             }
                             $("#bcrm_debug_msg").text("");
@@ -1175,7 +1955,7 @@ BCRMCreateDebugMenu = function () {
                     "RetainFile": {
                         "label": "Retain File",
                         "default": "false",
-                        "tip": "Retain (true) or delete (false) trace file after retrival",
+                        "tip": "Retain (true) or delete (false) trace file after retrieval",
                         "type": "select",
                         "lov": ["true", "false"]
                     },
@@ -1266,6 +2046,16 @@ BCRMCreateDebugMenu = function () {
                     return r;
                 },
                 "img": "images/grid_matte_pricetag.png"
+            },
+            "ShowHistory": {
+                "seq":23,
+                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowHistory") == "false" ? false : true,
+                "label" : "🆕Show History",
+                "title" : "Show cross-session history",
+                "onclick" : function(){
+                    BCRMShowHistoryList();
+                    return BCRMCloseDebugMenu();
+                }
             },
             "ClearCaches": {
                 "seq": 10,
@@ -1702,7 +2492,7 @@ BCRMCreateDebugMenu = function () {
             "devpops": {
                 "seq": 21,
                 "enable": localStorage.getItem("BCRM_MENU_ENABLE_devpops") == "false" ? false : true,
-                "label": "devpops " + devpops_dver,
+                "label": "About devpops " + devpops_dver,
                 "title": "devpops " + devpops_dver + " (" + devpops_tag + ")\nSiebel Version: " + localStorage.BCRM_SIEBEL_VERSION + "\nLearn more about blacksheep-crm devpops and contribute on github.",
                 "onclick": function () {
                     window.open("https://github.com/blacksheep-crm/devpops");
@@ -1829,11 +2619,11 @@ BCRMCreateDebugMenu = function () {
                         $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
                         var checked = $("input#" + ip).prop("checked");
                         if (checked) {
-                            sessionStorage.BCRM_BREAK_FREE = "true";
+                            sessionStorage.toggle_freeform = "true";
                             $("#bcrm_debug_msg").text("Break Free Demo set as default");
                         }
                         else {
-                            sessionStorage.BCRM_BREAK_FREE = "false";
+                            sessionStorage.toggle_freeform = "false";
                             $("#bcrm_debug_msg").text("");
                         }
                         return false;
@@ -1846,11 +2636,11 @@ BCRMCreateDebugMenu = function () {
                         $("input#" + ip).prop("checked", !$("input#" + ip).prop("checked"));
                         var checked = $("input#" + ip).prop("checked");
                         if (checked) {
-                            sessionStorage.BCRM_REDWOOD_BANNER = "true";
+                            sessionStorage.toggle_RedwoodBanner = "true";
                             $("#bcrm_debug_msg").text("Pretty banner set as default");
                         }
                         else {
-                            sessionStorage.BCRM_REDWOOD_BANNER = "false";
+                            sessionStorage.toggle_RedwoodBanner = "false";
                             $("#bcrm_debug_msg").text("");
                         }
                         return false;
@@ -1880,7 +2670,7 @@ BCRMCreateDebugMenu = function () {
                 }
                 dv.append(tog);
                 if (i == "freeform") {
-                    if (sessionStorage.BCRM_BREAK_FREE == "true") {
+                    if (sessionStorage.toggle_freeform == "true") {
                         tog.find("input").attr("bcrm-bf-checked", "true");
                         setTimeout(function () {
                             $("input[bcrm-bf-checked='true']").prop("checked", true);
@@ -1888,7 +2678,7 @@ BCRMCreateDebugMenu = function () {
                     }
                 }
                 if (i == "RedwoodBanner") {
-                    if (sessionStorage.BCRM_REDWOOD_BANNER == "true") {
+                    if (sessionStorage.toggle_RedwoodBanner == "true") {
                         tog.find("input").attr("bcrm-rw-checked", "true");
                         setTimeout(function () {
                             $("input[bcrm-rw-checked='true']").prop("checked", true);
@@ -2130,6 +2920,9 @@ BCRMAddDebugButton = function () {
             $(next_to).parent().before(btn);
         }
         //add contextmenu as per Jason's suggestion
+        //swap the handlers below for old(jQuery)/new(shoelace) menu
+        //jQuery menu
+        
         $(btn.find("li")[0]).on("click contextmenu", function (e) {
             if ($("#bcrm_dbg_menu").length == 0) {
                 var mc = $("<div id='bcrm_dbg_menu' style='position: relative;min-width: 240px;'></div>");
@@ -2151,6 +2944,14 @@ BCRMAddDebugButton = function () {
             }
             return false;
         });
+        
+        //new shoelace menu
+        /*
+        $(btn.find("li")[0]).on("click contextmenu", function (e) {
+            BCRMShowDrawer();
+            $("#bcrm_sl_drawer_btn").hide();
+        });
+        */
         //restore state
         if (localStorage.BCRM_MENU_STATE == "toolbar") {
             $(btn.find("li")[0]).click();
@@ -2179,10 +2980,14 @@ BCRMAddDebugButton = function () {
     if ($("#bcrm_debug_msg").length == 0) {
         var ms = $('<div id="bcrm_debug_msg" style="float: left;margin-top: 10px;padding-left: 20px;color: lightsteelblue;width: fit-content;">');
         $(".applicationMenu").after(ms);
+        /*
         $("#bcrm_debug_msg").text("devpops " + devpops_dver + " loaded.");
         setTimeout(function () {
             $("#bcrm_debug_msg").text("");
         }, 5000);
+        */
+        //now we're toasting
+        BCRMToast("devpops " + devpops_dver + " loaded", "primary", "rocket-takeoff", 5000);
     }
 };
 //END devpops Menu******************************************************
@@ -3168,7 +3973,10 @@ BCRMApplyDefaultXray = function () {
                     ut.ToggleLabels(t, a);
                 }
             }
+            /*
             $("#bcrm_debug_msg").text("X-Ray default set to: " + t);
+            */
+            BCRMToast("X-Ray default set to: " + t, "success", "toggle-on");
         }
     }
 };
@@ -3177,7 +3985,7 @@ BCRMApplyDefaultXray = function () {
 BCRMApplyDefaultBreakFree = function () {
     var ut = new SiebelAppFacade.BCRMUtils();
     var rwd = new SiebelAppFacade.BCRMRWDFactory();
-    var t = sessionStorage.BCRM_BREAK_FREE;
+    var t = sessionStorage.toggle_freeform;
     var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
     if (typeof (t) !== "undefined") {
         if (t == "true") {
@@ -3192,7 +4000,7 @@ BCRMApplyDefaultBreakFree = function () {
 
 //Redwood Banner postload helper
 BCRMApplyDefaultRedwoodBanner = function () {
-    var t = sessionStorage.BCRM_REDWOOD_BANNER;
+    var t = sessionStorage.toggle_RedwoodBanner;
     if (typeof (t) !== "undefined") {
         if (t == "true") {
             BCRMPrettifyBanner();
@@ -3390,10 +4198,51 @@ BCRMEnableMagicSitemap = function () {
     }
 };
 
+//shoelace drawer button
+BCRMAddDrawerButton = function () {
+    if ($(".open-drawer-btn").length == 0) {
+        const btn = $('<sl-animation name="flip" duration="2000" iterations="1" play><div id="bcrm_sl_drawer_btn"><sl-tooltip content="Open devpops Menu" placement="right"><sl-icon-button class="open-drawer-btn" name="rocket-takeoff" label="devpops menu" style="font-size:2em;"></sl-icon-button></sl-tooltip></div></sl-animation>');
+        btn.find(".open-drawer-btn").on("click", function () {
+            BCRMShowDrawer();
+            $("#bcrm_sl_drawer_btn").hide();
+        });
+        btn.find("#bcrm_sl_drawer_btn").css({
+            "position": "fixed",
+            "border": "1px solid darkgray",
+            "background": "rgb(248 248 255 / 80%)",
+            "border-radius": "6px",
+            "z-index": "1000"
+        });
+        btn.find("#bcrm_sl_drawer_btn").draggable({
+            axis:"y"
+        });
+        btn.find("#bcrm_sl_drawer_btn").on( "dragstop", function( event, ui ) {
+            event.stopImmediatePropagation();
+        } );
+        $("#_sweview").prepend(btn);
+        if ($(".dp-drawer-main").length > 0) {
+            if ($(".dp-drawer-main")[0].open) {
+                $("#bcrm_sl_drawer_btn").hide();
+            }
+        }
+    }
+    else {
+        if ($(".dp-drawer-main").length > 0) {
+            if (!$(".dp-drawer-main")[0].open) {
+                $("#bcrm_sl_drawer_btn").show();
+            }
+        }
+    }
+};
+
 //main postload function
 BCRMWSHelper = function () {
     //console.time("BCRMWSHelper");
     try {
+        $("#_sweview")[0].scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
         var vn = SiebelApp.S_App.GetActiveView().GetName();
         var an = "BCRM Modified Objects List Applet";
         var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -3452,13 +4301,13 @@ BCRMWSHelper = function () {
             }
 
             //fix missing CodeMirror in app (Siebel Update 23.1 and higher)
-            if (typeof(CodeMirror) != "function"){
+            if (typeof (CodeMirror) != "function") {
                 var cmscript = $('<script src="scripts/3rdParty/codemirror/lib/codemirror.js"></script>');
                 var cmcss = $('<link type="text/css" href="scripts/3rdParty/codemirror/lib/codemirror.css" rel="stylesheet">');
                 $("head").append(cmscript);
                 $("head").append(cmcss);
             }
-            
+
             //show current workspace
             //if (typeof (sessionStorage.BCRMCurrentWorkspace) !== "undefined") {
             if (BCRM_SIEBEL_VERSION != "") {
@@ -3500,6 +4349,9 @@ BCRMWSHelper = function () {
 
             //dialog style
             BCRMInjectDialogStyle();
+
+            //shoelace drawer button
+            BCRMAddDrawerButton();
         }
 
     }
@@ -5106,7 +5958,7 @@ function BCRMSiebelAboutView() {
     let html = ejs.render(tmp, SiebelApp.S_App);
 
     $d = $(html).dialog({
-        modal: true,
+        modal: false,
         width: "1024",
         open: function () {
             // hide all expandable ULs by default
@@ -5369,7 +6221,7 @@ function BCRMSiebelAboutView2() {
     $d = $(`<div class="container" title="About View 2.0">${rApplication()}${css}</div>`).dialog({
         dragStop: () => $d.dialog({ height: 'auto' }),
         classes: { "ui-dialog": Id },
-        modal: true,
+        modal: false,
         width: options["width"],
         close: () => $d.dialog('destroy').remove(),
         buttons: [
@@ -5766,7 +6618,7 @@ BCRMScriptEditor = function () {
     $("#" + BCRMfunc + "List").parent().remove();
 
     var d = $(s).dialog({
-        modal: true,
+        modal: false,
         width: 1024,
         open: function () {
 
@@ -6049,7 +6901,7 @@ BCRMExprEditor = function () {
         '</div>';
 
         var d = $(s).dialog({
-            modal: true,
+            modal: false,
             width: 1024,
             heigth: 640,
             open: function () {
@@ -6382,11 +7234,13 @@ BCRMSARMOn = function () {
         sarmduration = sarmduration - 1000;
         var disp = sarmduration / 1000;
         $("#bcrm_sarm_msg").text("Logging SARM data for " + disp + " seconds");
+        $("#bcrm_sarm_toast").text("Logging SARM data for " + disp + " seconds");
         if (sarmduration <= 0) {
             BCRMSARMOff();
             sessionStorage.BCRMSARMCycle = "StopSARM";
             clearInterval(sarmintv);
             $("#bcrm_debug_msg").text("");
+            $("#bcrm_sarm_toast").parent()[0].open = false;
         }
     }, 1000);
 };
@@ -9463,8 +10317,8 @@ BCRMEnhanceAboutViewApplet = function () {
 
                     //Add a button
                     var btn = $("<button class='appletButton'>Get Lucky</button>");
-                    btn.attr("title","It's all about the view\nBrought to you by devpops");
-                    btn.on("click",function(){
+                    btn.attr("title", "It's all about the view\nBrought to you by devpops");
+                    btn.on("click", function () {
                         BCRMAboutTime();
                     });
                     ae.find(".siebui-popup-button").prepend(btn);
