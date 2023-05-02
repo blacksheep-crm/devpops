@@ -1541,7 +1541,9 @@ BCRMWSIconEnhancer = function () {
 
 
 BCRMCloseDebugMenu = function () {
-    $(".dp-drawer-main")[0].hide();
+    if ($(".dp-drawer-main").length > 0) {
+		$(".dp-drawer-main")[0].hide();
+	}
     if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
         return false;
     }
