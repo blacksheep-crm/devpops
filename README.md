@@ -155,6 +155,13 @@ Application: Open View in new tab for printing
 
 15. To implement Lizard button on list applets, refer to jqgridrenderer_customization.txt
 
+16. If Siebel CRM version is 23.5 or higher, verify that the following Business Objects are registered in the REST Inbound Data Access Service view:
+
+BCRM Modified Object
+
+BCRM devpops Storage
+
+
 # Pre-Requisites
 
 Siebel CRM 20.12 or higher
