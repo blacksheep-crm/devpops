@@ -172,4 +172,9 @@ Ability to load 3rd-Party code via internet (CDN)
 
 Server Manager features require Siebel Administrator responsibility
 
+# Known Issues
+
+Workspace Inspect in Application (vanilla functionality) can cause OM crashes when postload.js has custom code.
+Workaround: Use Fast Inspect or remove all custom code from postload.js (this will render devpops defunct)
+
 
