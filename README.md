@@ -20,7 +20,7 @@ Installation: https://youtu.be/gl7PljwLbbo
 
 # What's New in 23.6
 
-Dependency Finder: Uses REST API to find dependencies for various object types
+Dependency Finder: Uses REST API to find dependencies for various object types (Special thanks to Jason)
 
 Web Tools: List Applet record hover menu
 
