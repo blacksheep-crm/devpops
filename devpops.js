@@ -11,16 +11,14 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "23.5";
-var devpops_version = 59;
-var devpops_tag = "Michael Collins";
+var devpops_dver = "23.6";
+var devpops_version = 60;
+var devpops_tag = "Margaret Hamilton";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
 var BCRCMETACACHE = {};
-var BCRM_SIEBEL_VERSION = "";
-var BCRM_SIEBEL_V = {};
-var BCRM_WORKSPACE = {};
+//var BCRM_SIEBEL_VERSION = "";
 var FWK_VERSION = 0;
 var BCRM_XRAY_DATA = {};
 var BCRM_XRAY_APPLETS = [];
@@ -33,6 +31,7 @@ var devpops_config = {
 
 //helper for SARM timestamps
 BCRMSARMTimeStamp = function (dt) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var r = "";
     r += dt.getFullYear();
     r += "-";
@@ -50,7 +49,7 @@ BCRMSARMTimeStamp = function (dt) {
 
 //shoelace menu
 BCRMGetSLMenu = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     let BCRM_MENU_SL = {
         "xray": {
             "pos": "1",
@@ -291,8 +290,8 @@ BCRMGetSLMenu = function () {
             "label": "Stop Tracing",
             "title": "Stop SQL/Allocation Tracing",
             "onclick": function () {
-                    BCRMStopLogging();
-                    $("#bcrm_trace_toast").parent()[0].open = false;
+                BCRMStopLogging();
+                $("#bcrm_trace_toast").parent()[0].open = false;
             },
             "img": "images/grid_matte_forklift.png"
         },
@@ -397,6 +396,21 @@ BCRMGetSLMenu = function () {
                     //nothing
                 }
                 //return r;
+            },
+            "img": "images/grid_matte_scales.png"
+        },
+        "RepoScan": {
+            "pos": "3.6",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_RepoScan") == "false" ? false : true,
+            "label": "🆕 Dependency Finder",
+            "title": "Find them all!",
+            "onclick": function () {
+                try {
+                    BCRMRepoScanUI();
+                }
+                catch (e) {
+                    //nothing
+                }
             },
             "img": "images/grid_matte_scales.png"
         },
@@ -775,11 +789,11 @@ BCRMGetSLMenu = function () {
             "img": "images/grid_matte_megaphone.png"
         },
         "ShowHistory": {
-            "pos":"7.7",
-            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowHistory") == "false" ? false : true,
-            "label" : "🆕Show History",
-            "title" : "Show cross-session history",
-            "onclick" : function(){
+            "pos": "7.7",
+            "enable": false, //localStorage.getItem("BCRM_MENU_ENABLE_ShowHistory") == "false" ? false : true,
+            "label": "🆕Show History",
+            "title": "Show cross-session history",
+            "onclick": function () {
                 BCRMShowHistoryList();
             }
         },
@@ -814,6 +828,7 @@ BCRMGetSLMenu = function () {
 };
 
 BCRMCustomizeDebugMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //put your menu customizations here
     //visit the BCRMCreateDebugMenu method to see pre-defined menu items
     //Example:
@@ -850,6 +865,7 @@ BCRMCustomizeDebugMenu = function () {
 //workspace-helper
 //get list of workspaces via REST
 BCRMGetWorkspaceList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var pagesize = 100;
     var url = location.origin + "/siebel/v1.0/data/BCRM%20Modified%20Object/BCRM%20Modified%20Object?uniformresponse=Y&childlinks=none&fields=Workspace%20Name,%20Workspace%20Version,Workspace%20Latest%20Version,Workspace%20Status,%20Object%20Name&PageSize=" + pagesize;
     var items = [];
@@ -890,6 +906,7 @@ BCRMGetWorkspaceList = function () {
 //workspace-helper
 //create Workspace banner
 BCRMWSGenerateWSBanner = function (ws, ver, status, type) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (type) === "undefined") {
         type = "banner";
     }
@@ -944,6 +961,7 @@ BCRMWSGenerateWSBanner = function (ws, ver, status, type) {
 //workspace-helper
 //Re-enact workspace banner in application until there's a better way
 BCRMWSUpdateWSBanner = function (ws, ver, status) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ($("#SiebComposerConfig").find("a").length > 0) {
         $("div.applicationMenu").parent().find("#bcrm_wsui_name").remove();
         var c = BCRMWSGenerateWSBanner(ws, ver, status, "banner");
@@ -976,6 +994,7 @@ BCRMWSUpdateWSBanner = function (ws, ver, status) {
 //workspace-helper
 //Open and inspect workspace
 BCRMWSFastInspectHandler = function (cell) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     bcrm_meta = {};
     bcrm_meta.wsn = $(cell).attr("wsn");
     bcrm_meta.wsv = $(cell).attr("wsv");
@@ -987,6 +1006,7 @@ BCRMWSFastInspectHandler = function (cell) {
 //fast inspect main function (calls server side BS)
 
 BCRMWSFastInspect = function (ws, ver, status) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var vn = SiebelApp.S_App.GetActiveView().GetName();
     var fio;
     var vopt = BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@fi_view_opt");
@@ -1028,6 +1048,7 @@ BCRMWSFastInspect = function (ws, ver, status) {
     setTimeout(function () {
         ops = svc.InvokeMethod("FastInspect", ips);
         if (ops.GetProperty("Status") == "OK") {
+            devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMWSFastInspect") : 0;
             BCRMGetWSContext();
             /*no longer needed
             sessionStorage.BCRMCurrentWorkspace = ws;
@@ -1071,6 +1092,7 @@ BCRMWSFastInspect = function (ws, ver, status) {
 
 //devpops Storage view
 BCRMGotoStorageView = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var vn = "Business Service Script Editor View";
     sessionStorage.BCRM_STORAGE_VIEW = "true";
     SiebelApp.S_App.GotoView(vn);
@@ -1078,6 +1100,7 @@ BCRMGotoStorageView = function () {
 
 //mod Storage view
 BCRMModStorageView = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (sessionStorage.BCRM_STORAGE_VIEW == "true") {
         sessionStorage.BCRM_STORAGE_VIEW = "false";
         var ut = new SiebelAppFacade.BCRMUtils();
@@ -1121,6 +1144,7 @@ BCRMModStorageView = function () {
 
 //Auto cache refresh
 BCRMReloadCache = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         if (sessionStorage.BCRMReloadCache == "Y") {
             /*
@@ -1147,6 +1171,7 @@ BCRMReloadCache = function () {
 //workspace-helper
 //read workspace data for modified object list applet
 BCRMWSGetObjectDef = function (cell) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     bcrm_meta = {};
     bcrm_meta.wot = $(cell).attr("wot");
     bcrm_meta.wsn = $(cell).attr("wsn");
@@ -1240,6 +1265,7 @@ BCRMWSGetObjectDef = function (cell) {
 //in this DRAFT(!!) we simply compare the last two defs that have been clicked
 //requires mergely
 BCRMCompare = function (right, left) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var wrap = $("<div id='bcrm_compare_wrapper'><div id='bcrm-compare-left-title' style='width:50%;float:left;'></div><div id='bcrm-compare-right-title' style='width:50%;float:left;'></div></div>");
     $("#compare2").remove();
     $("#_sweview").append(wrap);
@@ -1272,6 +1298,7 @@ BCRMCompare = function (right, left) {
 //workspace-helper
 //enhance modified objects list applet with clickable object name and WS/Version column
 BCRMWSEnhancer = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (pm) === "undefined") {
         pm = this;
     }
@@ -1322,6 +1349,7 @@ BCRMWSEnhancer = function (pm) {
 //workspace-helper
 //Create Workspace Menu
 BCRMCreateWSMenu = function (data) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var key, val, wsn, wss, wsl, ver;
     //additional formatting by Jason
     //21.5 fix ul top
@@ -1366,6 +1394,7 @@ BCRMCreateWSMenu = function (data) {
 
 //Fast Inspect intro dialog
 BCRMWSFastInspectDialog = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var dlg = $("<div id='bcrm_fi_dlg' style='overflow:auto'></div>");
     var m = $("<div id='bcrm_fi_msg'></div>");
     m.append("<div id='bcrm_fi_hs'>Read this information carefully.<br>devpops FastInspect allows you to open/inspect a workspace really fast but remember that<br><b>devpops is an educational sample!</b><br>If you encounter difficulties with FastInspect, try one of the options below.<br></div>");
@@ -1493,6 +1522,7 @@ BCRMWSFastInspectDialog = function () {
 //workspace-helper
 //Right-click on Dashboard icon (cube)
 BCRMWSIconEnhancer = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ($("#SiebComposerConfig").length == 1) {
         $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;");
         $("#SiebComposerConfig").attr("style", "transition: background-color 1.5s ease-in-out 1s;background-color: mediumseagreen;");
@@ -1541,9 +1571,10 @@ BCRMWSIconEnhancer = function () {
 
 
 BCRMCloseDebugMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ($(".dp-drawer-main").length > 0) {
-		$(".dp-drawer-main")[0].hide();
-	}
+        $(".dp-drawer-main")[0].hide();
+    }
     if ($("#bcrm_dbg_menu").hasClass("ui-draggable")) {
         return false;
     }
@@ -1555,6 +1586,7 @@ BCRMCloseDebugMenu = function () {
 
 //such Personalization, much wow
 BCRMEditDebugMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var t;
     var def = true;
     for (i in BCRM_MENU) {
@@ -1586,6 +1618,7 @@ BCRMEditDebugMenu = function () {
 };
 
 BCRMStopEditDebugMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     $("span.bcrm-dbg-edit").remove();
     $("#bcrm_dbg_menu").find("ul").css("width", "auto");
     $("#bcrm_bed").show();
@@ -1598,6 +1631,7 @@ BCRMStopEditDebugMenu = function () {
 };
 
 BCRMButtonizeDebugMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var m;
     var adjust = false;
     BCRMStopEditDebugMenu();
@@ -1679,6 +1713,7 @@ BCRMButtonizeDebugMenu = function () {
 };
 
 BCRMRunSilentXRay = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     /*
     $("#bcrm_debug_msg").text("X-Ray silent scan running, please wait...");
     */
@@ -1762,6 +1797,7 @@ BCRMRunSilentXRay = function () {
 var BCRM_MENU;
 BCRM_MENU = {};
 BCRMCreateDebugMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var redwood = [
         "https://docs.oracle.com/cd/F26413_16/portalres/images/Abstracts_Light_3.png",
         "https://docs.oracle.com/cd/F26413_13/portalres/images/Abstracts_Winter_1.png",
@@ -2050,11 +2086,11 @@ BCRMCreateDebugMenu = function () {
                 "img": "images/grid_matte_pricetag.png"
             },
             "ShowHistory": {
-                "seq":23,
-                "enable": localStorage.getItem("BCRM_MENU_ENABLE_ShowHistory") == "false" ? false : true,
-                "label" : "🆕Show History",
-                "title" : "Show cross-session history",
-                "onclick" : function(){
+                "seq": 23,
+                "enable": false, //localStorage.getItem("BCRM_MENU_ENABLE_ShowHistory") == "false" ? false : true,
+                "label": "🆕Show History",
+                "title": "Show cross-session history",
+                "onclick": function () {
                     BCRMShowHistoryList();
                     return BCRMCloseDebugMenu();
                 }
@@ -2903,6 +2939,7 @@ BCRMCreateDebugMenu = function () {
 
 //devpops Add debug button
 BCRMAddDebugButton = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var next_to = $("#SiebComposerConfig");
     //var next_to = $("#siebui-toolbar-settings");
     if ($("#bcrm_debug").length == 0) {
@@ -2924,7 +2961,7 @@ BCRMAddDebugButton = function () {
         //add contextmenu as per Jason's suggestion
         //swap the handlers below for old(jQuery)/new(shoelace) menu
         //jQuery menu
-        
+
         $(btn.find("li")[0]).on("click contextmenu", function (e) {
             if ($("#bcrm_dbg_menu").length == 0) {
                 var mc = $("<div id='bcrm_dbg_menu' style='position: relative;min-width: 240px;'></div>");
@@ -2946,7 +2983,7 @@ BCRMAddDebugButton = function () {
             }
             return false;
         });
-        
+
         //new shoelace menu
         /*
         $(btn.find("li")[0]).on("click contextmenu", function (e) {
@@ -2997,6 +3034,7 @@ BCRMAddDebugButton = function () {
 //START TRACE FILE VIEWER by Jason MacZura******************************
 //courtesy of Jason MacZura: view trace file in browser
 BCRMViewLog = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var fp, rf;
     if (typeof (localStorage.BCRM_OPT_StartTracing_FilePath) !== "undefined") {
         fp = localStorage.BCRM_OPT_StartTracing_FilePath;
@@ -3153,10 +3191,12 @@ BCRMViewLog = function () {
 };
 
 BCRMResetTrace = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     $("#bcrm_cm").find(".CodeMirror")[0].CodeMirror.setValue(trace_raw);
 };
 
 BCRMRemoveRRTrace = function (p, textonly) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     trace_norr = "";
     var tokens = p.tokens;
     for (t in tokens) {
@@ -3179,6 +3219,7 @@ BCRMRemoveRRTrace = function (p, textonly) {
 
 //Show stats
 BCRMShowTraceStats = function (type) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var divisor = 5;
     var top = 10;
     var agg = trace_parsed.agg;
@@ -3332,6 +3373,7 @@ BCRMShowTraceStats = function (type) {
 }
 //show worst queries
 BCRMShowWorstQueries = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sta = trace_parsed.worst_statements;
     var divisor = 5;
     var tracew = "";
@@ -3359,6 +3401,7 @@ BCRMShowWorstQueries = function () {
 
 //courtesy of Jason MacZura: start tracing from browser
 BCRMStartLogging = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var jm_service = SiebelApp.S_App.GetService("FWK Runtime");
     var jm_ps = SiebelApp.S_App.NewPropertySet();
     //get saved/defaults
@@ -3395,6 +3438,7 @@ BCRMStartLogging = function () {
 
 //simple extension to write messages into trace file
 BCRMTrace = function (msg) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var jm_service = SiebelApp.S_App.GetService("FWK Runtime");
     var jm_ps = SiebelApp.S_App.NewPropertySet();
     jm_ps.SetProperty("Operation", "Trace");
@@ -3404,7 +3448,7 @@ BCRMTrace = function (msg) {
 
 //courtesy of Jason MacZura: stop tracing
 BCRMStopLogging = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     const jm_service = SiebelApp.S_App.GetService("FWK Runtime");
     var jm_ps = SiebelApp.S_App.NewPropertySet();
 
@@ -3427,6 +3471,7 @@ BCRMStopLogging = function () {
 
 //not so simple SQL Trace parser
 BCRMParseTrace = function (s) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //presuming the input is valid SQL trace file content
 
     //tokenize
@@ -3895,6 +3940,7 @@ BCRMParseTrace = function (s) {
 //View Tracer (piggybacks on PM until further notice)
 BCRMTraceView = function () {
     if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
+        devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
         var vn = SiebelApp.S_App.GetActiveView().GetName();
         BCRMTrace("VIEWTRACE:" + vn + "::postload");
     }
@@ -3902,6 +3948,7 @@ BCRMTraceView = function () {
 //PM Invoke Method handler for enhanced tracing
 BCRMTracePMMethod = function (m, i, c, r) {
     if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
+        devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
         var ut = new SiebelAppFacade.BCRMUtils();
         var pm = ut.ValidateContext(this);
         if (pm && typeof (pm.GetObjName) === "function") {
@@ -3914,6 +3961,7 @@ BCRMTracePMMethod = function (m, i, c, r) {
 //PM Invoke Method handler for ShowSelection
 var bcrm_sc_counter = 0;
 BCRMTraceShowSelection = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //calling trace causes a loop on ShowSelection
     //workaround with counter which is reset after 2 seconds
     bcrm_sc_counter++;
@@ -3934,6 +3982,7 @@ BCRMTraceShowSelection = function () {
 }
 //PM Invoke Method handler for FieldChange
 BCRMTraceFieldChange = function (f, v) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (sessionStorage.BCRMTracingCycle == "StartTracing" && localStorage.BCRM_OPT_StartTracing_TraceEvents == "Presentation Model") {
         var ut = new SiebelAppFacade.BCRMUtils();
         var pm = ut.ValidateContext(this);
@@ -3947,22 +3996,26 @@ BCRMTraceFieldChange = function (f, v) {
 
 //PM Tracing registration
 BCRMRegisterPMTracing = function () {
-    var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
-    for (a in am) {
-        pm = am[a].GetPModel();
-        if (pm.Get("BCRMInvokeMethodTracing") != "enabled") {
-            //attach invoke method handler
-            pm.AddMethod("InvokeMethod", BCRMTracePMMethod, { sequence: true, scope: pm });
-            pm.AddMethod("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
-            //FieldChange tracing kills popups, let's not do this
-            //pm.AttachPMBinding("FieldChange", BCRMTraceFieldChange, { scope: pm, sequence: true });
-            pm.SetProperty("BCRMInvokeMethodTracing", "enabled");
+    if (SiebelApp.S_App.GetActiveView().GetName() != "WSUI Dashboard View") {
+        devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+        for (a in am) {
+            pm = am[a].GetPModel();
+            if (pm.Get("BCRMInvokeMethodTracing") != "enabled") {
+                //attach invoke method handler
+                pm.AddMethod("InvokeMethod", BCRMTracePMMethod, { sequence: true, scope: pm });
+                pm.AddMethod("ShowSelection", BCRMTraceShowSelection, { scope: pm, sequence: true });
+                //FieldChange tracing kills popups, let's not do this
+                //pm.AttachPMBinding("FieldChange", BCRMTraceFieldChange, { scope: pm, sequence: true });
+                pm.SetProperty("BCRMInvokeMethodTracing", "enabled");
+            }
         }
     }
 }
 
 //xray postload helper to apply default settings
 BCRMApplyDefaultXray = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var ut = new SiebelAppFacade.BCRMUtils();
     var t = sessionStorage.BCRM_TOGGLE_DEFAULT;
     var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -3985,6 +4038,7 @@ BCRMApplyDefaultXray = function () {
 
 //break free postload helper
 BCRMApplyDefaultBreakFree = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var ut = new SiebelAppFacade.BCRMUtils();
     var rwd = new SiebelAppFacade.BCRMRWDFactory();
     var t = sessionStorage.toggle_freeform;
@@ -4002,6 +4056,7 @@ BCRMApplyDefaultBreakFree = function () {
 
 //Redwood Banner postload helper
 BCRMApplyDefaultRedwoodBanner = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var t = sessionStorage.toggle_RedwoodBanner;
     if (typeof (t) !== "undefined") {
         if (t == "true") {
@@ -4012,6 +4067,7 @@ BCRMApplyDefaultRedwoodBanner = function () {
 
 //version checker
 async function BCRMCheckVersion() {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //check FWK version
     if (FWK_VERSION == 0) {
         FWK_VERSION = BCRMGetFWKVersion();
@@ -4041,6 +4097,7 @@ async function BCRMCheckVersion() {
 
 //open popup
 BCRMOpenPopup = function (applet, mode) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //mode: 1=list, 2=form
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
     var ip = SiebelApp.S_App.NewPropertySet();
@@ -4050,7 +4107,10 @@ BCRMOpenPopup = function (applet, mode) {
 };
 
 //Read Tech Support Info
+//23.6 deprecated, replaced by postload.js BCRMGetAppInfo
+/*
 BCRMGetTechSupportInfo = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var tempcss = ".ui-widget-overlay,.ui-dialog.ui-corner-all.ui-widget.ui-widget-content.ui-front.ui-draggable.ui-resizable {display: none!important;}";
     var st = $("<style bcrm-temp-style='yes'>" + tempcss + "</style>");
     if ($("style[bcrm-temp-style]").length == 0) {
@@ -4064,28 +4124,16 @@ BCRMGetTechSupportInfo = function () {
             var cver = cs["ApplicationVersion"];
             var crep = cs["RepositoryFile"];
             var ws = "";
-            BCRM_SIEBEL_VERSION = pm.ExecuteMethod("GetFieldValue", cver);
-            var vt = BCRM_SIEBEL_VERSION;
-            if (BCRM_SIEBEL_VERSION != "" && typeof (BCRM_SIEBEL_VERSION) !== "undefined") {
-                localStorage.BCRM_SIEBEL_VERSION = BCRM_SIEBEL_VERSION;
-            }
+            localStorage.BCRM_SIEBEL_VERSION = pm.ExecuteMethod("GetFieldValue", cver);
+            var vt = localStorage.BCRM_SIEBEL_VERSION;
+
             BCRM_SIEBEL_V.y = parseInt(vt.split(".")[0]);
             BCRM_SIEBEL_V.m = parseInt(vt.split(".")[1]);
             ws = pm.ExecuteMethod("GetFieldValue", crep);
             BCRM_WORKSPACE.WS = ws.split("[")[1].split("/")[0];
             BCRM_WORKSPACE.VER = ws.split("[")[1].split("/")[1].split("]")[0];
             BCRM_WORKSPACE.STATUS = ws.split("[")[1].split("/")[1].split("]")[1].split(" - ")[1];
-            /*
-            sessionStorage.BCRMCurrentWorkspace = BCRM_WORKSPACE.WS;
-            if (BCRM_WORKSPACE.VER == "Latest"){
-                if (isNaN(sessionStorage.BCRMCurrentWorkspaceVersion)){
-                    sessionStorage.BCRMCurrentWorkspaceVersion = BCRM_WORKSPACE.VER;
-                }
-            }
-            //sessionStorage.BCRMCurrentWorkspaceVersion = BCRM_WORKSPACE.VER;
-            sessionStorage.BCRMCurrentWorkspaceStatus = BCRM_WORKSPACE.STATUS;
-            BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
-            */
+            
             pm.ExecuteMethod("InvokeMethod", "CloseApplet");
         }
         catch (e) {
@@ -4096,56 +4144,11 @@ BCRMGetTechSupportInfo = function () {
         $("head").find("style[bcrm-temp-style]").remove();
     }, 1000);
 };
-
-//version check
-//example input (20,7,"ge"): true if current version is greater than or equal to 20.7; false if current version is 20.6 or earlier
-BCRMSiebelVersionCheck = function (y, m, mode) {
-    //mode: lt=less than, le=less than or equal, gt=greater than, ge=greater than or equal, eq=equal
-    var curv_y = BCRM_SIEBEL_V.y;
-    var curv_m = BCRM_SIEBEL_V.m;
-    var retval = false;
-    if (mode == "ge") {
-        if (curv_y == y && curv_m >= m) {
-            retval = true;
-        }
-        if (curv_y > y) {
-            retval = true;
-        }
-    }
-    if (mode == "gt") {
-        if (curv_y == y && curv_m > m) {
-            retval = true;
-        }
-        if (curv_y > y) {
-            retval = true;
-        }
-    }
-    if (mode == "le") {
-        if (curv_y == y && curv_m <= m) {
-            retval = true;
-        }
-        if (curv_y < y) {
-            retval = true;
-        }
-    }
-    if (mode == "lt") {
-        if (curv_y == y && curv_m < m) {
-            retval = true;
-        }
-        if (curv_y < y) {
-            retval = true;
-        }
-    }
-    if (mode == "eq") {
-        if (curv_y == y && curv_m == m) {
-            retval = true;
-        }
-    }
-    return retval;
-};
+*/
 
 //FWK Runtime service version check
 BCRMGetFWKVersion = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval = null;
     var v = 0;
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
@@ -4163,6 +4166,7 @@ BCRMGetFWKVersion = function () {
 
 //Site Map Magic
 BCRMEnableMagicSitemap = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var btn = $("li[name='SiteMap']");
     if (btn.length == 1) {
         if (btn.attr("bcrm-enabled") !== "true") {
@@ -4202,6 +4206,7 @@ BCRMEnableMagicSitemap = function () {
 
 //shoelace drawer button
 BCRMAddDrawerButton = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ($(".open-drawer-btn").length == 0) {
         const btn = $('<sl-animation name="flip" duration="2000" iterations="1" play><div id="bcrm_sl_drawer_btn"><sl-tooltip content="Open devpops Menu" placement="right"><sl-icon-button class="open-drawer-btn" name="rocket-takeoff" label="devpops menu" style="font-size:2em;"></sl-icon-button></sl-tooltip></div></sl-animation>');
         btn.find(".open-drawer-btn").on("click", function () {
@@ -4216,11 +4221,11 @@ BCRMAddDrawerButton = function () {
             "z-index": "1000"
         });
         btn.find("#bcrm_sl_drawer_btn").draggable({
-            axis:"y"
+            axis: "y"
         });
-        btn.find("#bcrm_sl_drawer_btn").on( "dragstop", function( event, ui ) {
+        btn.find("#bcrm_sl_drawer_btn").on("dragstop", function (event, ui) {
             event.stopImmediatePropagation();
-        } );
+        });
         $("#_sweview").prepend(btn);
         if ($(".dp-drawer-main").length > 0) {
             if ($(".dp-drawer-main")[0].open) {
@@ -4239,6 +4244,7 @@ BCRMAddDrawerButton = function () {
 
 //main postload function
 BCRMWSHelper = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //console.time("BCRMWSHelper");
     try {
         $("#_sweview")[0].scrollTo({
@@ -4268,92 +4274,113 @@ BCRMWSHelper = function () {
 
         //enhance application
         if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools" && $("#SiebComposerConfig").find("a").length > 0) {
-            //add right click handler to Dashboard icon
-            BCRMWSIconEnhancer();
+            if (vn != "WSUI Dashboard View") {
 
-            //add debug button
-            BCRMAddDebugButton();
+                //add right click handler to Dashboard icon
+                BCRMWSIconEnhancer();
 
-            //xray handler
-            //retired
-            /*
-            for (a in am) {
-                ut.AddXrayHandler(a);
-            }
-            */
+                //add debug button
+                BCRMAddDebugButton();
 
-            //default xray toggle
-            BCRMApplyDefaultXray();
+                //xray handler
+                //retired
+                /*
+                for (a in am) {
+                    ut.AddXrayHandler(a);
+                }
+                */
 
-            //PM tracing
-            BCRMRegisterPMTracing();
+                //default xray toggle
+                BCRMApplyDefaultXray();
 
-            //View tracing
-            BCRMTraceView();
+                //PM tracing
+                BCRMRegisterPMTracing();
 
-            //Version check
-            BCRMCheckVersion().catch(error => {
-                console.log("BCRMCheckVersion failed: ", error.message);
-            });
+                //View tracing
+                BCRMTraceView();
 
-            //experimental: include chart.js
-            var cjs = $('<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>');
-            if ($("script[src*='chart.js']").length == 0) {
-                $("head").append(cjs);
-            }
+                //Version check
+                BCRMCheckVersion().catch(error => {
+                    console.log("BCRMCheckVersion failed: ", error.message);
+                });
 
-            //fix missing CodeMirror in app (Siebel Update 23.1 and higher)
-            if (typeof (CodeMirror) != "function") {
-                var cmscript = $('<script src="scripts/3rdParty/codemirror/lib/codemirror.js"></script>');
-                var cmcss = $('<link type="text/css" href="scripts/3rdParty/codemirror/lib/codemirror.css" rel="stylesheet">');
-                $("head").append(cmscript);
-                $("head").append(cmcss);
-            }
+                //experimental: include chart.js
+                var cjs = $('<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>');
+                if ($("script[src*='chart.js']").length == 0) {
+                    $("head").append(cjs);
+                }
 
-            //show current workspace
-            //if (typeof (sessionStorage.BCRMCurrentWorkspace) !== "undefined") {
-            if (BCRM_SIEBEL_VERSION != "") {
-                BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
-            }
+                //fix missing CodeMirror in app (Siebel Update 23.1 and higher)
+                if (typeof (CodeMirror) != "function") {
+                    var cmscript = $('<script src="scripts/3rdParty/codemirror/lib/codemirror.js"></script>');
+                    var cmcss = $('<link type="text/css" href="scripts/3rdParty/codemirror/lib/codemirror.css" rel="stylesheet">');
+                    $("head").append(cmscript);
+                    $("head").append(cmcss);
+                }
 
-            //get version and workspace
-            if (BCRM_SIEBEL_VERSION == "") {
-                BCRMGetTechSupportInfo();
-            }
+                //get/show current workspace
+                //if (typeof (sessionStorage.BCRMCurrentWorkspace) !== "undefined") {
+                if (localStorage.BCRM_SIEBEL_VERSION != "" && typeof (localStorage.BCRM_SIEBEL_VERSION) !== "undefined") {
+                    BCRMGetWSContext();
+                }
 
-            //reload cache if necessary
-            BCRMReloadCache();
+                //get version
+                if (localStorage.BCRM_SIEBEL_VERSION == "" || typeof (localStorage.BCRM_SIEBEL_VERSION) === "undefined") {
+                    if (location.href.indexOf("WSUI+Dashboard+View") == -1) {
+                        //BCRMGetTechSupportInfo(); deprecated 23.6
+                        BCRMGetAppInfo(); //new function using REST/BCRM Repository Details BO
+                    }
+                }
 
-            //default break free demo
-            BCRMApplyDefaultBreakFree();
+                //reload cache if necessary
+                BCRMReloadCache();
 
-            //default Redwood Banner
-            //(retired the redwood-ish backgrounds but keep the name)
-            if (typeof (sessionStorage.BCRMBANNERTIMER) === "undefined") {
-                BCRMApplyDefaultRedwoodBanner();
-                sessionStorage.BCRMBANNERTIMER = 10;
-            }
-            else {
-                sessionStorage.BCRMBANNERTIMER = sessionStorage.BCRMBANNERTIMER - 1;
-                if (sessionStorage.BCRMBANNERTIMER <= 0) {
+                //default break free demo
+                BCRMApplyDefaultBreakFree();
+
+                //default Redwood Banner
+                //(retired the redwood-ish backgrounds but keep the name)
+                if (typeof (sessionStorage.BCRMBANNERTIMER) === "undefined") {
                     BCRMApplyDefaultRedwoodBanner();
                     sessionStorage.BCRMBANNERTIMER = 10;
                 }
+                else {
+                    sessionStorage.BCRMBANNERTIMER = sessionStorage.BCRMBANNERTIMER - 1;
+                    if (sessionStorage.BCRMBANNERTIMER <= 0) {
+                        BCRMApplyDefaultRedwoodBanner();
+                        sessionStorage.BCRMBANNERTIMER = 10;
+                    }
+                }
+
+                //devpops storage view mod
+                if (vn == "Business Service Script Editor View") {
+                    BCRMModStorageView();
+                }
+
+                //site map menu
+                BCRMEnableMagicSitemap();
+
+                //dialog style
+                BCRMInjectDialogStyle();
+
+                //shoelace drawer button
+                BCRMAddDrawerButton();
+
+                //list applet hover box
+                //for future use
+                //uncomment and find out
+                /*
+                $("[id^='bcrm_box']").each(function () {
+                    $(this).remove();
+                });
+                for (a in am){
+                    if (ut.GetAppletType(a) === "list"){
+                        pm = am[a].GetPModel();
+                        BCRMAddListRecordHover(pm);
+                    }
+                }
+                */
             }
-
-            //devpops storage view mod
-            if (vn == "Business Service Script Editor View") {
-                BCRMModStorageView();
-            }
-
-            //site map menu
-            BCRMEnableMagicSitemap();
-
-            //dialog style
-            BCRMInjectDialogStyle();
-
-            //shoelace drawer button
-            BCRMAddDrawerButton();
         }
 
     }
@@ -4363,10 +4390,9 @@ BCRMWSHelper = function () {
     //console.timeEnd("BCRMWSHelper");
 };
 
-SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
-
 //blacksheep dark theme
 BCRMToggleDarkMode = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var css = $("<link type='text/css' href='files/custom/blacksheep.css' rel='stylesheet'>");
     if ($("link[href*='blacksheep.css']").length == 0) {
         $("head").append(css);
@@ -4379,6 +4405,7 @@ BCRMToggleDarkMode = function () {
 }
 //preload
 BCRMPreLoad = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (localStorage.BCRMDARKMODE == "true") {
         var css = $("<link type='text/css' href='files/custom/blacksheep.css' rel='stylesheet'>");
         if ($("link[href*='blacksheep.css']").length == 0) {
@@ -4388,14 +4415,13 @@ BCRMPreLoad = function () {
     if (localStorage.BCRM_OPT_injectCSS_Persistence == "localStorage") {
         BCRMInjectCSS("preload", localStorage.BCRM_CSS_INJECTION);
     }
-}
+    //clean up list applet hover boxes
+    $("[id^='bcrm_box']").each(function () {
+        $(this).remove();
+    });
 
-//register preload listener
-try {
-    SiebelApp.EventManager.addListner("preload", BCRMPreLoad, this);
-}
-catch (e) {
-    console.log("Error in BCRM devpops extension: " + e.toString());
+    //load shoelace
+    BCRMLoadShoelace();
 }
 
 //START XRAY21*******************************************************
@@ -4409,6 +4435,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //xray handler: defines trigger event
         BCRMUtils.prototype.AddXrayHandler = function (context) {
+            devpops_debug ? console.log(Date.now(), "AddXrayHandler") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var tp = "";
@@ -4447,6 +4474,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //toggle labels main function
         BCRMUtils.prototype.ToggleLabels = function (cycle, context) {
+            devpops_debug ? console.log(Date.now(), "ToggleLabels") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             if (pm) {
@@ -4469,6 +4497,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //reset to original labels
         BCRMUtils.prototype.LabelReset = function (context) {
+            devpops_debug ? console.log(Date.now(), "LabelReset") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
 
@@ -4508,6 +4537,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //show XR data in new DOM element
         BCRMUtils.prototype.ShowXRData = function (c, nl, context, options) {
+            devpops_debug ? console.log(Date.now(), "ShowXRData") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var where = "";
@@ -4568,6 +4598,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         }
         //set label for a control
         BCRMUtils.prototype.SetLabel = function (c, nl, context) {
+            devpops_debug ? console.log(Date.now(), "SetLabel") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var le;
@@ -4647,6 +4678,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //get label element for a control
         BCRMUtils.prototype.GetLabelElem = function (c, context) {
+            devpops_debug ? console.log(Date.now(), "GetLabelElem") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var tp;
@@ -4732,6 +4764,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         }
         //show BC Field information on labels
         BCRMUtils.prototype.ShowBCFields = function (context) {
+            devpops_debug ? console.log(Date.now(), "ShowBCFields") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var bc, fm, cs, tp, fn, fd, lovtype;
@@ -4836,6 +4869,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //Wrapper for BCRM RR Reader service
         BCRMUtils.prototype.GetRRData = function (ot, on) {
+            devpops_debug ? console.log(Date.now(), "GetRRData") : 0;
             var svc = SiebelApp.S_App.GetService("FWK Runtime");
             var ips = SiebelApp.S_App.NewPropertySet();
             var ops;
@@ -4851,6 +4885,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //extract specified data (BC only as of now, but could expand)
         BCRMUtils.prototype.ExtractBCData = function (rrdata) {
+            devpops_debug ? console.log(Date.now(), "ExtractBCData") : 0;
             var retval = {};
             var bc;
             var props;
@@ -4902,6 +4937,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //ahansal 2022-02-25: Convert XRAY JSON data to html table
         BCRMUtils.prototype.XRAY2HTML = function () {
+            devpops_debug ? console.log(Date.now(), "XRAY2HTML") : 0;
             if ($.isEmptyObject(BCRM_XRAY_DATA)) {
                 SiebelApp.Utils.Alert("No X-Ray data found.\nPlease run X-Ray first.");
             }
@@ -4992,6 +5028,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         //currently limited to BC and Field data
         //requires Base BCRM RR Integration Object and underlying BO/BCs (see sif files on github)
         BCRMUtils.prototype.GetNEOData = function (bc, field) {
+            devpops_debug ? console.log(Date.now(), "GetNEOData") : 0;
             var sv = SiebelApp.S_App.GetService("FWK Runtime");
             var ips = SiebelApp.S_App.NewPropertySet();
             var ops = SiebelApp.S_App.NewPropertySet();
@@ -5022,6 +5059,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //wrapper to get "formatted" BC data
         BCRMUtils.prototype.GetBCData = function (bcn) {
+            devpops_debug ? console.log(Date.now(), "GetBCData") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, bcdata, bcd;
             //use variable as client-side cache to avoid multiple queries for the same object
@@ -5041,6 +5079,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //wrapper to get "formatted" BS data
         BCRMUtils.prototype.GetBSData = function (bsn) {
+            devpops_debug ? console.log(Date.now(), "GetBSData") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, bsdata, bsd;
             //use variable as client-side cache to avoid multiple queries for the same object
@@ -5059,6 +5098,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         };
 
         BCRMUtils.prototype.ExtractBSData = function (rrdata) {
+            devpops_debug ? console.log(Date.now(), "ExtractBSData") : 0;
             var retval = {};
             var bs;
             var props, gprops;
@@ -5101,6 +5141,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         };
 
         BCRMUtils.prototype.GetBusinessServiceList = function () {
+            devpops_debug ? console.log(Date.now(), "GetBusinessServiceList") : 0;
             var sv = SiebelApp.S_App.GetService("FWK Runtime");
             var ips = SiebelApp.S_App.NewPropertySet();
             var ops = sv.InvokeMethod("GetBusinessServiceList", ips);
@@ -5128,6 +5169,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //wrapper to get "formatted" BO data
         BCRMUtils.prototype.GetBOData = function (bon, bclist) {
+            devpops_debug ? console.log(Date.now(), "GetBOData") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, bodata, bod;
             rrdata = ut.GetRRData("Business Object", bon);
@@ -5137,6 +5179,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         };
 
         BCRMUtils.prototype.ExtractBOData = function (rrdata, bclist) {
+            devpops_debug ? console.log(Date.now(), "ExtractBOData") : 0;
             var retval = {};
             var bo;
             var props;
@@ -5193,6 +5236,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //wrapper to get "formatted" Link data
         BCRMUtils.prototype.GetLinkData = function (ln) {
+            devpops_debug ? console.log(Date.now(), "GetLinkData") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, lndata, lnd;
             //use variable as client-side cache to avoid multiple queries for the same object
@@ -5210,6 +5254,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return lnd;
         };
         BCRMUtils.prototype.ExtractLinkData = function (rrdata) {
+            devpops_debug ? console.log(Date.now(), "ExtractLinkData") : 0;
             var retval = {};
             var ln;
             var props;
@@ -5224,12 +5269,14 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         };
 
         BCRMUtils.prototype.RemoveLinkOverlay = function () {
+            devpops_debug ? console.log(Date.now(), "RemoveLinkOverlay") : 0;
             $("[bcrm-bc]").css("border", "inherit");
             $("[id^='bcrm_bc_info']").remove();
             $("[id^='bcrm_applet_info']").remove();
         };
 
         BCRMUtils.prototype.LinkOverlay = function () {
+            devpops_debug ? console.log(Date.now(), "LinkOverlay") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var am, bo, bod, ae, bc, link, lt, pnt, it, ln;
             var bclist = [];
@@ -5282,6 +5329,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             }
         };
         BCRMUtils.prototype.ExtractAppletData = function (rrdata) {
+            devpops_debug ? console.log(Date.now(), "ExtractAppletData") : 0;
             var retval = {};
             var ap;
             var props;
@@ -5311,6 +5359,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
         };
 
         BCRMUtils.prototype.GetAppletData = function (an) {
+            devpops_debug ? console.log(Date.now(), "GetAppletData") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var rrdata, appletdata, ad;
             //use variable as client-side cache to avoid multiple queries for the same object
@@ -5330,6 +5379,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //helper for XRAY data
         BCRMUtils.prototype.GetXRAYTemplate = function () {
+            devpops_debug ? console.log(Date.now(), "GetXRAYTemplate") : 0;
             var tmp = {};
 
             tmp["View Name"] = "";
@@ -5364,6 +5414,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
             return tmp;
         }
         BCRMUtils.prototype.ShowControls = function (context) {
+            devpops_debug ? console.log(Date.now(), "ShowControls") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var an, ae, apd, tp, cs, cn, uit, pop;
@@ -5489,6 +5540,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //show physical metadata (table.column), requires BCRM RR Reader service
         BCRMUtils.prototype.ShowTableColumns = function (context) {
+            devpops_debug ? console.log(Date.now(), "ShowTableColumns") : 0;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
             var table, column, mvlink, mvfield, mvbc, join;
@@ -5685,6 +5737,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //the big equalizer function, always get a PM, no matter the input (almost)
         BCRMUtils.prototype.ValidateContext = function (inp) {
+            devpops_debug ? console.log(Date.now(), "ValidateContext") : 0;
             var retval = false;
             try {
                 var pm = null;
@@ -5738,6 +5791,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //get applet type
         BCRMUtils.prototype.GetAppletType = function (context) {
+            devpops_debug ? console.log(Date.now(), "GetAppletType") : 0;
             var retval = false;
             var type = null;
             var pm = null;
@@ -5778,6 +5832,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 
         //get the applet DOM element
         BCRMUtils.prototype.GetAppletElem = function (context) {
+            devpops_debug ? console.log(Date.now(), "GetAppletElem") : 0;
             var retval = null;
             var ut = new SiebelAppFacade.BCRMUtils();
             var pm = ut.ValidateContext(context);
@@ -5798,6 +5853,7 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
 //START xapuk.com utilities by Slava**********************************
 //Kudos to Slava (xapuk.com)
 BCRMClearCaches = function (silent) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         var a = SiebelApp.S_App.GetActiveView().GetActiveApplet();
         a.InvokeMethod("ClearCTEventCache");
@@ -6601,7 +6657,7 @@ var BCRMsnip; // an array of saved snippets
 var BCRMlast; // current snippet name
 
 BCRMScriptEditor = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ("undefined" === typeof ace) {
         var src = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.2/ace.js";
         requirejs([src], BCRMScriptEditor, function () { SiebelApp.Utils.Alert("Failed to load ace library ! \n" + src); });
@@ -6700,7 +6756,7 @@ BCRMScriptEditor = function () {
 
 
 BCRMEval = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sExpr = BCRMGetCode();
     var sRes = "";
     var dTS = new Date();
@@ -6768,6 +6824,7 @@ BCRMEval = function () {
 
 // attach acejs plugin
 BCRMattachACE = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ("undefined" === typeof ace) {
         var src = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.2/ace.js";
         requirejs([src], BCRMScriptEditor, function () { SiebelApp.Utils.Alert("Failed to load ace library ! \n" + src); });
@@ -6779,6 +6836,7 @@ BCRMattachACE = function () {
 
 // save button
 BCRMSave = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var n = $('#' + BCRMfunc + "List").val();
     if (n == "*" || n == null) { // new
         n = SiebelApp.Utils.Prompt("Snippet name");
@@ -6800,6 +6858,7 @@ BCRMSave = function () {
 
 // Remove button
 BCRMDelete = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var n = $('#' + BCRMfunc + "List").val();
     if (SiebelApp.Utils.Confirm("Are you sure you want to delete a snippet: " + n)) {
         if (n && n != "*") {
@@ -6813,7 +6872,7 @@ BCRMDelete = function () {
 
 // loads preserved code snippets
 BCRMLoad = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var s = window.localStorage[BCRMfunc];
 
     // remove all dropdown items
@@ -6847,6 +6906,7 @@ BCRMLoad = function () {
 
 // returns either selected peace of code or full value from text area or ACEJS plugin
 BCRMGetCode = function (bFull) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sRes;
     if (BCRMeditor) {
         if (bFull || BCRMeditor.getSelectedText() === "") {
@@ -6882,7 +6942,7 @@ var BCRMExprfunc = "SiebelEvalExpr";
 var bBeauty = false;
 
 BCRMExprEditor = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     require(["3rdParty/SiebelQueryLang"], function (e) {
         console.log("Beautifier loaded!");
     });
@@ -6967,6 +7027,7 @@ BCRMExprEditor = function () {
 }
 
 BCRMBeauty = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var s = $('#' + BCRMExprfunc).val();
     if (s) {
         if (bBeauty) {
@@ -6992,6 +7053,7 @@ BCRMBeauty = function () {
 }
 
 BCRMtrav = function (o, t, f) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var r = "";
     if ("object" === typeof o) {
         var p = o.par;
@@ -7050,7 +7112,7 @@ BCRMtrav = function (o, t, f) {
 
 
 BCRMEvalExpr = function () {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sExpr = $('#' + BCRMExprfunc).val();
     var sRes = "";
 
@@ -7084,7 +7146,7 @@ BCRMEvalExpr = function () {
 
 // auto-ajust textarea height
 BCRMTextAdjust = function (scope, minrows, maxrows) {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     maxrows = maxrows > 0 ? maxrows : 30;
     minrows = minrows > 0 ? minrows : 5;
     var txt = scope.value;
@@ -7104,6 +7166,7 @@ BCRMTextAdjust = function (scope, minrows, maxrows) {
 
 // put active BC in the list with active applet's bc as selected
 BCRMLoadBCs = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var a = [];
     for (var i in SiebelApp.S_App.GetActiveBusObj().GetBCMap()) {
         var bc = SiebelApp.S_App.GetActiveBusObj().GetBCMap()[i];
@@ -7117,6 +7180,7 @@ BCRMLoadBCs = function () {
 
 //run srvrmgr commands, requires BCRM Server Manager Business Service
 BCRMSrvrMgr = function (command, fromdialog) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (command) === "undefined") {
         command = SiebelApp.Utils.Prompt("Enter a valid srvrmgr command.", "list comps");
     }
@@ -7189,6 +7253,7 @@ BCRMSrvrMgr = function (command, fromdialog) {
 var sarmduration = 0;
 var sarmintv;
 BCRMSARMOn = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //get input
     var logdir, comp, server, duration;
     if (typeof (localStorage.BCRM_OPT_StartSARM_FilePath) !== "undefined") {
@@ -7249,6 +7314,7 @@ BCRMSARMOn = function () {
 
 //Demo: disable SARM
 BCRMSARMOff = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var comp, server;
     if (typeof (localStorage.BCRM_OPT_StartSARM_Server) !== "undefined") {
         server = localStorage.BCRM_OPT_StartSARM_Server;
@@ -7275,6 +7341,7 @@ BCRMSARMOff = function () {
 
 //SARM Demo
 BCRMShowSARM = function (type, sarmcmd, ofile) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var cmd = "";
     var labels = [];
     var data = [];
@@ -7372,6 +7439,7 @@ BCRMShowSARM = function (type, sarmcmd, ofile) {
 
 //run command line on Siebel Server, requires System Preference: Runtime Scripts System Access = TRUE
 BCRMRunCmd = function (cmd) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
     var ops = SiebelApp.S_App.NewPropertySet();
@@ -7386,6 +7454,7 @@ BCRMRunCmd = function (cmd) {
 };
 //retrieve text files from server
 BCRMReadFile = function (filepath, sleeptime) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
     var ops = SiebelApp.S_App.NewPropertySet();
@@ -7461,6 +7530,7 @@ if (typeof (SiebelAppFacade.BCRMPopupPW) === "undefined") {
 }
 
 BCRMsleep = function (ms) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     const date = Date.now();
     let currentDate = null;
     do {
@@ -7470,6 +7540,7 @@ BCRMsleep = function (ms) {
 
 //Test function
 BCRMdevpopsTest = function (mode) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var v1 = "ISS Product Administration View";
     var st = 2000;
     if (mode == "xray") {
@@ -7538,6 +7609,7 @@ BCRMdevpopsTest = function (mode) {
 
 //chart.js Demo
 BCRMChartEngine = function (id, type, labels, data) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //try BCRMChartEngine("Revenue","horizontalBar",["Jan","Feb","Mar","Apr","May"],[100,150,75,70,110]);
     //see chartjs.org for details
     $("#bcrm_chart").remove();
@@ -7560,6 +7632,7 @@ BCRMChartEngine = function (id, type, labels, data) {
 
 //expression runner
 BCRMQuickEval = function (expr, bo, bc) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     var svc = SiebelApp.S_App.GetService("FWK Runtime");
     var ips = SiebelApp.S_App.NewPropertySet();
@@ -7581,6 +7654,7 @@ BCRMQuickEval = function (expr, bo, bc) {
 };
 //get responsibilities of current user
 BCRMGetResps = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var resps;
     if (typeof (sessionStorage.BCRM_RESPS) === "undefined") {
         resps = BCRMQuickEval("GetProfileAttrAsList(\"User Responsibilities\")");
@@ -7602,6 +7676,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
         function BCRMRWDFactory(options) { }
 
         BCRMRWDFactory.prototype.SaveConfig = function (el, size, css, cond) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.SaveConfig") : 0;
             var resize = false;
             var style = false;
             var conditional = false;
@@ -7706,6 +7781,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
         };
 
         BCRMRWDFactory.prototype.ShowFieldOptions = function (pm, iname) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.ShowFieldOptions") : 0;
             var cs = pm.Get("GetControls");
             var ut = new SiebelAppFacade.BCRMUtils();
             var ae = ut.GetAppletElem(pm);
@@ -7825,6 +7901,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
         };
 
         BCRMRWDFactory.prototype.ApplyOverrides = function (pmi) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.ApplyOverrides") : 0;
             var m, pm;
             if (typeof (pmi.Get) !== "function") {
                 m = pmi;
@@ -7924,6 +8001,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
         };
 
         BCRMRWDFactory.prototype.BCRMMakeGridResponsive = function (pm) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.BCRMMakeGridResponsive") : 0;
             var utils = new SiebelAppFacade.BCRMUtils();
             var rwd = new SiebelAppFacade.BCRMRWDFactory();
             var ts = Date.now();
@@ -8086,6 +8164,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
         };
 
         BCRMRWDFactory.prototype.Reset = function (a) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.Reset") : 0;
             //console.log("BCRMRWDFactory.Reset");
             var utils = new SiebelAppFacade.BCRMUtils();
             var pm = utils.ValidateContext(a);
@@ -8106,6 +8185,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
         };
 
         BCRMRWDFactory.prototype.GetResponsiveGrid = function (a, appletconfig) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.GetResponsiveGrid") : 0;
             //3rd pass
             //now create sections and collect controls
             var acconf = {
@@ -8348,6 +8428,7 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
             return $(newgriddiv);
         };
         BCRMRWDFactory.prototype.GetConfig = function (a) {
+            devpops_debug ? console.log(Date.now(), "BCRMRWDFactory.prototype.GetConfig") : 0;
             //config examples
             var BCRMRWDConf = {
                 "SIS Product Form Applet - ISS Admin__ISS Product Administration View": {
@@ -8543,11 +8624,15 @@ if (typeof (SiebelAppFacade.BCRMRWDFactory) === "undefined") {
 }
 
 //get server and component status through CGW REST API
+//ahansal 23.6: added ent profiles/named subsys for dependency finder
 //do not try this at home!
 var BCRM_ENT = "";
 var BCRM_SERVERS = [];
 var BCRM_COMPS = [];
+var BCRM_ENTPROFILES = [];
+
 BCRMGetEnterprise = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     if (BCRM_BASIC_AUTH == "") {
         BCRMGetCredentials("ent");
@@ -8574,6 +8659,7 @@ BCRMGetEnterprise = function () {
 };
 
 BCRMGetServers = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     if (BCRM_BASIC_AUTH == "") {
         BCRMGetCredentials("srv");
@@ -8606,6 +8692,7 @@ BCRMGetServers = function () {
 };
 
 BCRMGetComponents = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     if (BCRM_BASIC_AUTH == "") {
         BCRMGetCredentials("com");
@@ -8637,7 +8724,133 @@ BCRMGetComponents = function () {
     return retval;
 };
 
+BCRMGetEntProfiles = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var retval;
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMGetCredentials("entprof");
+    }
+    else {
+        if (BCRM_ENT == "") {
+            BCRMGetEnterprise();
+            BCRMGetEntProfiles();
+        }
+        else {
+            var data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + BCRM_ENT + "/namedsubsystems",
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                }
+            });
+            if (data.status == 200) {
+                retval = data.responseJSON.Result;
+                BCRM_ENTPROFILES = retval;
+            }
+            else {
+                retval = data.status + ":" + data.responseText;
+            }
+        }
+    }
+    return retval;
+};
+
+BCRMGetEntProfileParams = function (q) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var retval;
+    var temp = [];
+    var data;
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMGetCredentials("entprofparams", { payload: q });
+    }
+    else {
+        if (BCRM_ENT == "") {
+            BCRMGetEnterprise();
+            BCRMGetEntProfiles();
+            BCRMGetEntProfileParams(q);
+        }
+        else {
+            //1st pass: basic params
+            data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + BCRM_ENT + "/namedsubsystems/" + q + "/parameters",
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                }
+            });
+            if (data.status == 200) {
+                retval = data.responseJSON.Result;
+                temp.push(...retval);
+                for (let i = 0; i < BCRM_ENTPROFILES.length; i++) {
+                    if (BCRM_ENTPROFILES[i]['NSS_ALIAS'] == q) {
+                        BCRM_ENTPROFILES[i]['PARAMS'] = [];
+                        BCRM_ENTPROFILES[i]['PARAMS'].push(...retval);
+                        break;
+                    }
+                }
+            }
+            else {
+                temp.push(data.status + ":" + data.responseText);
+            }
+
+            //2nd pass: advanced params
+            data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + BCRM_ENT + "/namedsubsystems/" + q + "/parameters?advanced=true",
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                }
+            });
+            if (data.status == 200) {
+                retval = data.responseJSON.Result;
+                temp.push(...retval);
+                for (let i = 0; i < BCRM_ENTPROFILES.length; i++) {
+                    if (BCRM_ENTPROFILES[i]['NSS_ALIAS'] == q) {
+                        BCRM_ENTPROFILES[i]['PARAMS'].push(...retval);
+                        break;
+                    }
+                }
+            }
+            else {
+                temp.push(data.status + ":" + data.responseText);
+            }
+
+            //3rd pass: hidden params
+            data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + BCRM_ENT + "/namedsubsystems/" + q + "/parameters?hidden=true",
+                async: false,
+                method: "GET",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH
+                }
+            });
+            if (data.status == 200) {
+                retval = data.responseJSON.Result;
+                temp.push(...retval);
+                for (let i = 0; i < BCRM_ENTPROFILES.length; i++) {
+                    if (BCRM_ENTPROFILES[i]['NSS_ALIAS'] == q) {
+                        BCRM_ENTPROFILES[i]['PARAMS'].push(...retval);
+                        break;
+                    }
+                }
+            }
+            else {
+                temp.push(data.status + ":" + data.responseText);
+            }
+        }
+    }
+    return temp;
+}
+
 BCRMDisplayServer = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (BCRM_BASIC_AUTH == "") {
         BCRMGetCredentials("dis");
     }
@@ -8705,6 +8918,7 @@ BCRMDisplayServer = function () {
 //Business Service meep meep
 //Run Business Services faster than ever
 BCRMGetIOList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
     var ip = SiebelApp.S_App.NewPropertySet();
     var op = sv.InvokeMethod("GetIOList", ip).GetChildByType("ResultSet");
@@ -8717,6 +8931,7 @@ BCRMGetIOList = function () {
 };
 
 BCRMGetBSMethodList = function (sn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
     var ip = SiebelApp.S_App.NewPropertySet();
     ip.SetProperty("Service Name", sn);
@@ -8734,6 +8949,7 @@ BCRMGetBSMethodList = function (sn) {
 }
 
 BCRMGetWFList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
     var ip = SiebelApp.S_App.NewPropertySet();
     var op = sv.InvokeMethod("getWFList", ip).GetChildByType("ResultSet");
@@ -8748,6 +8964,7 @@ BCRMGetWFList = function () {
 };
 
 BCRMGetBSMethod = function (sn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var ut = new SiebelAppFacade.BCRMUtils();
     var bsd, ms;
     try {
@@ -8766,6 +8983,7 @@ BCRMGetBSMethod = function (sn) {
 };
 
 BCRMMeepReset = function (preset) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     $("#bcrm_service").val("");
     $("#bcrm_method").val("");
     $("#bcrm_method").parent().hide();
@@ -8790,6 +9008,7 @@ BCRMMeepReset = function (preset) {
 
 var last_meep = "";
 BCRMInvokeServiceMethod = function (p, print) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     var sExpr = "var svc = TheApplication().GetService(\"" + p.service + "\");\n";
     sExpr += "var ips = TheApplication().NewPropertySet();\n";
@@ -8845,6 +9064,7 @@ BCRMInvokeServiceMethod = function (p, print) {
 };
 
 BCRMCreatePreset = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var preset = {};
     var sn = "";
     var mn = "";
@@ -8872,6 +9092,7 @@ BCRMCreatePreset = function () {
 };
 
 BCRMCreateWFPreset = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var p = {
         "service": "Workflow Process Manager",
         "method": "RunProcess",
@@ -8884,6 +9105,7 @@ BCRMCreateWFPreset = function () {
 }
 
 BCRMGetWFProps = function (wn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //get DR first, if not found get RR
     var retval;
     var sv = SiebelApp.S_App.GetService("FWK Runtime");
@@ -8955,6 +9177,7 @@ BCRMGetWFProps = function (wn) {
 
 //Enhance for Workflows
 BCRMWorkflowRunner = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //only if 20.7 or later
     if (BCRMSiebelVersionCheck(20, 7, "ge")) {
         var brf = $('<button style="margin-left:16px;" title="Reload Row Id from active record" id="bcrm_del_preset">Reload</button>');
@@ -9021,11 +9244,13 @@ BCRMWorkflowRunner = function () {
 };
 
 BCRMTitle = function (el, text) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //el.text(text);
 };
 
 //main dialog
 BCRMBusinessServiceRunner = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     BCRMCreateWFPreset();
     var ut = new SiebelAppFacade.BCRMUtils();
     var bs = ut.GetBusinessServiceList();
@@ -9431,10 +9656,9 @@ BCRMBusinessServiceRunner = function () {
     });
 }
 
-SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
-
 //SPA (System Preference Acrobatics)
 BCRMGetSysPref = function (name) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     var r = BCRMInvokeServiceMethod({
         service: "PRM ANI Utility Service",
@@ -9453,6 +9677,7 @@ BCRMGetSysPref = function (name) {
 };
 
 BCRMSetSysPref = function (name, value) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval = false;
     var conf = {
         service: "FWK Runtime",
@@ -9474,6 +9699,7 @@ BCRMSetSysPref = function (name, value) {
 //Helpers for Test Automation Setup Wizard
 var BCRMTestAutoToDo = [];
 BCRMTestAutoGetServersAndComps = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var r = BCRMSrvrMgr("list comp %objmgr% show SV_NAME, CC_ALIAS, CP_DISP_RUN_STATE", true);
     var ra = r.split("\n");
     var c = 0;
@@ -9516,6 +9742,7 @@ BCRMTestAutoGetServersAndComps = function () {
 };
 
 BCRMTestAutoShowTodo = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var ta = $("<textarea id='bcrm_todo' style='width:900px;height:200px;overflow:auto;'></textarea>");
     for (var i = 0; i < BCRMTestAutoToDo.length; i++) {
         ta.val(ta.val() + "\n" + BCRMTestAutoToDo[i]);
@@ -9542,6 +9769,7 @@ BCRMTestAutoShowTodo = function () {
 };
 
 BCRMTestAutoCheckDISA = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var wsport = BCRMGetSysPref("WebSocketServerPort");
     if (typeof (wsport) !== "undefined") {
         var ws = new WebSocket("wss://localhost:" + wsport);
@@ -9577,6 +9805,7 @@ BCRMTestAutoCheckDISA = function () {
 };
 
 BCRMTestAutoCheckWF = function (wf) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (BCRMGetWFList().indexOf(wf) == -1) {
         m = $("<div style='background:coral;margin:2px;'></div>");
         var t = "Workflow Process '" + wf + "' must be activated manually.";
@@ -9599,6 +9828,7 @@ BCRMTestAutoCheckWF = function (wf) {
 };
 
 BCRMTestAutoCheckEvents = function (type) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var check = true;
     var conf = {
         service: "EAI Siebel Adapter",
@@ -9708,6 +9938,7 @@ var BCRMTestAutoServerComps;
 var BCRMTestAutoSV = "";
 var BCRMTestAutoCP = "";
 BCRMTestAutoCheckParam = function (cmd, type, val) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (cmd.indexOf("EnableAutomation") > -1 && BCRMTestAutoSV == "") {
         if (typeof (BCRMTestAutoServerComps) === "undefined") {
             BCRMTestAutoServerComps = BCRMTestAutoGetServersAndComps();
@@ -9886,6 +10117,7 @@ BCRMTestAutoCheckParam = function (cmd, type, val) {
 //Helper for Test Automation Setup Wizard
 var showsvr = false;
 BCRMTestAutoCheckSP = function (sp, vd) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var v = BCRMGetSysPref(sp);
     //vd = "TRUE";
     if (v != vd) {
@@ -10008,6 +10240,7 @@ BCRMTestAutoCheckSP = function (sp, vd) {
 
 //Test Automation Setup Wizard
 BCRMTestAutoSetup = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     BCRMTestAutoToDo = [];
     BCRMTestAutoSV = "";
     BCRMTestAutoCP = "";
@@ -10060,6 +10293,7 @@ var BCRMsounds = {
     }
 };
 BCRMloadSound = function (name) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sound = BCRMsounds[name];
     var url = SiebelApp.S_App.GetBaseURL() + sound.url;
     var buffer = sound.buffer;
@@ -10075,9 +10309,10 @@ BCRMloadSound = function (name) {
 };
 var BCRMsoundContext = new AudioContext();
 for (var key in BCRMsounds) {
-    BCRMloadSound(key);
+    //BCRMloadSound(key);
 }
 BCRMplaySound = function (name, options) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var sound = BCRMsounds[name];
     var soundVolume = BCRMsounds[name].volume || 1;
     var buffer = sound.buffer;
@@ -10100,6 +10335,7 @@ BCRMplaySound = function (name, options) {
 
 //Web Engine HTTP TXN Full Mojo
 BCRMShowHTTPSecrets = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var t = SiebelApp.S_App.NewPropertySet();
     var s = BCRMInvokeServiceMethod({ service: "Web Engine HTTP TXN", method: "GetRequestInfo" }).GetChildByType("ResultSet").GetProperty("v");
     t.DecodeFromStringOld(s);
@@ -10111,6 +10347,7 @@ var BCRMPSHTML = [];
 var BCRMPSCL = 0;
 
 BCRMShowPropSet = function (ps) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     BCRMPSC = 0;
     BCRMPSHTML = [];
     BCRMPSCL = 0;
@@ -10149,6 +10386,7 @@ BCRMShowPropSet = function (ps) {
 };
 
 BCRMPropSet2HTML = function (ps, p) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var level;
     if (BCRMPSCL <= 1) {
         level = 0;
@@ -10213,18 +10451,8 @@ BCRMPropSet2HTML = function (ps, p) {
 
 //Site Map to Menu
 var BCRM_SITEMAP;
-
-//check for site map
-var BCRM_SM_INT = setInterval(function () {
-    BCRMGetSitemap();
-}, 1000);
-
-//check for About View Applet
-var BCRM_AV_INT = setInterval(function () {
-    BCRMEnhanceAboutViewApplet();
-}, 1000);
-
 BCRMEnhanceAboutViewApplet = function () {
+    //devpops_debug?console.log(Date.now(),arguments.callee.name):0;
     var cm = SiebelAppFacade.ComponentMgr;
     if (cm.FindComponent("About View Applet") != null) {
         //clearInterval(BCRM_AV_INT);
@@ -10318,7 +10546,7 @@ BCRMEnhanceAboutViewApplet = function () {
                     }, ms);
 
                     //Add a button
-                    var btn = $("<button class='appletButton'>Get Lucky</button>");
+                    var btn = $("<button class='appletButton'>I'm Feeling Lucky</button>");
                     btn.attr("title", "It's all about the view\nBrought to you by devpops");
                     btn.on("click", function () {
                         BCRMAboutTime();
@@ -10331,6 +10559,7 @@ BCRMEnhanceAboutViewApplet = function () {
 }
 
 BCRMGetSitemap = function () {
+    //devpops_debug?console.log(Date.now(),arguments.callee.name):0;
     var sm;
     if (typeof (BCRM_SITEMAP) === "undefined") {
         //site map open, let's clone and convert to menu
@@ -10355,6 +10584,7 @@ BCRMGetSitemap = function () {
 };
 
 BCRMShowSitemap = function (options) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (options) === "undefined") {
         if (typeof (localStorage.BCRM_OPT_SM_STYLE) === "undefined") {
             options = {
@@ -10579,9 +10809,10 @@ BCRMShowSitemap = function (options) {
 //recommend SSO-enabled Web Tools OM (e.g. DBSSO)
 var swt;
 BCRMOpenWebTools = function (ws, ver, rn, ot) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         //amend as necessary for your environment
-        var wturl = location.origin + "/siebel/app/webtools/sso?SWECmd=GotoView&SWEView=WSUI+Dashboard+View&SWERF=1&SWEHo=&SWEBU=1"
+        var wturl = location.origin + "/siebel/app/webtools/enu?SWECmd=GotoView&SWEView=WSUI+Dashboard+View&SWERF=1&SWEHo=&SWEBU=1"
         if (typeof (swt) === "undefined") {
             //open in new tab
             console.log("BCRMOpenWebTools: Step 1: Open Web Tools in new tab");
@@ -10612,6 +10843,7 @@ BCRMOpenWebTools = function (ws, ver, rn, ot) {
             swt.focus();
             console.log("BCRMOpenWebTools: Step 2: Query Workspace");
             if (swt.SiebelApp.S_App.GetActiveView().GetName() == "WSUI Dashboard View") {
+                devpops_debug ? console.log(Date.now(), "Calling swt.BCRMGetWSContext from BCRMOpenWebTools") : 0;
                 swt.BCRMGetWSContext();
                 var in_ws = ws + "/" + ver;
                 var curr_ws = swt.sessionStorage.BCRMCurrentWorkspace + "/" + swt.sessionStorage.BCRMCurrentWorkspaceVersion;
@@ -10695,6 +10927,7 @@ BCRMOpenWebTools = function (ws, ver, rn, ot) {
 };
 //CSS Injector
 BCRMInjectCSSDialog = function (alias, css) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (css) === "undefined") {
         css = "";
         if (typeof (localStorage.BCRM_CSS_INJECTION) !== "undefined") {
@@ -10774,6 +11007,7 @@ BCRMInjectCSSDialog = function (alias, css) {
 //Support Analyzers, not quite done yet
 
 BCRMGetAnalyzerList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var an_home;
     var an_tmp;
     var an_list;
@@ -10811,6 +11045,7 @@ BCRMGetAnalyzerList = function () {
 };
 
 BCRMAnalyzerDialog = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var dlg = $("<div id='bcrm_an'>");
     var an;
     var an_list = BCRMGetAnalyzerList();
@@ -10857,6 +11092,7 @@ BCRMAnalyzerDialog = function () {
 };
 
 BCRMGetAnalyzerReports = function (zips) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var dir = "";
     var ai_root = (localStorage.BCRM_OPT_analyzer_AIHOME ? localStorage.BCRM_OPT_analyzer_AIHOME : "C:\\Siebel\\ai");;
     var zip = "";
@@ -10885,6 +11121,7 @@ BCRMGetAnalyzerReports = function (zips) {
     //window.open(location.origin + "/report/SBL Workflow_01-Mar-2022_173535/SBL Workflow_01-Mar-2022_173535.html");
 }
 BCRMRunAnalyzer = function (an_list, param_list) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var cmd = "";
     var an_name = "";
     var zip = "";
@@ -11000,6 +11237,7 @@ BCRMRunAnalyzer = function (an_list, param_list) {
 //23.1 viewpops demo
 //felt cute, might enhance later
 BCRMGetBookmark = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //so far, this only works for the "primary" applet
     var bm = location.href;
     var vn = SiebelApp.S_App.GetActiveView().GetName();
@@ -11017,6 +11255,7 @@ BCRMGetBookmark = function (pm) {
 //no, this is not a replacement for "a publisher"
 //code intentionally left dumb
 BCRMPopoutView = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var all = $("[id^='S_A'");
     var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
     var wham = [];
@@ -11083,17 +11322,26 @@ BCRMPopoutView = function () {
         if (type == "list") {
             var lcl = $("#" + wham[i]).clone();
             pm = ut.ValidateContext(wham[i]);
+            var bc = pm.Get("GetBusComp").GetName();
             var sel = pm.Get("GetSelection");
             var ttl = lcl.find(".siebui-applet-title").text();
             var cntr = lcl.find(".siebui-row-counter").text();
             ct = $("<div id='bcrm_" + pm.Get("GetFullId") + "' style='font-family:arial,sans-serif;font-size:22px;border:1px solid darkgrey;padding:10px'>");
             var lh = $("<div>");
+
+            //get HTML table from PM raw data
+            var tbl = BCRMGetTableFromListPM(pm);
+
+            var stn = bc + "_count";
+            if (typeof (sessionStorage[stn]) !== "undefined") {
+                cntr = sessionStorage[stn] + " record" + (parseInt(sessionStorage[stn]) != 1 ? "s" : "");
+            }
             lh.text(ttl + " (" + cntr + ")");
             lh.css("font-size", "26px");
             lh.css("background", "#90caf9");
             ct.append(lh);
-            //get HTML table from PM raw data
-            var tbl = BCRMGetTableFromListPM(pm);
+
+
             tbl.addClass("bcrm-table");
             tbl.css("font-family", "arial,sans-serif");
             tbl.css("font-size", "18px");
@@ -11126,10 +11374,55 @@ BCRMPopoutView = function () {
     w.document.write(bma2[0].outerHTML);
 
     //icing on the cake
-    var css = "@media print{.no-print{display:none;}} .bcrm-table tr:nth-child(even) td,.ui-jqgrid .ui-jqgrid-btable tr:nth-child(even) td {background-color: #f5f5f5;} .bcrm-selected td{background-color:#e3f2fd!important;}";
+    var css = "@media print{.no-print{display:none;}} .bcrm-table tr:nth-child(even) td,.ui-jqgrid .ui-jqgrid-btable tr:nth-child(even) td {background-color: #f5f5f5;} .bcrm-selected td{background-color:#c2c2e0!important;}";
     var head = w.document.getElementsByTagName('HEAD')[0];
     var st = w.document.createElement('style');
     st.innerHTML = css;
     head.appendChild(st);
     w.document.title = document.title;
 };
+
+//listeners
+try {
+    SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
+    SiebelApp.EventManager.addListner("preload", BCRMPreLoad, this);
+    SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
+
+    //check for site map
+    var BCRM_SM_INT = setInterval(function () {
+        BCRMGetSitemap();
+    }, 1000);
+
+    //check for About View Applet
+    var BCRM_AV_INT = setInterval(function () {
+        BCRMEnhanceAboutViewApplet();
+    }, 1000);
+}
+catch (e) {
+    console.log("Error in BCRM devpops extension: " + e.toString());
+}
+
+//comment above/uncomment below to use a switch, e.g. localStorage or url content
+/*
+try {
+    if (localStorage.DEVPOPS_ENABLE == "TRUE") {
+        SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
+        SiebelApp.EventManager.addListner("preload", BCRMPreLoad, this);
+        SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
+
+        if (location.pathname.indexOf("callcenter") > -1) {
+            var BCRM_SM_INT = setInterval(function () {
+                BCRMGetSitemap();
+            }, 1000);
+        }
+        if (location.pathname.indexOf("callcenter") > -1) {
+            var BCRM_AV_INT = setInterval(function () {
+                BCRMEnhanceAboutViewApplet();
+            }, 1000);
+        }
+    }
+}
+catch (e) {
+    console.log("Error in BCRM devpops extension: " + e.toString());
+}
+*/
