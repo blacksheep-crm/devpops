@@ -75,6 +75,10 @@ var bcrm_help_map = {
     "23.11": "F26413_47",
     "23.12": "F26413_48",
 };
+//AppInfo
+var BCRM_SIEBEL_V = {};
+var BCRM_SYS;
+var BCRM_WORKSPACE = {};
 
 var icon_map = new Map();
 icon_map.set("Applet", "🍎");
@@ -101,9 +105,14 @@ icon_map.set("Web Page", "🕸");
 icon_map.set("Web Template", "🍕");
 icon_map.set("Workflow Process", "🍽");
 
+//23.6, finally a debug flag
+//set to true to crank up console logging
+devpops_debug = false;
+
 //Banner prettifier
 var bannerint;
 BCRMPrettifyBanner = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var redwood = [
         "https://docs.oracle.com/cd/F26413_16/portalres/images/Abstracts_Light_3.png",
         "https://docs.oracle.com/cd/F26413_13/portalres/images/Abstracts_Winter_1.png",
@@ -144,6 +153,7 @@ BCRMPrettifyBanner = function () {
 //DOM element creator helper, supports Siebel Test Automation for custom DOM elements
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRM_ = function (s) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval = "";
     var b = btoa(s);
     for (var i = 0; i < b.length; i += 5) {
@@ -158,6 +168,7 @@ BCRM_ = function (s) {
 //DOM element creator, supports Siebel Test Automation for custom DOM elements
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRM$ = function (elem, attr, ataonly) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     var jq;
     var tq = $(elem);
@@ -198,6 +209,7 @@ BCRM$ = function (elem, attr, ataonly) {
 //get data from custom BO for Web Tools display of who else is editing an object definition
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWSGetModData = function (cell) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     bcrm_meta = {};
     bcrm_meta.wot = $(cell).attr("wot");
     bcrm_meta.wrn = $(cell).attr("wrn");
@@ -233,6 +245,7 @@ BCRMWSGetModData = function (cell) {
 //add click handler to "Writable" column
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWebToolsHighlight = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (pm) === "undefined") {
         pm = this;
     }
@@ -270,6 +283,7 @@ BCRMWebToolsHighlight = function (pm) {
 //DRAFT and unsupported: Enhance tools list applet
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWebToolsEnhancer = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //DRAFT: grab the main list applet
     var pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
     pm.AttachPMBinding("ShowSelection", BCRMWebToolsHighlight, { scope: pm, sequence: true });
@@ -280,7 +294,8 @@ BCRMWebToolsEnhancer = function () {
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 //Collect user credentials for use in REST calls, stored as variable BCRM_BASIC_AUTH
 var BCRM_BASIC_AUTH = "";
-BCRMGetCredentials = function (next) {
+BCRMGetCredentials = function (next, opt = {}) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var dlg = $("<div id='bcrm_cred_dlg' style='display:grid;'>");
     var user = $("<input id='username' type='text' placeholder='User Name'>");
     var pw = $("<input id='password' type='password' placeholder='Password'>");
@@ -307,6 +322,15 @@ BCRMGetCredentials = function (next) {
                 }
                 if (next == "com") {
                     BCRMGetComponents();
+                }
+                if (next == "entprof") {
+                    BCRMGetEntProfiles();
+                }
+                if (next == "entprofparams") {
+                    BCRMGetEntProfileParams(opt.payload);
+                }
+                if (next == "entprofquery") {
+                    BCRMGetEntProfileParamsQuery(opt.payload, opt.on);
                 }
                 if (next == "dis") {
                     BCRMDisplayServer();
@@ -342,6 +366,7 @@ BCRMGetCredentials = function (next) {
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 var BCRM_CUSTOM_RESPS = [];
 BCRMGetRespList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (true) {
         if (BCRM_BASIC_AUTH == "") {
             BCRMGetCredentials("getresplist");
@@ -371,6 +396,7 @@ BCRMGetRespList = function () {
 //Add View to View List
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMAddView = function (vn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (BCRM_BASIC_AUTH == "") {
         sessionStorage.BCRM_NEW_VIEW = vn;
         BCRMGetCredentials("addview");
@@ -397,6 +423,7 @@ BCRMAddView = function (vn) {
 //Upsert Responsibility with View and current user
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMUpsertResp = function (rn, vn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var cd = {};
     var firstauth = false;
     if (BCRM_BASIC_AUTH == "") {
@@ -485,6 +512,7 @@ BCRMUpsertResp = function (rn, vn) {
 //Helper for Screen View List Applet
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMPostInvokeHandler = function (m, i, c, r) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (m) !== "undefined") {
         if (m.indexOf("PositionOnRow") == 0) {
             setTimeout(function () {
@@ -497,6 +525,7 @@ BCRMPostInvokeHandler = function (m, i, c, r) {
 //Dialog to pick custom responsibility or define new one
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMUpsertRespDialog = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Screen View List Applet").GetPModel();
     var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
     var vn = r["View"];
@@ -570,6 +599,7 @@ BCRMUpsertRespDialog = function () {
 //add button for the need of the view to Screen View List Applet
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMEnhanceScreenViewListApplet = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Screen View List Applet").GetPModel();
     if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
         pm.AttachPMBinding("ShowSelection", BCRMEnhanceScreenViewListApplet, { scope: pm, sequence: true });
@@ -609,6 +639,7 @@ BCRMEnhanceScreenViewListApplet = function () {
 //Get details for a screen
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMGetWTScreenDetail = function (screen) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var url = location.origin + "/siebel/v1.0/workspace/MAIN/Screen/" + screen + "?uniformresponse=Y&childlinks=none&fields=Default View";
     var items = [];
     var det = {};
@@ -631,6 +662,7 @@ BCRMGetWTScreenDetail = function (screen) {
 //Note, not filtered by responsibility (see todo section)
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMGetAppScreens = function (app) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     //uses localStorage as "cache"
     if (typeof (localStorage.BCRM_WT_SCREENS) === "undefined") {
@@ -678,6 +710,7 @@ BCRMGetAppScreens = function (app) {
 var BCRM_ALLOWED_VIEWS = [];
 var BCRM_FORBIDDEN_VIEWS = [];
 BCRMCheckViewAccess = function (views) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var acl;
     var to_check = [];
     for (var i = 0; i < views.length; i++) {
@@ -726,6 +759,7 @@ BCRMCheckViewAccess = function (views) {
 //Get screen views for a screen
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMGetWTScreenViews = function (screen) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //only allow vanilla views
     var vanilla = ["Accessibility Applet Attributes View", "Accessibility View Attributes View", "Admin - Restricted Menu Items", "Alert Admin View", "Application Admin View Order View", "Application Data Rule Expression View", "Batch Component Admin View", "Batch Job Submission View", "Business Process Access View", "Business Service Access View", "Business Service List View", "Business Service Methods List View", "Business Service Script Editor View", "Business Service Test View", "Business Service User Properties View", "XA Administration Detail View", "Component Job View", "Contact Us Mail Address Administration View", "Contact Us Email Subject Administration View", "Contact Us Mail Address Administration View", "Enterprise Compgroup View (Configuration)", "Enterprise Component Definition View (Configuration)", "Enterprise Explorer View (Configuration)", "Enterprise Parameters View", "Enterprise Server/Server View", "FINCORP Org Category Admin List View", "FINS Approval Administration View", "FINS Authentication Administration View", "FINS Authentication Template View", "FINS CEM Admin View", "FINS CF Fair Market Value Auction Admin View", "FINS CF Fair Market Value FMV Admin View", "FINS CF Vehicle Residuals Reference Data Admin View", "FINS Calculation Manager Rule Set View", "FINS Data Map Admin View", "Knowledge Management Admin View", "LS Pharma Smart Call Template Admin Detail View", "Manifest Expression List View", "Manifest File List View", "Message Map View", "Navigation Links Admin View", "Pharma Admin Medical Procedure View", "Pharma Admin Plan View", "Pharma Admin Professional Primary Specialty", "Pharma Template Call List View", "Predefined Query Administration View", "Process Failure Diagnostics", "Product Line Fee Administration View", "Quick Fill Templates Administration View", "RS Admin Profile View", "Registered Task Administration View", "Repeating Batch Job List View", "Repository UI EIM Attribute Mapping Detail View", "Repository UI EIM Foreign Key Mapping Detail View", "Repository UI EIM Interface Table Column Detail View", "Repository UI EIM Interface Table List View", "Repository UI EIM Primary Mapping Detail View", "Repository UI EIM Table User Key Detail View", "Repository UI Table Column Detail View", "Repository UI Table Column List View", "Repository UI Table Data Source Detail View", "Repository UI Table Index Column Detail View", "Repository UI Table User Key Attribute Join Detail View", "Repository UI Table User Key Attribute Tree Node Detail View", "Repository UI Table User Key Column Detail View", "Responsibility Administration View", "Responsibility Detail  -  Business Process Access View", "Responsibility Detail  -  Business Service Access View", "Responsibility Detail - Tab Layout View", "Responsibility Detail - Tasks View", "Runtime Config Version Info", "Runtime Config Version Info", "SA-VBC Alert Definitions View", "SA-VBC Named Subsystem View", "SRF Vlink Public Screen View View", "Server Server /Parameter View (Configuration)", "Server Server/Compgroup View", "Server Server/Component/Event Configuration View", "Server Server/Component/Parameter View", "Server Server/Component/State Value View", "Server Server/Component/Statistic View", "Server Server/Component/Task View", "Server Server/Info Log View", "Server Server/Server Event Configuration", "Server Server/Session View", "Server Server/Statistic View", "Server Server/Task View", "Server Session/Info Log View", "Server Session/Parameter View", "Server Session/State Value View", "Server Session/Statistic View", "Server Task History List View", "Server Task/Info Log View", "Server Task/Parameter View", "Server Task/State Value View", "Server Task/Statistic View", "Service Locator Admin View", "Service Request Assignment View", "Siebel License Key View", "State Model Detail View", "State Model Detail View - Categories", "State Model Detail View - States", "State Model List View", "System Preferences", "Task Administration View", "UI Object List View", "Usage Pattern Tracking List View", "View Administration View", "WSUI Conflict Resolution View", "WSUI Dashboard View", "WSUI Delivered View", "eAuto Dealer Locator Admin View", "eEvents Session Template Admin View"];
     if (bcrm_check_user_views) {
@@ -763,6 +797,7 @@ BCRMGetWTScreenViews = function (screen) {
 //Create Screen Menu
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMCreateScreenMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var tm = $("<ul id='bcrm_scr_menu_ul' style='display:none;' class='depth-0'></ul>");
     var vc, vi, tt, cat;
     var cats = [];
@@ -906,6 +941,7 @@ BCRMCreateScreenMenu = function () {
 //Add Screen Menu button
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMAddWTScreenMenu = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var m;
     if ($("#bcrm_screen_menu").length == 0) {
         m = $('<li title="This Screen Menu is brought to you by devpops.\nBe gentle." id="bcrm_screen_menu" class="siebui-appmenu-item ui-menubar-item" role="presentation"><a href="javascript:void(0)" class="ui-button ui-widget ui-button-text-only ui-menubar-link" role="menuitem" aria-haspopup="true"><span class="ui-button-text">Screens</span></a></li>');
@@ -944,6 +980,7 @@ BCRMAddWTScreenMenu = function () {
 //Remove a view entry from user's recently used view list
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMRemoveRecentView = function (vn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var rviews = JSON.parse(BCRMGetStorageItem(devpops_storage, SiebelApp.S_App.GetUserName() + "@wt_rec_views"));
     if (typeof (rviews) !== "undefined") {
         for (var i = 0; i < rviews.length; i++) {
@@ -962,6 +999,7 @@ BCRMRemoveRecentView = function (vn) {
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 //dependency on Base BCRM devpops Storage IO
 BCRMStorageCheck = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval = false;
     var url = location.origin + "/siebel/v1.0/data/BCRM devpops Storage/Business Service/describe";
     var cd;
@@ -986,6 +1024,7 @@ BCRMStorageCheck = function () {
 //creates storage record if readonly=false
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMGetStorageId = function (rn, readonly) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     if (BCRMStorageCheck() == true) {
         //query first, need to get Id because of PUT bug in some versions
@@ -1040,6 +1079,7 @@ BCRMGetStorageId = function (rn, readonly) {
 //Write item to storage, sdata must be a string (objects must be stringified when "set" and parsed after "get")
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMSetStorageItem = function (rn, sn, sdata, com) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval = false;
     if (BCRMStorageCheck() == true) {
         if (typeof (com) === "undefined") {
@@ -1083,6 +1123,7 @@ BCRMSetStorageItem = function (rn, sn, sdata, com) {
 //Get value of a storage item, object data must be parsed after retrieval
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMGetStorageItem = function (rn, sn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     if (BCRMStorageCheck() == true) {
         var rid = BCRMGetStorageId(rn, true);
@@ -1110,12 +1151,17 @@ BCRMGetStorageItem = function (rn, sn) {
 //Inject custom CSS
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMInjectCSS = function (name, css) {
-    var st = $("<style bcrm-temp-style_" + name + "='yes'>" + css + "</style>");
-    if ($("style[bcrm-temp-style_" + name + "]").length == 0) {
-        $("head").append(st);
+    if (location.href.indexOf("WSUI+Dashboard+View") == -1) {
+        devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+        var st = $("<style bcrm-temp-style_" + name + "='yes'>" + css + "</style>");
+        if ($("style[bcrm-temp-style_" + name + "]").length == 0) {
+            $("head").append(st);
+        }
     }
 };
+
 BCRMUnInjectCSS = function (name) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if ($("style[bcrm-temp-style_" + name + "]").length > 0) {
         $("style[bcrm-temp-style_" + name + "]").remove();
     }
@@ -1124,6 +1170,7 @@ BCRMUnInjectCSS = function (name) {
 //Auto Column Resize: Add button (call from PR)
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMAddAutoResizeButton = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (pm.Get) === "function") {
         var pr = pm.GetRenderer();
         var fi = pm.Get("GetFullId");
@@ -1160,6 +1207,7 @@ BCRMAddAutoResizeButton = function (pm) {
 //restricted to popup applets
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMAutoResizeHandler = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (pm.Get) === "function") {
         if (pm.Get("IsPopup")) {
             var ap = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
@@ -1179,6 +1227,7 @@ BCRMAutoResizeHandler = function (pm) {
 //Auto Resize Columns execution
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMResizeCol = function (pm, colname, nw) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (pm.Get) === "function") {
         var pr = pm.GetRenderer();
         var idx = 0;
@@ -1231,6 +1280,7 @@ BCRMResizeCol = function (pm, colname, nw) {
 //Auto Resize Columns main function
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMAutoResizeColumns = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (pm.Get) === "function") {
         try {
             var pr = pm.GetRenderer();
@@ -1247,13 +1297,11 @@ BCRMAutoResizeColumns = function (pm) {
             var cm = ch.GetColMap();
             var minwidth = new Map();
 
-
             //22.10.2: write back to repository
             var cf = ch.GetColField();
             var lcn;
             var repowidth = new Map();
             var listcols = {};
-
 
             var nr = rs.length;
             if (nr > 0) {
@@ -1265,7 +1313,6 @@ BCRMAutoResizeColumns = function (pm) {
                         rs[nr][fn] = cs[ct].GetDisplayName();
                     }
                 }
-
 
                 for (r in rs) {
                     record = rs[r];
@@ -1352,6 +1399,7 @@ BCRMAutoResizeColumns = function (pm) {
 var BULC_PM;
 var BULC_FMAP;
 BCRMUpdateListColumns = function (pm, fields, skipDisplay = false, go = false) {
+    devpops_debug ? console.log(Date.now(), "BCRMUpdateListColumns") : 0;
     BULC_PM = pm;
     BULC_FMAP = fields;
     var ws = sessionStorage.BCRMCurrentWorkspace;
@@ -1522,6 +1570,7 @@ BCRMUpdateListColumns = function (pm, fields, skipDisplay = false, go = false) {
 }
 //Add Lizard button
 BCRMAddLizardButton = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var btn = $('<div id="devpops_lizard" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops Lizard: Auto-resize List Columns"><li id="devpops_1" class="siebui-toolbar-enable" role="menuitem" title="devpops Lizard: Auto-resize List Columns" aria-label="devpops Lizard: Auto-resize List Columns" name="devpops Lizard: Auto-resize List Columns">🦎</li></ul></div>');
     if ($("#devpops_lizard").length == 0) {
         $("div#siebui-toolbar-settings").after(btn);
@@ -1532,8 +1581,157 @@ BCRMAddLizardButton = function () {
     }
 };
 
+//23.6 and higher
+//Add Favorites button
+var BCRM_FAVS_INT;
+BCRMAddFavoritesButton = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var btn = $('<div id="devpops_favs" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops Favs"><li id="devpops_1" class="siebui-toolbar-enable" role="menuitem" aria-label="devpops Vavs" name="devpops Favs">⭐</li></ul></div>');
+    btn.attr("title", "Left-click: Add selected record to favorites\nRight-click: Open Favorites List");
+    if ($("#devpops_favs").length == 0) {
+        $("div#siebui-toolbar-settings").after(btn);
+        btn.on("contextmenu", function () {
+            SiebelApp.S_App.GotoView("WT Favourites List Applet View");
+            return false;
+        });
+        btn.on("click", function () {
+            BCRMPopFavorites();
+        })
+    }
+};
+
+BCRMPopFavorites = function () {
+    var opm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
+    let fn = "Name";
+    if (SiebelApp.S_App.GetActiveView().GetName() == "WT Repository Workflow Process List View") {
+        fn = "Process Name";
+    }
+    var fname = opm.Get("GetRawRecordSet")[opm.Get("GetSelection")][fn];
+    opm.ExecuteMethod("InvokeMethod", "AddFavourites");
+
+    //wait for favs popup and override name with the real thing
+    BCRM_FAVS_INT = setInterval(function () {
+        let am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+        if (Object.hasOwn(am, "WT Favourites Applet")) {
+            let fpm = am["WT Favourites Applet"].GetPModel();
+            let fpr = fpm.GetRenderer();
+            if (typeof (fpr) !== "undefined") {
+                clearInterval(BCRM_FAVS_INT);
+                //set name and save
+                let fnc = fpm.Get("GetControls")["Fav Name"];
+                let fnel = fpr.GetUIWrapper(fnc).GetEl();
+                fnel.val(fname.substring(0, 75));
+                //fpm.ExecuteMethod("InvokeMethod","SaveFavourites");
+                //BCRMToast("'" + fname + "' saved as Favorite");
+            }
+        }
+    }, 50);
+};
+
+//"improve" WT Favourites List Applet View
+BCRMEnhanceFavsView = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    let pm = SiebelApp.S_App.GetActiveView().GetAppletMap()["WT Favourites List Applet"].GetPModel();
+    let fi = pm.Get("GetFullId");
+    if (pm.Get("BCRM_ENHANCE") != "true") {
+        pm.AddMethod("ShowSelection", BCRMEnhanceFavsView, { scope: pm, sequence: true });
+        pm.SetProperty("BCRM_ENHANCE", "true");
+    }
+
+    let ae = $("#" + fi);
+    ae.find("td[aria-roledescription='Object Name']").each(function () {
+        if ($(this).find("input").length > 0) {
+            $(this).text($(this).find("input").val());
+            $(this).find("input").hide();
+        }
+    });
+    ae.find("td[aria-roledescription='Object Name']").each(function () {
+        if ($(this).text().indexOf("WT Repository") > -1) {
+            let ot = $(this).text();
+            ot = ot.replaceAll("WT Repository", "");
+            ot = ot.replaceAll("List Applet", "");
+            $(this).text(ot);
+            $(this).on("click", function () {
+                BCRMEnhanceFavsView();
+            })
+        }
+    });
+}
+
+BCRMGetFavorites = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    //list applets only for now
+    if (typeof (pm) === "undefined") {
+        pm = this;
+    }
+    if (pm.Get("GetListOfColumns")) {
+        if (pm.Get("BCRM_GETFAVS") !== "true") {
+            pm.AttachPMBinding("ShowSelection", BCRMGetFavorites, { sequence: true, scope: pm });
+            pm.SetProperty("BCRM_GETFAVS", "true");
+        }
+        var user = SiebelApp.S_App.GetUserName();
+        var rrs = pm.Get("GetRawRecordSet");
+        var fi = pm.Get("GetFullId");
+        var ae = $("#" + fi);
+        var s = [];
+
+        //cleanup
+        ae.find(".bcrm-fav").each(function () {
+            $(this).removeClass("bcrm-fav");
+        });
+
+        //CSS
+        BCRMInjectCSS("favs001", "tr.bcrm-fav td{background:lightyellow!important;}");
+
+        //get row-ids in a row for searching
+        for (r in rrs) {
+            if (typeof (rrs[r]["Id"]) !== "undefined") {
+                s.push("[Record Id]='" + rrs[r]["Id"] + "'");
+            }
+        }
+        var searchspec = s.join(" OR ");
+        searchspec = "(" + searchspec + ")";
+        searchspec += " AND [Owner Name]='" + user + "'";
+
+        var myHeaders = new Headers();
+        //myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
+
+        var requestOptions = {
+            method: 'GET',
+            headers: myHeaders,
+            redirect: 'follow'
+        };
+
+        fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/BCRM List Of Favourites?uniformresponse=y&searchspec=" + searchspec, requestOptions)
+            .then(response => response.text())
+            .then(result => {
+                let res = JSON.parse(result);
+                if (typeof (res.items) !== "undefined") {
+                    let items = res.items;
+                    ae.find("tr[role='row']").each(function () {
+                        let row = $(this);
+                        if (typeof (row.attr("id")) !== "undefined") {
+                            let x = parseInt(row.attr("id")) - 1;
+                            let rowid = rrs[x]["Id"];
+                            for (i in items) {
+                                if (items[i]["Record Id"] == rowid) {
+                                    row.addClass("bcrm-fav");
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                //do nothing
+            });
+    }
+};
+
 //Add History button
 BCRMAddHistoryButton = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var btn = $('<div id="devpops_hist" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops: View Workspace History for active record"><li id="devpops_2" class="siebui-toolbar-enable" role="menuitem" title="devpops: View Workspace History for active record" aria-label="devpops: View Workspace History for active record" name="devpops: View Workspace History for active record">⏰</li></ul></div>');
     if ($("#devpops_hist").length == 0) {
         $("div#siebui-toolbar-settings").after(btn);
@@ -1552,6 +1750,7 @@ BCRMAddHistoryButton = function () {
 
 //Add ChangeRecords button
 BCRMAddChangeRecordsButton = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var btn = $('<div id="devpops_cr" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops: Change Records"><li id="devpops_3" class="siebui-toolbar-enable" role="menuitem" title="devpops: Change Records" aria-label="devpops: Change Records" name="devpops: Change Records">💿</li></ul></div>');
     if ($("#devpops_cr").length == 0) {
         $("div#siebui-toolbar-settings").after(btn);
@@ -1599,6 +1798,7 @@ BCRMAddChangeRecordsButton = function () {
 
 //Enhance 3-applet views (with Form Applet on top)
 BCRMAddFormNavigation = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var view = SiebelApp.S_App.GetActiveView();
     var am = view.GetAppletMap();
     var l = 0;
@@ -1668,6 +1868,7 @@ BCRMAddFormNavigation = function () {
 //Enhance WS Dashboard
 //TBD: Split into functions, for now we only have the object drilldown, so we're good
 BCRMEnhanceWSDashboard = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var row, cell, vn, ot;
     if (typeof (pm.Get) != "function") {
         pm = this;
@@ -1722,6 +1923,7 @@ BCRMEnhanceWSDashboard = function (pm) {
 
 //goto object demo
 BCRMGotoObject = function (rn, ot) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var vn = "WT Repository " + ot + " List View";
     sessionStorage.BCRM_DBNAV_VIEW = vn;
     sessionStorage.BCRM_DBNAV_RN = rn;
@@ -1734,7 +1936,7 @@ BCRMGotoObject = function (rn, ot) {
 
 //post Dashboard Navigation query
 BCRMPostDBNavQuery = function (vn) {
-
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     $("#maskoverlay").css("background", "rgb(128 128 128 / 25%)");
     $("#maskoverlay").show();
 
@@ -1864,17 +2066,26 @@ BCRMPostDBNavQuery = function (vn) {
 //Vanilla business service to the rescue
 BCRMGetWSContext = function () {
     try {
-        var svwecp = SiebelApp.S_App.GetService("Web Engine Client Preferences");
-        var ip = SiebelApp.S_App.NewPropertySet();
-        if (typeof (svwecp.InvokeMethod) === "function") {
-            var op = svwecp.InvokeMethod("GetActiveWSContext", ip);
-            if (typeof (op) !== "undefined") {
-                op = op.GetChildByType("ResultSet");
-                sessionStorage.BCRMCurrentWorkspaceVersion = op.GetProperty("WSVersion");
-                sessionStorage.BCRMCurrentWorkspace = op.GetProperty("WSName");
-                sessionStorage.BCRMCurrentWorkspaceStatus = op.GetProperty("ActiveWSStatus");
-                if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools") {
-                    BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+        if (location.href.indexOf("WSUI+Dashboard+View") == -1) {
+            devpops_debug ? console.log(Date.now(), "BCRMGetWSContext") : 0;
+            var svwecp = SiebelApp.S_App.GetService("Web Engine Client Preferences");
+            var ip = SiebelApp.S_App.NewPropertySet();
+            if (typeof (svwecp.InvokeMethod) === "function") {
+                var op = svwecp.InvokeMethod("GetActiveWSContext", ip);
+                if (typeof (op) !== "undefined") {
+                    op = op.GetChildByType("ResultSet");
+                    sessionStorage.BCRMCurrentWorkspaceVersion = op.GetProperty("WSVersion");
+                    sessionStorage.BCRMCurrentWorkspace = op.GetProperty("WSName");
+                    sessionStorage.BCRMCurrentWorkspaceStatus = op.GetProperty("ActiveWSStatus");
+                    //populate global WS variable (first time only)
+                    if ($.isEmptyObject(BCRM_WORKSPACE)) {
+                        BCRM_WORKSPACE.WS = sessionStorage.BCRMCurrentWorkspace
+                        BCRM_WORKSPACE.VER = sessionStorage.BCRMCurrentWorkspaceVersion
+                        BCRM_WORKSPACE.STATUS = sessionStorage.BCRMCurrentWorkspaceStatus
+                    }
+                    if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools") {
+                        BCRMWSUpdateWSBanner(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, sessionStorage.BCRMCurrentWorkspaceStatus);
+                    }
                 }
             }
         }
@@ -1886,6 +2097,7 @@ BCRMGetWSContext = function () {
 
 //WSUI Dashboard: Get Current Selection
 BCRMWSDBGetCurrentSelection = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var vn = SiebelApp.S_App.GetActiveView().GetName();
     var retval;
     if (vn == "WSUI Dashboard View") {
@@ -1900,6 +2112,7 @@ BCRMWSDBGetCurrentSelection = function () {
 
 //Workspace Actions
 BCRMWorkspaceAction = function (action) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var svc = SiebelApp.S_App.GetService("Web Engine Client Preferences");
     var ips = SiebelApp.S_App.NewPropertySet();
     sessionStorage.BCRM_DBNAV_WSACTION = action;
@@ -1909,6 +2122,7 @@ BCRMWorkspaceAction = function (action) {
 //get all workspaces for a given object
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWSGetWSForObject = function (rn, ot, searchspec) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var response;
     var retval;
     //get only Edit-In-Progress workspaces by default
@@ -1936,6 +2150,7 @@ BCRMWSGetWSForObject = function (rn, ot, searchspec) {
 //get objects for a given workspace
 //demo: pagination in REST
 BCRMGetObjectsForWS = function (ws, ver) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var oresponse, objdata, oitems, links;
     var items = [];
     var srn = 0;
@@ -1974,7 +2189,9 @@ BCRMGetObjectsForWS = function (ws, ver) {
 };
 
 BCRMDisplayObjectsForWS = function (ws, ver) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (ws) === "undefined") {
+        devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMDisplayObjectsForWS") : 0;
         BCRMGetWSContext();
         ws = sessionStorage.BCRMCurrentWorkspace;
         ver = sessionStorage.BCRMCurrentWorkspaceVersion;
@@ -2071,6 +2288,7 @@ BCRMDisplayObjectsForWS = function (ws, ver) {
 };
 
 BCRMWSGetWSHistoryForObject = function (rn, ot, searchspec) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var oresponse, mresponse, aresponse;
     var objdata;
     var mrgdata;
@@ -2161,7 +2379,9 @@ BCRMWSGetWSHistoryForObject = function (rn, ot, searchspec) {
 
 //Display workspaces for a given object
 BCRMDisplayWSForObject = function (rn, ot, bvn) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var curws = BCRMWSDBGetCurrentSelection();
+    devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMDisplayWSForObject") : 0;
     BCRMGetWSContext();
     var ows = sessionStorage.BCRMCurrentWorkspace + "/" + sessionStorage.BCRMCurrentWorkspaceVersion;
     var wss = [];
@@ -2281,6 +2501,7 @@ BCRMDisplayWSForObject = function (rn, ot, bvn) {
 };
 
 BCRMDisplayWSHistory = function (rn, ot) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var data = BCRMWSGetWSHistoryForObject(rn, ot);
     var dlg = $("<div id='bcrm_wslist' style='overflow-y: auto;'>");
     var itext = ot + ": " + rn;
@@ -2294,6 +2515,7 @@ BCRMDisplayWSHistory = function (rn, ot) {
     });
 
     //add currently open WS if not in data
+    devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMDisplayWSHistory") : 0;
     BCRMGetWSContext();
     var currws = sessionStorage.BCRMCurrentWorkspace + "/" + sessionStorage.BCRMCurrentWorkspaceVersion;
     var currws_in_data = false;
@@ -2436,6 +2658,7 @@ BCRMDisplayWSHistory = function (rn, ot) {
 
 //locate ws/version in WS Dashboard
 BCRMQueryWSList = function (searchspec, select, v, rn, ot) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var view = SiebelApp.S_App.GetActiveView();
     if (view.GetName() == "WSUI Dashboard View") {
         var pm = view.GetApplet("WSUI Dashboard - All Workspaces List Applet").GetPModel();
@@ -2507,6 +2730,7 @@ BCRMQueryWSList = function (searchspec, select, v, rn, ot) {
 
 //add "drilldown"
 BCRMAddDrilldown = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var vn = SiebelApp.S_App.GetActiveView().GetName();
     var dd = {
         "WT Repository Business Service Method Arg List View": {
@@ -2556,6 +2780,7 @@ BCRMAddDrilldown = function () {
 
 //Enhance WF Editor
 BCRMEnhanceWFEditor = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         var canvas = $("div.siebui-ide-canvas");
         if (canvas.length > 0) {
@@ -2607,6 +2832,7 @@ BCRMEnhanceWFEditor = function () {
 
 //Open Script Debugger (and load an object)
 BCRMOpenScriptDebugger = function (rn, ot, m) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         if ($("#_swescriptdebugger:visible").length == 0) {
             $("li[name='Toggle Script Debugger']").click();
@@ -2679,6 +2905,7 @@ BCRMOpenScriptDebugger = function (rn, ot, m) {
 
 //Add Buttons
 BCRMMoarButtons = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         //Edit Server Script button to all applets (Applet, Application, Business Component, Business Service)
         //let's hope top applet is always active
@@ -2707,6 +2934,7 @@ BCRMMoarButtons = function () {
 
 //Enhance Server Script Editors
 BCRMEnhanceServerScriptEditor = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         var pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
         var fi = pm.Get("GetFullId");
@@ -2740,6 +2968,7 @@ BCRMEnhanceServerScriptEditor = function () {
 
 //Add click handler for active WS banner in Web Tools
 BCRMEnhanceWSBanner = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var b = $("div.siebui-active-ws");
     var nt = "";
     var vn = SiebelApp.S_App.GetActiveView().GetName();
@@ -2758,6 +2987,7 @@ BCRMEnhanceWSBanner = function () {
             nt += "\nRight-click: Select in WS Dashboard";
             b.off("contextmenu");
             b.on("contextmenu", function () {
+                devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMEnhanceWSBanner/contextmenu") : 0;
                 BCRMGetWSContext();
                 let wsn = sessionStorage.BCRMCurrentWorkspace;
                 let wsv = sessionStorage.BCRMCurrentWorkspaceVersion;
@@ -2772,6 +3002,7 @@ BCRMEnhanceWSBanner = function () {
 
 //devpops style for dialogs
 BCRMInjectDialogStyle = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     BCRMInjectCSS("bcrmdlg1", ".ui-dialog.bcrm-dialog, .ui-dialog.bcrm-dialog div, .ui-dialog.bcrm-dialog span {background: #29303f;color: papayawhip;font-family: 'Roboto';font-weight: 300!important;line-height: 1.6;}");
     BCRMInjectCSS("bcrmdlg2", ".ui-dialog.bcrm-dialog input, .ui-dialog.bcrm-dialog select, .ui-dialog.bcrm-dialog textarea {background: papayawhip;border: none;line-height: 1.6;font-family: 'Roboto'!important;font-weight: 300!important;margin-bottom:4px;}");
     BCRMInjectCSS("bcrmdlg3", ".ui-dialog.bcrm-dialog button {background: papayawhip;border: none!important;line-height: 1.6;font-family: 'Roboto'!important;font-weight: 300!important;font-size: 1.6em!important;border-radius: 10px;cursor: pointer;}");
@@ -2785,6 +3016,7 @@ BCRMInjectDialogStyle = function () {
 
 //Enhance list applet: keep focus on column during query
 BCRMQueryFocus = function (m) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     try {
         var pm = this;
         if (typeof (pm.Get) !== "function") {
@@ -2835,9 +3067,15 @@ BCRMQueryFocus = function (m) {
 
 //Get record set with actual display names
 BCRMGetDisplayRecordSet = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //get mapped record set
     var cs = pm.Get("GetControls");
     var rd = pm.Get("GetRecordSet");
+
+    //Full Record Set Example: Works with any custom business service capable of returning the full record set for the current applet
+    //NOTE: This is not part of devpops due to security reasons, you must implement the custom BS yourself
+    //rd = BCRMGetFullRecordSet(pm);
+
     var rs = [];
     var hidden = ["Outline Number", "Has Children", "Is Expanded", "Id", "Parent Asset Id", "Hierarchy Level", "Is Leaf", "Parent Id"];
     //get record set with display names
@@ -2858,8 +3096,70 @@ BCRMGetDisplayRecordSet = function (pm) {
     return rs;
 };
 
+//requires custom BS (i.e. does not work in safe mode/webtools)
+BCRMGetFullRecordSet = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    let fullrs = [];
+    //hierarchical list applets have pseudo fields in PM
+    let hidden = ["Outline Number", "Has Children", "Is Expanded", "Parent Asset Id", "Hierarchy Level", "Is Leaf", "Parent Id"];
+    let rs = pm.Get("GetRecordSet");
+    let sel = rs[pm.Get("GetSelection")];
+    let bc = pm.Get("GetBusComp").GetName();
+    let fieldlistPS = SiebelApp.S_App.NewPropertySet();
+    let ops = SiebelApp.S_App.NewPropertySet();
+    for (fn in sel) {
+        if (hidden.indexOf(fn) == -1) {
+            fieldlistPS.SetProperty(fn, "");
+        }
+    }
+    //BCRM Dashboard Service is a placeholder for your custom BS which returns the full record set for a given BC within the active BO
+    let activeBCdata = BCRMInvokeServiceMethod(
+        {
+            "service": "BCRM Dashboard Service",
+            "method": "GetActiveBCData",
+            "inputs":
+            {
+                "Business Component": bc,
+                "RunQuery": "true",
+                "FieldList": fieldlistPS.EncodeAsString()
+            }
+        });
+    let result = activeBCdata.GetChildByType("ResultSet");
+    let v = result.GetProperty("v");
+    ops.DecodeFromString(v);
+    let rc = ops.GetProperty("RecordCount");
+    let stn = bc + "_count";
+    sessionStorage[stn] = rc;
+    let data = ops.GetChildByType("ObjectData");
+    let cc = data.GetChildCount();
+    for (let i = 0; i < cc; i++) {
+        let cr = data.GetChild(i);
+        let prop = cr.GetFirstProperty();
+        let record = {};
+        do {
+            record[prop] = cr.GetProperty(prop);
+            prop = cr.GetNextProperty();
+        } while (prop != null);
+        fullrs.push(record);
+    }
+
+    //re-order columns
+    let temp = [];
+    for (r in fullrs) {
+        let tr = {}
+        for (fn in rs[0]) {
+            tr[fn] = fullrs[r][fn];
+        }
+        temp.push(tr);
+    }
+    fullrs = temp;
+
+    return fullrs;
+};
+
 //JSON to table (e.g. record set)
 BCRMGetTableFromListPM = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //get record set with display names
     var rs = BCRMGetDisplayRecordSet(pm);
     //table header
@@ -2892,6 +3192,7 @@ BCRMGetTableFromListPM = function (pm) {
 
 //a new face for About View?
 BCRMAboutTime = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var v = $("#_sweview").clone();
     var view = SiebelApp.S_App.GetActiveView();
     var vn = view.GetName();
@@ -2971,19 +3272,27 @@ BCRMAboutTime = function () {
 //shoelace experiment
 var BCRM_SL_LOADED = false;
 //Inject shoelace
-if (!BCRM_SL_LOADED) {
-    if ($("link[href*='shoelace']").length == 0) {
-        let slcss = $('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0/dist/themes/light.css" />');
-        let sljs = $('<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0/dist/shoelace.js"></script>');
-        $("head").append(slcss);
-        $("head").append(sljs);
-        //shoelace toast CSS
-        BCRMInjectCSS("shoelace1", ".sl-toast-stack{top: unset;bottom: 0;display: flex;flex-direction: column-reverse;}");
-        BCRM_SL_LOADED = true;
+BCRMLoadShoelace = function () {
+    if (!BCRM_SL_LOADED) {
+        if (location.href.indexOf("WSUI+Dashboard+View") == -1) {
+            devpops_debug ? console.log(Date.now(), "Loading shoelace") : 0;
+            if ($("link[href*='shoelace']").length == 0) {
+                let slcss = $('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0/dist/themes/light.css" />');
+                let sljs = $('<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0/dist/shoelace.js"></script>');
+                $("head").append(slcss);
+                $("head").append(sljs);
+                //shoelace toast CSS
+                BCRMInjectCSS("shoelace1", ".sl-toast-stack{top: unset;bottom: 0;display: flex;flex-direction: column-reverse;}");
+                BCRM_SL_LOADED = true;
+            }
+        }
     }
 }
+BCRMLoadShoelace();
+
 //add pretty tooltips
 BCRMTooltipMod = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     setTimeout(function () {
         $("li[title],button[title]").each(function () {
             let t = $(this).attr("title");
@@ -2995,6 +3304,7 @@ BCRMTooltipMod = function () {
 };
 //toast á la shoelace
 BCRMToast = function (message, variant = 'primary', icon = 'info-circle', duration = 3000) {
+    devpops_debug ? console.log(Date.now(), "BCRMToast") : 0;
     const toastme = Object.assign(document.createElement('sl-alert'), {
         variant,
         closable: true,
@@ -3010,6 +3320,7 @@ BCRMToast = function (message, variant = 'primary', icon = 'info-circle', durati
 };
 
 BCRMShowDrawer = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     const tree = BCRMGetDrawerTree();
     if ($(".dp-drawer-main").length == 0) {
         let drawer = $('<sl-drawer label="devpops ' + devpops_dver + '" contained placement="start" class="dp-drawer-main" style="--size: 20rem;"><sl-icon-button class="dp-drawer-edit" slot="header-actions" name="pencil" title="Edit"></sl-icon-button><sl-icon-button style="display:none;" class="dp-drawer-save" slot="header-actions" name="save" title="Save"></sl-icon-button><sl-button class="dp-drawer-closebtn" slot="footer" variant="primary">Close</sl-button></sl-drawer>');
@@ -3050,6 +3361,7 @@ BCRMShowDrawer = function () {
 };
 
 ShowOptionsSL = function (m) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     let BCRM_MENU_SL = BCRMGetSLMenu();
     const opt = BCRM_MENU_SL[m].options;
     let prefix = "BCRM_OPT_" + m + "_";
@@ -3098,6 +3410,7 @@ ShowOptionsSL = function (m) {
 };
 
 BCRMGetDrawerTree = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     let tree = $("<sl-tree></sl-tree>");
     let p = 1;
     let BCRM_MENU_SL = BCRMGetSLMenu();
@@ -3244,12 +3557,15 @@ BCRMGetDrawerTree = function () {
 //Online Help URL
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMGetToolsHelpURL = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var retval;
     var seblver;
     var url1 = "https://docs.oracle.com/cd/";
     var url2 = "/portalres/pages/other_toolshelp.htm";
     if (typeof (localStorage.BCRM_SIEBEL_VERSION) === "undefined") {
-        alert("Siebel version information not found. Please log in to a Siebel application session with devpops in the same browser and try again.");
+        //alert("Siebel version information not found. Please log in to a Siebel application session with devpops in the same browser and try again.");
+        //default
+        seblver = "21.12";
     }
     else {
         seblver = localStorage.BCRM_SIEBEL_VERSION.split(".")[0] + "." + localStorage.BCRM_SIEBEL_VERSION.split(".")[1];
@@ -3261,6 +3577,7 @@ BCRMGetToolsHelpURL = function () {
 //Online Help Menu
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMSetToolsHelpContent = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     var url = BCRMGetToolsHelpURL();
     if (typeof (url) != "undefined") {
         $("[data-caption='&Help']").find("a").each(function (x) {
@@ -3278,22 +3595,77 @@ BCRMSetToolsHelpContent = function () {
     }
 };
 
+//moved from devpops.js to support Web Tools
+//version check
+//example input (20,7,"ge"): true if current version is greater than or equal to 20.7; false if current version is 20.6 or earlier
+BCRMSiebelVersionCheck = function (y, m, mode) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    //mode: lt=less than, le=less than or equal, gt=greater than, ge=greater than or equal, eq=equal
+    var curv_y = BCRM_SIEBEL_V.y;
+    var curv_m = BCRM_SIEBEL_V.m;
+    var retval = false;
+    if (mode == "ge") {
+        if (curv_y == y && curv_m >= m) {
+            retval = true;
+        }
+        if (curv_y > y) {
+            retval = true;
+        }
+    }
+    if (mode == "gt") {
+        if (curv_y == y && curv_m > m) {
+            retval = true;
+        }
+        if (curv_y > y) {
+            retval = true;
+        }
+    }
+    if (mode == "le") {
+        if (curv_y == y && curv_m <= m) {
+            retval = true;
+        }
+        if (curv_y < y) {
+            retval = true;
+        }
+    }
+    if (mode == "lt") {
+        if (curv_y == y && curv_m < m) {
+            retval = true;
+        }
+        if (curv_y < y) {
+            retval = true;
+        }
+    }
+    if (mode == "eq") {
+        if (curv_y == y && curv_m == m) {
+            retval = true;
+        }
+    }
+    return retval;
+};
+
 //main postload function for Web Tools
 //THIS FUNCTION MUST BE IN VANILLA postxload.js to work in Web Tools!
 BCRMWTHelper = function () {
     try {
         //prevent double loading
+        var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
         var vn = SiebelApp.S_App.GetActiveView().GetName();
         if (vn == "WSUI Dashboard View" || sessionStorage.BCRM_CURRENT_VIEW != vn) {
+
             //enhance Web Tools
             if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
-
+                devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
                 var do_postnav_query = false;
+
+                //load shoelace
+                BCRMLoadShoelace();
 
                 //General enhancements
                 BCRMWebToolsEnhancer();
 
                 //update current open WS
+                devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMWTHelper") : 0;
                 BCRMGetWSContext();
 
                 //process postload after ws db navigation
@@ -3370,6 +3742,18 @@ BCRMWTHelper = function () {
                 //Add Change Records Button (*gasp*)
                 BCRMAddChangeRecordsButton();
 
+                //23.6 or higher: Add Favs button
+                if (BCRM_SYS != "NA") {
+                    if (BCRMSiebelVersionCheck(23, 5, "ge")) {
+                        BCRMAddFavoritesButton();
+                    }
+                }
+
+                //Enhance Favs view
+                if (vn == "WT Favourites List Applet View") {
+                    BCRMEnhanceFavsView();
+                }
+
                 //Add Form navigation for 3-applet views
                 BCRMAddFormNavigation();
 
@@ -3413,6 +3797,17 @@ BCRMWTHelper = function () {
                 //shoelace titles to tooltips
                 //BCRMTooltipMod();
 
+                //23.6+ list applet hover box
+                //for future use
+                //comment this part to disable hover boxes in Web Tools
+                //clean up hover boxes
+                $("[id^='bcrm_box']").each(function () {
+                    $(this).remove();
+                });
+                for (a in am) {
+                    BCRMAddListRecordHover(am[a].GetPModel());
+                }
+
                 console.log("BCRM devpops extension for Siebel Web Tools loaded");
 
                 //prevent double-loading
@@ -3425,18 +3820,34 @@ BCRMWTHelper = function () {
     }
 };
 
-//register Web Tools postload listener
-try {
-    if (location.pathname.indexOf("webtools") > -1) {
-        SiebelApp.EventManager.addListner("postload", BCRMWTHelper, this);
-    }
-}
-catch (e) {
-    console.log("Error in BCRM devpops extension for Siebel Web Tools: " + e.toString());
-}
+//23.6+ new way of getting app version
+BCRMGetAppInfo = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
+    var requestOptions = {
+        method: 'GET',
+        redirect: 'follow'
+    };
+    //Requires BO "BCRM Repository Details" and Base IO
+    fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/Database Version?childlinks=None", requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            BCRM_SYS = JSON.parse(result);
+            let v = BCRM_SYS['Application Version'].split("v")[1];
+            BCRM_SIEBEL_V = {
+                y: v.split(".")[0],
+                m: v.split(".")[1]
+            }
+            localStorage.BCRM_SIEBEL_VERSION = v;
+        })
+        .catch(error => {
+            BCRM_SYS = "NA";
+        });
+};
 
 //history tracker
 //TODO: fix bug with CheckAppletReady function (random error)
+/*
+//ahansal: deactivated due to bugs not resolved
 var BCRM_HIST_APP = "BCRM_HISTORY_" + location.pathname.replaceAll("/", "_");
 var BCRM_HISTORY = [];
 var BCRM_HISTORY_MAX = 100;
@@ -3470,6 +3881,7 @@ const BCRMTrackHistory = () => {
 };
 
 BCRMAddHistoryItem = function (hitem) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     BCRM_HISTORY.push(JSON.stringify(hitem));
     //max length
     if (BCRM_HISTORY.length > BCRM_HISTORY_MAX) {
@@ -3479,6 +3891,7 @@ BCRMAddHistoryItem = function (hitem) {
 };
 
 BCRMGenerateHistoryList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     BCRMInjectCSS("bcrmhist01", "sl-card.bcrm-current-session::part(body) {background: #3272a85c;}");
     var hasdata = false;
     let cont = $("<div id='bcrm_hist_container'>");
@@ -3537,9 +3950,10 @@ BCRMGenerateHistoryList = function () {
         cont.append("<sl-card>No history data found.</sl-card>");
     }
     return cont;
-}
+};
 
 BCRMShowHistoryList = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     let dlg = $("<sl-dialog id='bcrm_history' label='" + "BCRM History" + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
     const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
     closeButton.addEventListener('click', () => dlg.hide());
@@ -3548,10 +3962,1512 @@ BCRMShowHistoryList = function () {
     $("#bcrm_history").remove();
     $("body").append(dlg);
     $("#bcrm_history")[0].show();
-}
+};
+
 window.onload = BCRMTrackHistory;
-//workaround errors
+//work around errors for BCRMTrackHistory
 top.CheckAppletReady = function (a, b) { return false; };
 top.Top = function () { return window; };
+*/
+//23.6: List Applets: show popup menu on record hover
+var BCRM_CUR_BOX;
+var BCRM_BOX_INT = [];
+BCRMAddListRecordHover = function (pm) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
 
+    if (typeof (pm.Get) === "function") {
+        //show faves
+        BCRMGetFavorites(pm);
+        var fi = pm.Get("GetFullId");
+        var ae = $("#" + fi);
+
+        //clean up
+        $("[id^='bcrm_box']").each(function () {
+            $(this).remove();
+        });
+
+        //list applets only
+        if (pm.Get("GetListOfColumns")) {
+
+            BCRMInjectCSS("hover001", "tr[bcrm-box='true']:{border:1px solid lightgray!important;}");
+
+            //clean up globally on any other method, e.g. nextrecordset
+            pm.AddMethod("InvokeMethod", function () {
+                $("[id^='bcrm_box']").each(function () {
+                    $(this).remove();
+                });
+            }, { scope: pm, sequence: true });
+
+            $("#_sweview").removeAttr("title");
+
+            ae.find("tr[role='row']").each(function () {
+                if (typeof ($(this).attr("id")) !== "undefined") {
+
+                    //main mouseover event handler
+                    $(this).on("mouseover", function (e) {
+                        //remove distracting tooltips (this could be done elsewhere)
+                        $("#s_" + fi + "_div").removeAttr("title");
+                        ae.find("td[title]").each(function () {
+                            $(this).removeAttr("title");
+                        });
+
+                        //tr = table row/record
+                        var tr = $(this);
+                        var i = parseInt(tr.attr("id"));
+                        let rrs = pm.Get("GetRawRecordSet");
+
+                        //use ROW_ID for identification
+                        var rowid = rrs[i - 1]["Id"];
+                        tr.attr("bcrm-rowid", rowid);
+
+                        //if no box is open for current row
+                        if (tr.attr("bcrm-box") != "true") {
+
+                            //remove all other boxes
+                            $("[id^='bcrm_box']").each(function () {
+                                if ($(this).attr("bcrm_rowid") != tr.attr("bcrm_rowid")) {
+                                    $(this).remove();
+                                }
+                            });
+
+                            let boxid = "bcrm_box_" + i;
+
+                            //create box
+                            if (BCRM_CUR_BOX != rowid && ae.find("#" + boxid).length == 0) {
+                                let box = $("<div bcrm_rowid='" + rowid + "' id='" + boxid + "' style='box-shadow: 4px 4px 11px 0px rgb(210 233 245);z-index:99999;background:whitesmoke;border:1px solid darkgrey;border-radius:8px;width:150px;height:32px;position:absolute;'>");
+                                //box.text(rowid);
+
+                                //position
+                                box.css("top", e.clientY + 0 + "px");
+                                box.css("left", e.clientX + 4 + "px");
+
+                                //select record on click
+                                box.on("click", function () {
+                                    $(this).attr("bcrm-active", "true");
+                                    pm.ExecuteMethod("HandleRowSelect", i - 1);
+                                });
+
+                                box.on("mouseover", function () {
+                                    $(this).attr("bcrm-active", "true");
+                                });
+
+                                //add buttons to do record-specific stuff, e.g. About Record, Add to Faves (TBD), Show Details, Drilldown,...
+
+                                //Faves 23.6+ (Web Tools only)
+                                if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools" && BCRMSiebelVersionCheck(23, 5, "ge")) {
+                                    let fbtn = $("<button title='Add To Favorites' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>⭐</button>");
+                                    if (tr.hasClass("bcrm-fav")) {
+                                        fbtn.text("🤩");
+                                        fbtn.attr("title", "Already a fave");
+                                    }
+                                    fbtn.on("click", function () {
+                                        pm.ExecuteMethod("HandleRowSelect", i - 1);
+                                        if (!tr.hasClass("bcrm-fav")) {
+                                            BCRMPopFavorites();
+                                        }
+                                    });
+                                    box.append(fbtn);
+                                }
+
+                                //About Record
+                                let abrbtn = $("<button title='About Record' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>🆎</button>");
+                                abrbtn.on("click", function () {
+                                    pm.ExecuteMethod("HandleRowSelect", i - 1);
+                                    let ps = SiebelApp.S_App.NewPropertySet();
+                                    ps.SetProperty("Command", "*Browser Applet* *AboutRecord*" + pm.GetObjName() + "*About Record Applet*450*160*true");
+                                    ps.SetProperty("Method Argument", "About Record Applet");
+                                    ps.SetProperty("SWEH", "160");
+                                    ps.SetProperty("SWESP", "true");
+                                    ps.SetProperty("SWEW", "450");
+                                    let sps = ps.EncodeAsString();
+                                    let ips = SiebelApp.S_App.NewPropertySet();
+                                    ips.SetProperty("SWEIPS", sps);
+                                    pm.ExecuteMethod("InvokeMethod", "AboutRecord", ips); //yup, it's that complicated...
+                                    tr.attr("bcrm-box", "false");
+                                    box.remove();
+                                });
+                                box.append(abrbtn);
+
+                                $("body").append(box);
+
+                                BCRM_CUR_BOX = rowid;
+
+
+                                //remove open box after x seconds when not engaged
+
+                                let iv = setInterval(function () {
+                                    for (let i = 0; i < BCRM_BOX_INT.length; i++) {
+                                        window.clearInterval(BCRM_BOX_INT[i]);
+                                        BCRM_BOX_INT.splice(i, 1);
+                                    }
+                                    if ($("[id^='bcrm_box']").length > 0) {
+                                        $("[id^='bcrm_box']").each(function () {
+                                            if ($(this).attr("bcrm-active") != "true") {
+                                                $(this).fadeOut(400, function () {
+                                                    $(this).remove();
+                                                });
+                                            }
+                                        })
+                                    }
+                                }, 3000);
+                                BCRM_BOX_INT.push(iv);
+
+                                tr.attr("bcrm-box", "true");
+                            }
+                        }
+                    });
+
+                    //reset row status on mouseout
+                    $(this).on("mouseout", function (e) {
+                        $(this).attr("bcrm-box", "false");
+                        for (let i = 0; i < BCRM_BOX_INT.length; i++) {
+                            window.clearInterval(BCRM_BOX_INT[i]);
+                            BCRM_BOX_INT.splice(i, 1);
+                        }
+                    });
+                }
+            }); //end for each row
+        }
+    }
+};
+
+//23.6+ Repo Scanner, it not only scans the repo, it scans any other ol' BC for clues what the fella who quit 5 years ago really did leave behind
+BCRMGetEntProfileParamsQuery = function (cfg, on) {
+    devpops_debug ? console.log(Date.now(), "BCRMGetEntProfileParamsQuery") : 0;
+    var retval;
+    let query = cfg.query.replaceAll("$OBJ_NAME", on);
+    let fields = cfg.fields.split(",");
+    let qfields = query.split(" AND "); //we take it easy here, not allowing ORs
+    let label = cfg.label;
+    let ot = cfg.ot;
+    let xfield = cfg.xfield;
+
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMToast("Fetching Enterprise Profile data. Please stand by.", "primary", "info-circle", 10000);
+        BCRMGetCredentials("entprofquery", { payload: cfg, on: on });
+    }
+    else {
+        if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
+            BCRM_REPO_SCAN_CACHE[label] = [];
+        }
+        BCRMRepoScanShowResults(label, ot, on, true);
+        retval = true;
+        if (BCRM_ENTPROFILES.length == 0) {
+            BCRMGetEntProfiles();
+        }
+
+        //1st pass: find ent profiles that match the query
+        for (let q = 0; q < qfields.length; q++) {
+            if (qfields[q].indexOf("SS_") != -1) {
+                //part of the query that identifes the named subsystem
+                let fn = qfields[q].split("]")[0].replace("[", "");
+                let fv = qfields[q].split("='")[1].replaceAll("'", "");
+                //find the named subsystem and fetch the parameters
+                for (let i = 0; i < BCRM_ENTPROFILES.length; i++) {
+                    if (BCRM_ENTPROFILES[i][fn] == fv) {
+                        if (typeof (BCRM_ENTPROFILES[i]["PARAMS"]) === "undefined") {
+                            let alias = BCRM_ENTPROFILES[i]["NSS_ALIAS"];
+                            BCRMGetEntProfileParams(alias);
+                        }
+                    }
+                }
+            }
+        }
+        BCRMRepoScanShowResults(label, ot, on);
+        let match = 0;
+
+        //2nd pass: find params that match the query
+        for (var i = 0; i < BCRM_ENTPROFILES.length; i++) {
+            if (typeof (BCRM_ENTPROFILES[i]["PARAMS"]) !== "undefined") {
+                match = 0;
+                var matchid;
+                for (let p = 0; p < qfields.length; p++) {
+                    if (qfields[p].indexOf("PA_") != -1) {
+                        let fn = qfields[p].split("]")[0].replace("[", "");
+                        let fv = qfields[p].split("='")[1].replaceAll("'", "");
+                        let params = BCRM_ENTPROFILES[i]["PARAMS"];
+
+                        for (let pa = 0; pa < params.length; pa++) {
+                            if (BCRM_ENTPROFILES[i]["PARAMS"][pa][fn] == fv) {
+                                match++;
+                                matchid = pa;
+                                break;
+                            }
+                        }
+
+                        if (match == qfields.length - 1) { //all matched (logical AND)
+                            let item = {};
+                            let itemx = [];
+                            for (let f = 0; f < fields.length; f++) {
+                                item[fields[f]] = BCRM_ENTPROFILES[i]["PARAMS"][matchid][fields[f]];
+                            }
+                            item["Parent Name"] = BCRM_ENTPROFILES[i]["NSS_ALIAS"];
+                            if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
+                                BCRM_REPO_SCAN_CACHE[label] = [];
+                            }
+                            BCRM_REPO_SCAN_CACHE[label].push(item);
+                            itemx.push(item);
+                            BCRMRepoScanProcessExportData(itemx, on, ot, label, xfield);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (retval) {
+        BCRMRepoScanShowResults(label, ot, on);
+    }
+    return retval;
+};
+
+var BCRM_REPO_SCAN_CACHE = [];
+var BCRM_REPO_SCAN_CFG = {
+    "defaults": {
+        "Repository Script": {
+            bc: ["Repository Application Server Script", "Repository Application Browser Script", "Repository Applet Server Script", "Repository Applet Browser Script", "Repository BusComp Server Script", "Repository BusComp Browser Script", "Repository Business Service Server Script", "Repository Business Service Browser Script",]
+        }
+    },
+    "Applet": {
+        search: { //for autocomplete of UI input element
+            bc: "Repository Applet",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "View": {
+                bc: "Repository View Web Template Item",
+                query: "[Applet]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Comments,Applet,GParent BO,GParent Name",
+                xfield: "Applet" //xfield = for exporting data as "referenced by field"
+            },
+            "Associate Applet": {
+                bc: "Repository Applet",
+                query: "[Associate Applet]='$OBJ_NAME' AND [Inactive] <> 'Y'",
+                fields: "Name,Associate Applet,Comments",
+                xfield: "Associate Applet"
+            },
+            "MVG Applet - Control": {
+                bc: "Repository Control",
+                query: "[MVG Applet]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,MVG Applet,Parent Name,Comments",
+                xfield: "MVG Applet"
+            },
+            "MVG Applet - List Column": {
+                bc: "Repository List Column",
+                query: "[MVG Applet]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,MVG Applet,GParent Name,Comments",
+                xfield: "MVG Applet"
+            },
+            "Pick Applet - Control": {
+                bc: "Repository Control",
+                query: "[Pick Applet]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Pick Applet,Parent Name,Comments",
+                xfield: "Pick Applet"
+            },
+            "Pick Applet - List Column": {
+                bc: "Repository List Column",
+                query: "[Pick Applet]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Pick Applet,GParent Name,Comments",
+                xfield: "Pick Applet"
+            },
+            "Open UI Manifest": {
+                bc: "UI Object",
+                query: "[Name] = '$OBJ_NAME' AND [Is Inactive] <> 'Y'",
+                fields: "Name,UI File Names,Siebel Internal Read Only,Type Cd,Usage Type Cd",
+                xfield: "Name"
+            }
+        }
+    },
+    "Business Component": {
+        search: {
+            bc: "Repository Business Component",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Applet": {
+                bc: "Repository Applet",
+                query: "[Business Component]='$OBJ_NAME' AND [Inactive] <> 'Y'",
+                fields: "Name,Comments,Business Component",
+                xfield: "Business Component"
+            },
+            "Applet User Property": {
+                bc: "Repository Applet User Prop",
+                query: "(([Name] ~LIKE '*bc*' OR [Name] ~LIKE '*buscomp*' OR [Name] ~LIKE '*aspect*') AND [Value] = '$OBJ_NAME') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Comments,Value",
+                xfield: "Value"
+            },
+            "Business Object": {
+                bc: "Repository Business Object",
+                query: "[Primary Business Component]='$OBJ_NAME' AND [Inactive] <> 'Y'",
+                fields: "Name,Comments,Primary Business Component",
+                xfield: "Primary Business Component"
+            },
+            "Business Object Component": {
+                bc: "Repository Business Object Component",
+                query: "([BusComp]='$OBJ_NAME' OR [Link] LIKE '*/$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Parent Name,Name,BusComp,Comments",
+                xfield: "BusComp/Link(Child)"
+            },
+            "State Model": {
+                bc: "State Model",
+                query: "[BusComp Name] = '$OBJ_NAME' AND ([Expiration Date/Time] > Today() OR [Expiration Date/Time] IS NULL)",
+                fields: "Name,BusComp Name,Field Name,Activation Date/Time,Expiration Date/Time",
+                xfield: "BusComp"
+            },
+            "Workflow Step": {
+                bc: "Repository WF Step",
+                query: "[Business Component]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Business Component,Comments",
+                xfield: "Business Component"
+            },
+            "Workflow Step I/O Argument": {
+                bc: "BCRM Repository WF Step IO Argument",
+                query: "[Business Component]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Business Component,GParent Name,Comments",
+                xfield: "Business Component"
+            },
+            "Data Validation Rule": {
+                bc: "FINS Validation Rule",
+                query: "[Business Component] = '$OBJ_NAME' AND ([End Date] IS NULL OR [End Date] > Today())",
+                fields: "Name,Err Msg Text,Expression,Rule Set Id,Business Component,Apply To Type,Description,End Date",
+                xfield: "Business Component"
+            },
+            "Audit Trail": {
+                bc: "Audit Trail Buscomp",
+                query: "[Buscomp] = '$OBJ_NAME' AND ([End Date] > Today() OR [End Date] IS NULL)",
+                fields: "Buscomp,Start Date,End Date,Comments",
+                xfield: "Business Component"
+            },
+            "Client-Side Script": {
+                bc: "Business Service Script",
+                query: "([Script] LIKE '*BusComp*(*$OBJ_NAME*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            }
+            /* Smart Script tables use LONG type for Script column, so this will not work:
+            "Smart Script Question Script": {
+                bc: "Call Script Question Scripts",
+                query: "[Script] LIKE '*BusComp*(*$OBJ_NAME*)*'",
+                fields: "Question Id, Name, Script, Program Language",
+                xfield: "Script"
+            }
+            */
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*BusComp*(*\"$OBJ_NAME\"*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            }
+        }
+    },
+    "Business Service": {
+        search: {
+            bc: "Repository Business Service",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Application User Property": {
+                bc: "Repository Application User Prop",
+                query: "[Value] = '$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Comments,Value",
+                xfield: "Value"
+            },
+            "Runtime Event Action": {
+                bc: "Personalization Action",
+                query: "[BusProc Name]='$OBJ_NAME' AND [Active]='Y'",
+                fields: "Name,Description,BusProc Name,BusProc Method,BusProc Context,Condition Expression",
+                xfield: "BusProc Name"
+            },
+            "Command": {
+                bc: "Repository Command",
+                query: "[Business Service]='$OBJ_NAME' AND [Inactive] <> 'Y'",
+                fields: "Name,Business Service,Method,Comments",
+                xfield: "Business Service"
+            },
+            "Workflow Step": {
+                bc: "Repository WF Step",
+                query: "[Business Service Name]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Business Service Name,Business Service Method,Comments",
+                xfield: "Business Service Name"
+            },
+            "Calculated Field": {
+                bc: "Repository Field",
+                query: "[Calculated Value] LIKE '*InvokeServiceMethod*' AND [Calculated Value] LIKE '*$OBJ_NAME*' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Calculated Value,Parent Name,Comments",
+                xfield: "Calculated Value"
+            },
+            "Client-Side Script": {
+                bc: "Business Service Script",
+                query: "([Script] LIKE '*GetService*(*$OBJ_NAME*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            }
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*GetService*(*\"$OBJ_NAME\"*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            },
+            "Open UI JS": {
+                keywords: [".GetService"],
+                xfield: "Script"
+            }
+        },
+        ent: {
+            "EAI Data Handling Subsystem": {
+                ot: "Business Service",
+                function: BCRMGetEntProfileParamsQuery,
+                label: "EAI Data Handling Subsystem",
+                query: "[SS_ALIAS]='EAITransportDataHandlingSubsys' AND [PA_ALIAS]='DispatchService' AND [PA_VALUE]='$OBJ_NAME'",
+                fields: "PA_ALIAS,PA_VALUE,PA_DEFAULT_VAL,PA_VISIBILITY",
+                xfield: "PA_VALUE"
+            }
+        }
+    },
+    "Column": {
+        search: {
+            bc: "Repository Column",
+            query: "[Inactive]<>'Y' AND [Parent Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Field": {
+                bc: "Repository Field",
+                query: "[Column]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Column,Join,Parent Name,Comments",
+                xfield: "Column"
+            },
+            "Table": {
+                bc: "Repository Column",
+                query: "[Name]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Physical Type Name,Text Length,Parent Name,Comments",
+                xfield: "Column"
+            },
+            "Index": {
+                bc: "Repository Index Column",
+                query: "[Column Name]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Column Name,Parent Name,GParent Name",
+                xfield: "Column Name"
+            }
+        }
+    },
+    "Field": {
+        search: {
+            bc: "Repository Field",
+            query: "[Inactive]<>'Y' AND [Parent Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Business Component": {
+                bc: "Repository Field",
+                query: "[Name]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Comments",
+                xfield: "Name"
+            },
+            "Applet Search Specification": {
+                bc: "Repository Applet",
+                query: "[Search Specification] LIKE '*[$OBJ_NAME]*' AND [Inactive] <> 'Y'",
+                fields: "Name,Search Specification,Comments",
+                xfield: "Search Specification"
+            },
+            "BC Search Specification": {
+                bc: "Repository Business Component",
+                query: "[Search Specification] LIKE '*[$OBJ_NAME]*' AND [Inactive] <> 'Y'",
+                fields: "Name,Search Specification,Comments",
+                xfield: "Search Specification"
+            },
+            "BC Sort Specification": {
+                bc: "Repository Business Component",
+                query: "[Sort Specification] LIKE '*$OBJ_NAME*' AND [Inactive] <> 'Y'",
+                fields: "Name,Sort Specification,Comments",
+                xfield: "Sort Specification"
+            },
+            "BC User Property": {
+                bc: "Repository Business Component User Prop",
+                query: "([Value] = '$OBJ_NAME' OR [Value] LIKE '*,$OBJ_NAME,*' OR [Value] LIKE '*, $OBJ_NAME,*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Value,Comments",
+                xfield: "Value"
+            },
+            "State Model": {
+                bc: "State Model",
+                query: "[Field Name] = '$OBJ_NAME' AND ([Expiration Date/Time] > Today() OR [Expiration Date/Time] IS NULL)",
+                fields: "Name,BusComp Name,Field Name,Activation Date/Time,Expiration Date/Time",
+                xfield: "Field Name"
+            },
+            "Applet Control": {
+                bc: "Repository Control",
+                query: "[Field]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Field,Parent Name,Comments",
+                xfield: "Field"
+            },
+            "Applet List Column": {
+                bc: "Repository List Column",
+                query: "[Field]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Field,GParent Name,Comments",
+                xfield: "Field"
+            },
+            "Data Validation Rule": {
+                bc: "FINS Validation Rule",
+                query: "[Expression] LIKE '*[$OBJ_NAME]*' AND ([End Date] IS NULL OR [End Date] > Today())",
+                fields: "Name,Err Msg Text,Expression,Rule Set Id,Business Component,Apply To Type,Description,End Date",
+                xfield: "Expression"
+            },
+            "Audit Trail": {
+                bc: "Audit Trail Field",
+                query: "[Field] = '$OBJ_NAME'",
+                fields: "Field,Audit BC Name",
+                xfield: "Field"
+            },
+            "Workflow Step": {
+                //custom BC (copy of vanilla) needed because vanilla bc has slash in the name
+                bc: "BCRM Repository WF Step IO Argument",
+                query: "([Business Component Field] = '$OBJ_NAME' OR [Value/Search Specification] LIKE '*$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Type,Business Component,Business Component Field,Value/Search Specification,GParent Name,Parent Name,Comments",
+                xfield: "Business Component Field"
+            }
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*FieldValue*(*\"$OBJ_NAME\"*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            }
+        }
+    },
+    "Integration Object": {
+        search: {
+            bc: "Repository Integration Object",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "EAI Data Map": {
+                bc: "EAI Object Map",
+                query: "[Destination Object Name]='$OBJ_NAME' OR [Source Object Name]='$OBJ_NAME'",
+                fields: "Name,Source Object Name,Destination Object Name",
+                xfield: "Source/Dest Object"
+            },
+            "Workflow Step": {
+                //custom BC (copy of vanilla) needed because vanilla bc has slash in the name
+                bc: "BCRM Repository WF Step IO Argument",
+                query: "[Value/Search Specification] LIKE '*$OBJ_NAME*' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Type,Value/Search Specification,GParent Name,Parent Name,Comments",
+                xfield: "Value/Search Specification"
+            }
+        }
+    },
+    "LOV Type": {
+        search: {
+            bc: "List Of Values",
+            query: "[Active]='Y' AND [Inactive] <> 'Y' AND [Type]='LOV_TYPE' AND [Value] ~LIKE '$OBJ_NAME*'",
+            fields: "Value"
+        },
+        ref: {
+            "Applet Search Specification": {
+                bc: "Repository Applet",
+                query: "[Search Specification] LIKE '*LookupValue*' AND [Search Specification] LIKE '*$OBJ_NAME*' AND [Inactive] <> 'Y'",
+                fields: "Name,Search Specification,Comments",
+                xfield: "Search Specification"
+            },
+            "BC Search Specification": {
+                bc: "Repository Business Component",
+                query: "[Search Specification] LIKE '*LookupValue*' AND [Search Specification] LIKE '*$OBJ_NAME*' AND [Inactive] <> 'Y'",
+                fields: "Name,Search Specification,Comments",
+                xfield: "Search Specification"
+            },
+            "Data Validation Rule": {
+                bc: "FINS Validation Rule",
+                query: "[Expression] LIKE '*LookupValue*' AND [Expression] LIKE '*$OBJ_NAME*' AND ([End Date] IS NULL OR [End Date] > Today())",
+                fields: "Name,Err Msg Text,Expression,Rule Set Id,Business Component,Apply To Type,Description,End Date",
+                xfield: "Expression"
+            },
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*LookupValue*\"$OBJ_NAME\"*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            }
+        }
+    },
+    "Manifest File": {
+        search: {
+            bc: "UI Files",
+            query: "[Name] ~LIKE '*$OBJ_NAME*' AND [Is Inactive] <> 'Y' AND [Name] NOT LIKE '3rdParty*' AND [Name] LIKE '*.js'",
+            fields: "Name"
+        },
+        ref: {
+            "Custom Files by Object": {
+                bc: "UI Object",
+                query: "[UI File Names] LIKE '*$OBJ_NAME*' AND [Siebel Internal Read Only] <> 'Y' AND [Is Inactive] <> 'Y'",
+                fields: "Name,UI File Names,Type Cd,Usage Type Cd",
+                xfield: "UI File Names"
+            },
+            "All Files by Object": {
+                bc: "UI Object",
+                query: "[UI File Names] LIKE '*$OBJ_NAME*' AND [Is Inactive] <> 'Y'",
+                fields: "Name,UI File Names,Type Cd,Usage Type Cd",
+                xfield: "UI File Names"
+            },
+            "Manifest File JS": {
+                bc: "UI Files",
+                query: "[Name] LIKE '*$OBJ_NAME*' AND [Is Inactive] <> 'Y' AND [Name] NOT LIKE '3rdParty*' AND [Name] LIKE '*.js'",
+                fields: "Name",
+                xfield: "Name"
+            }
+        }
+    },
+    "Profile Attribute": {
+        ref: {
+            "Manifest Expression": {
+                bc: "UI Object Expression",
+                query: "[Expression] LIKE '*ProfileAttr*(*\"$OBJ_NAME\"*)*' AND [Is Inactive] <> 'Y' AND [IsExpInactive] <> 'Y'",
+                fields: "Siebel Internal Read Only,Expression,Child Count,Group Name,Level Num,UI Object Name,Ui Expr Name",
+                xfield: "Expression"
+            },
+            "Applet Web Template Item": {
+                bc: "Repository Applet Web Template Item",
+                query: "[Expression] LIKE '*ProfileAttr*(*\"$OBJ_NAME\"*)*' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Expression,Name,Web Tmpl Name,Item Identifier,GParent Name,Comments",
+                xfield: "Expression"
+            }
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*ProfileAttr*(*\"$OBJ_NAME\"*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            },
+            "Open UI JS": {
+                keywords: ["ProfileAttr"],
+                xfield: "Script"
+            }
+        }
+    },
+    "Table": {
+        search: {
+            bc: "Repository Table",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Base Table": {
+                bc: "Repository Business Component",
+                query: "[Table]='$OBJ_NAME' AND [Inactive] <> 'Y'",
+                fields: "Name,Table,Comments",
+                xfield: "Table"
+            },
+            "Join": {
+                bc: "Repository Join",
+                query: "[Table]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Table,Parent Name,Comments",
+                xfield: "Table"
+            }
+        }
+    },
+    "View": {
+        search: {
+            bc: "Repository View",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Responsibility": {
+                //Needs custom BC as denormalized view on S_APP_VIEW_RESP
+                bc: "BCRM Responsibility View",
+                query: "[View Name]='$OBJ_NAME'",
+                fields: "View Name,Responsibility Name",
+                xfield: "View Name"
+            },
+            "Applet Drilldown": {
+                bc: "Repository Drilldown Object",
+                query: "[View]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,View,Hyperlink Field,Parent Name,Comments",
+                xfield: "View"
+            },
+            "Screen": {
+                bc: "Repository Screen View",
+                query: "[View]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,View,Category,Parent Name,Comments",
+                xfield: "View"
+            },
+            "Workflow User Interact": {
+                bc: "Repository WF Step",
+                query: "[User Interact View]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,User Interact View,Parent Name,Comments",
+                xfield: "User Interact View"
+            }
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*GotoView*(*\"$OBJ_NAME\"*)*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            },
+            "Open UI JS": {
+                keywords: ["View", "view"],
+                xfield: "Script"
+            }
+        }
+    },
+    "Workflow Process": {
+        search: {
+            bc: "Repository Workflow Process",
+            query: "[Inactive]<>'Y' AND [Process Name] ~LIKE '$OBJ_NAME*'",
+            fields: "Process Name"
+        },
+        ref: {
+            "Job Template": {
+                bc: "Component Job Parameter",
+                query: "[Value] LIKE '$OBJ_NAME'",
+                fields: "Name,Value,Parameter Code,Component Job Id",
+                xfield: "Value"
+            },
+            "Applet User Property": {
+                bc: "Repository Applet User Prop",
+                query: "([Value] LIKE '*Workflow Process*' AND [Value] LIKE '*$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Comments,Value",
+                xfield: "Value"
+            },
+            "BC User Property": {
+                bc: "Repository Business Component User Prop",
+                query: "([Value] LIKE '*Workflow Process*' AND [Value] LIKE '*$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Comments,Value",
+                xfield: "Value"
+            },
+            "Workflow Sub Process": {
+                bc: "Repository WF Step",
+                query: "[Subprocess Name]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Subprocess Name,Parent Name,Comments",
+                xfield: "Subprocess Name"
+            },
+            "Workflow Policy Action": {
+                bc: "Workflow Action Argument",
+                query: "[Default Value]='$OBJ_NAME'",
+                fields: "Default Value,Action Program Id,Action Id",
+                xfield: "Default Value"
+            }
+        },
+        ent: {
+            "EAI Data Handling Subsystem": {
+                ot: "Workflow Process",
+                function: BCRMGetEntProfileParamsQuery,
+                label: "EAI Data Handling Subsystem",
+                query: "[SS_ALIAS]='EAITransportDataHandlingSubsys' AND [PA_ALIAS]='DispatchWorkflowProcess' AND [PA_VALUE]='$OBJ_NAME'",
+                fields: "PA_ALIAS,PA_VALUE,PA_DEFAULT_VAL,PA_VISIBILITY",
+                xfield: "PA_VALUE"
+            }
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] LIKE '*Workflow Process*' AND [Script] LIKE '*\"$OBJ_NAME\"*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name,Parent Name,Script,Comments",
+                xfield: "Script"
+            },
+            "Open UI JS": {
+                keywords: ["Workflow Process"],
+                xfield: "Script"
+            }
+        }
+    }
+};
+
+BCRMRepoScan = function (ot, on, wsn, wsv, opt = { silent: false }) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScan") : 0;
+    //refresh cache
+    if (!opt.silent) {
+        BCRM_REPO_SCAN_CACHE = [];
+    }
+    //workspace
+    if (typeof (wsn) === "undefined") {
+        devpops_debug ? console.log(Date.now(), "Calling BCRMGetWSContext from BCRMRepoScan") : 0;
+        BCRMGetWSContext();
+        wsn = sessionStorage.BCRMCurrentWorkspace;
+        wsv = sessionStorage.BCRMCurrentWorkspaceVersion;
+    }
+
+    if (typeof (BCRM_REPO_SCAN_CFG[ot]) !== "undefined") {
+        let ref = BCRM_REPO_SCAN_CFG[ot].ref;
+        let script;
+        if (typeof (BCRM_REPO_SCAN_CFG[ot].script) !== "undefined") {
+            script = BCRM_REPO_SCAN_CFG[ot].script;
+        }
+        let ent;
+        if (typeof (BCRM_REPO_SCAN_CFG[ot].ent) !== "undefined") {
+            ent = BCRM_REPO_SCAN_CFG[ot].ent;
+        }
+        let defaults = BCRM_REPO_SCAN_CFG.defaults;
+
+        //look for references
+        for (r in ref) {
+            let rdef = ref[r];
+            BCRMRepoScanFetchData(wsn, wsv, rdef, r, on, ot, opt);
+        }
+        //scan scripts
+        if (typeof (script) !== "undefined") {
+            for (s in script) {
+                if (s == "Repository Script") {
+                    let bc_list = defaults[s].bc;
+                    for (let i = 0; i < bc_list.length; i++) {
+                        let sdef = script[s];
+                        sdef.bc = bc_list[i];
+                        BCRMRepoScanFetchData(wsn, wsv, sdef, sdef.bc, on, ot, opt);
+                    }
+                }
+                if (s == "Open UI JS") {
+                    let label = r;
+                    BCRMRepoScanOUIJS(on, ot, s);
+                }
+            }
+        }
+        if (typeof (ent) !== "undefined") {
+            for (e in ent) {
+                let cfg = ent[e];
+                cfg.function(cfg, on);
+            }
+        }
+    }
+};
+
+BCRMRepoScanOUIJS = function (on, ot, label) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanOUIJS") : 0;
+    let timer = 10000;
+    if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
+        BCRM_REPO_SCAN_CACHE[label] = [];
+    }
+    BCRMRepoScanShowResults(label, ot, on, true);
+    if (typeof (BCRM_REPO_SCAN_MANIFEST_FILES) === "undefined") {
+        BCRMToast("Loading Open UI JS Files. Please stand by.", "primary", "info-circle", 10000);
+        BCRMRepoScan("Manifest File", "*", undefined, undefined, { silent: true });
+    }
+    else {
+        if ($.isEmptyObject(BCRM_REPO_SCAN_MANIFEST_FILES)) {
+            BCRMToast("Loading Open UI JS Files. Please stand by.", "primary", "info-circle", 10000);
+            BCRMRepoScan("Manifest File", "*", undefined, undefined, { silent: true });
+        }
+        else {
+            timer = 1;
+        }
+    }
+
+    setTimeout(function () {
+        BCRMRepoScanProcessOUIJS(on, ot, label);
+        BCRMRepoScanShowResults(label, ot, on);
+    }, timer);
+};
+
+BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent: false }, srownum = 0) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanFetchData") : 0;
+    let myHeaders = new Headers();
+    //myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
+    var pagesize = 100;
+
+    var bc = rdef.bc;
+    var xfield = rdef.xfield;
+
+    if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
+        BCRM_REPO_SCAN_CACHE[label] = [];
+    }
+    let requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+
+    let searchspec = rdef.query.replaceAll("$OBJ_NAME", on);
+    let fields = rdef.fields;
+
+    //Requires BO "BCRM Repository Details" and Base IO
+    let url = location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/" + bc + "?fields=" + fields + "&searchspec=" + searchspec + "&PageSize=" + pagesize + "&pagination=Y&StartRowNum=" + srownum + "&workspace=" + wsn + "&version=" + wsv + "&childlinks=None&uniformresponse=y";
+    if (!opt.silent) {
+        BCRMRepoScanShowResults(label, ot, on, true);
+    }
+    fetch(url, requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            let res = JSON.parse(result);
+            if (typeof (res.items) !== "undefined") {
+                let items = res.items;
+
+                if (label.indexOf("Script") > -1) {
+                    items = BCRMRepoScanProcessScript(items, on, ot);
+                }
+
+                BCRMRepoScanProcessExportData(items, on, ot, label, xfield);
+
+                if (label == "Manifest File JS") {
+                    for (let f = 0; f < items.length; f++) {
+                        BCRMRepoScanProcessMFJS(label, ot, on, items[f], opt);
+                    }
+                }
+
+                if (label != "Manifest File JS") {
+                    BCRM_REPO_SCAN_CACHE[label].push(...items);
+                }
+                if (!opt.silent) {
+                    BCRMRepoScanShowResults(label, ot, on);
+                }
+                //pagination
+                let links = res.Link;
+                for (let i = 0; i < links.length; i++) {
+                    if (links[i].rel == "nextSet") {
+                        BCRMRepoScanFetchData(wsn, wsv, rdef, label, on, ot, opt, srownum + pagesize);
+                        break;
+                    }
+                }
+            }
+            else {
+                //no results
+                if (!opt.silent) {
+                    BCRMRepoScanShowResults(label, ot, on);
+                }
+            }
+        })
+        .catch(error => {
+            //console.log('error', error);
+        });
+};
+
+BCRMRepoScanShowResults = function (label, ot, on, init = false) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanShowResults") : 0;
+    if ($("#bcrm_reposcan_results").length == 1) {
+        let items = BCRM_REPO_SCAN_CACHE[label];
+        let l = items.length;
+        let card;
+        let counter = l + " hit" + (l == 1 ? "" : "s");
+        if (init) {
+            counter = $("<sl-spinner style='--speed:4s'></sl-spinner>");
+        }
+        let card_content = $("<div class='bcrm-reposcan-card-content'>");
+        if ($("#bcrm_reposcan_results").find("[bcrm-label='" + label + "']").length == 0) {
+            card = $("<div bcrm-label='" + label + "'>");
+            card = $("<sl-card style='margin:8px;' bcrm-label='" + label + "'><div slot='header'><strong>" + label + "</strong></div><div class='bcrm-reposcan-card-footer' slot='footer'></div></sl-card>");
+            card.append(card_content);
+            $("#bcrm_reposcan_results").append(card);
+        }
+        else {
+            card = $("#bcrm_reposcan_results").find("[bcrm-label='" + label + "']");
+        }
+        if (init) {
+            card.find(".bcrm-reposcan-card-content").append(counter);
+        }
+        else {
+            card.find(".bcrm-reposcan-card-content").text(counter);
+        }
+
+        if (l > 0) {
+            if (card.find(".bcrm-reposcan-card-details-btn").length == 0) {
+                let fbtn = $("<sl-button class='bcrm-reposcan-card-details-btn' variant='primary' outline pill size='small'>Details</sl-button>");
+                fbtn[0].addEventListener("click", () => {
+                    BCRMRepoScanPopDetails(label, ot, on);
+                });
+                card.find(".bcrm-reposcan-card-footer").append(fbtn);
+            }
+        }
+    }
+};
+
+BCRMRepoScanPopExportData = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanPopExportData") : 0;
+    let dlg = $("<sl-dialog style='--width:90vw;' id='bcrm_reposcan_export_dlg' label='" + "Data Export" + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
+    const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+    closeButton.addEventListener('click', () => $("#bcrm_reposcan_export_dlg").remove());
+    let cont = $("<div style='overflow:auto'>");
+    let table = BCRM_REPO_SCAN_HTML;
+    table.css({
+        "font-size": "10px"
+    });
+    cont.append(table);
+    dlg.append(cont);
+    $("#bcrm_reposcan_export_dlg").remove();
+    $("body").append(dlg);
+    $("#bcrm_reposcan_export_dlg")[0].show();
+
+    var el = $("#bcrm_reposcan_export_dlg").find("table")[0];
+
+    //copy to clipboard
+    var body = document.body, range, sel;
+    if (document.createRange && window.getSelection) {
+        range = document.createRange();
+        sel = window.getSelection();
+        sel.removeAllRanges();
+        try {
+            range.selectNodeContents(el);
+            sel.addRange(range);
+        } catch (e) {
+            range.selectNode(el);
+            sel.addRange(range);
+        }
+        document.execCommand("copy");
+        BCRMToast("Data copied to clipboard 1");
+
+    } else if (body.createTextRange) {
+        range = body.createTextRange();
+        range.moveToElementText(el);
+        range.select();
+        range.execCommand("Copy");
+        BCRMToast("Data copied to clipboard 2");
+    }
+
+};
+
+BCRMRepoScanPopDetails = function (label, ot, on) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanPopDetails") : 0;
+    let title = label + " definitions with references to " + ot + " [" + on + "]";
+    let dlg = $("<sl-dialog style='--width:90vw;' id='bcrm_reposcan_details_dlg' label='" + title + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
+    const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+    closeButton.addEventListener('click', () => $("#bcrm_reposcan_details_dlg").remove());
+    let list = $("<div id='bcrm_reposcan_details_container'>");
+    var p;
+    var card;
+    let items = BCRM_REPO_SCAN_CACHE[label];
+    BCRMInjectCSS("reposcanpop01", "#bcrm_repo_scan_script{max-height:90vh!important;}");
+    for (let i = 0; i < items.length; i++) {
+        card = $("<sl-card></sl-card>");
+        card.css({
+            "width": "100%",
+            "font-size": "0.8em",
+            "line-height": "0.4",
+            "margin-bottom": "4px"
+        });
+        let item = items[i];
+        for (d in item) {
+
+            if (d == "Insight") {
+                p = $("<div><hr><p><strong>Script Insight</strong></p><p>" + "Script Status" + ": " + item[d]["Status"] + "</p><div>");
+                for (let la = 0; la < item[d]["Active Lines"].length; la++) {
+                    p.append("<p style='line-height:1.2;font-family:monospace;'>" + item[d]["Active Lines"][la] + "</p>");
+                }
+                for (let li = 0; li < item[d]["Inactive Lines"].length; li++) {
+                    p.append("<p style='line-height:1.2;font-family:monospace;'>" + item[d]["Inactive Lines"][li] + "</p>");
+                }
+            }
+            else if (d == "Link") {
+                //TBD (Links are REST "self" etc response links)
+            }
+            else if (d == "Script") {
+                p = $("<sl-button title='Show Script Code' size='small'>Script</sl-button>");
+                p[0].addEventListener("click", () => {
+                    let sc = $("<div id='bcrm_repo_scan_script' style='overflow:scroll;max-height:90vh!important;'></div>");
+                    let scr = $("<pre style='line-height:1.2;font-family:monospace;'>");
+                    scr.text(item["Script"]);
+                    sc.append(scr);
+                    sc.dialog({
+                        title: label,
+                        width: "90vw"
+                    });
+                });
+            }
+            else {
+                p = $("<p style='line-height:1.2;'>" + d + ": " + item[d] + "</p>");
+            }
+            card.append(p);
+        }
+        list.append(card);
+    }
+
+    dlg.append(list);
+    $("#bcrm_reposcan_details_dlg").remove();
+    $("body").append(dlg);
+    $("#bcrm_reposcan_details_dlg")[0].show();
+};
+
+var BCRM_REPO_SCAN_HTML;
+BCRMRepoScanProcessExportData = function (items, on, ot, label, xfield) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanProcessExportData") : 0;
+    //let cfg = BCRM_REPO_SCAN_CACHE[ot];
+    let cols = ["Object Type", "Object Name", "Referenced By OT", "Referenced By ON", "Root Object Name", "Reference", "Comments"];
+    //let noref = ["Name", "Parent Name", "GParent Name", "Link", "Id", "Comments", "Insight", "GParent BO"];
+    if (typeof (BCRM_REPO_SCAN_HTML) === "undefined") {
+        let table = $("<table>");
+        let hd = $("<tr>");
+        for (let c = 0; c < cols.length; c++) {
+            let htd = $("<td style='border:1px solid lightgrey;'>" + cols[c] + "</td>");
+            hd.append(htd);
+        }
+        table.append(hd);
+        BCRM_REPO_SCAN_HTML = table;
+    }
+
+    for (let i = 0; i < items.length; i++) {
+        let row = $("<tr>");
+        let c1 = $("<td style='border:1px solid lightgrey;'>" + ot + "</td>");
+        let c2 = $("<td style='border:1px solid lightgrey;'>" + on + "</td>");
+        let c3 = $("<td style='border:1px solid lightgrey;'>" + label + "</td>");
+        let name = items[i]["Name"];
+        if (typeof (name) === "undefined") {
+            if (typeof (items[i]["Responsibility Name"]) !== "undefined") {
+                name = items[i]["Responsibility Name"];
+            }
+        }
+        let c4 = $("<td style='border:1px solid lightgrey;'>" + name + "</td>");
+        let c5 = $("<td style='border:1px solid lightgrey;'></td>");
+        if (typeof (items[i]["Parent Name"]) !== "undefined") {
+            c5.text(items[i]["Parent Name"]);
+        }
+        if (typeof (items[i]["GParent Name"]) !== "undefined") {
+            c5.text(items[i]["GParent Name"]);
+        }
+        let c6 = $("<td style='border:1px solid lightgrey;'></td>");
+        c6.text(xfield);
+        let c7 = $("<td style='border:1px solid lightgrey;'></td>");
+        if (typeof (items[i]["Comments"]) !== "undefined") {
+            c7.text(items[i]["Comments"]);
+        }
+        row.append(c1);
+        row.append(c2);
+        row.append(c3);
+        row.append(c4);
+        row.append(c5);
+        row.append(c6);
+        row.append(c7);
+        BCRM_REPO_SCAN_HTML.append(row);
+    }
+};
+
+BCRMRepoScanProcessOUIJS = function (on, ot, label) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanProcessOUIJS") : 0;
+    //TODO: Handle comments and minified code
+    var insight;
+    var active = 0;
+    var insideblock = false;
+    var item = {};
+    var s_on = "\"" + on + "\"";
+    var kwds = BCRM_REPO_SCAN_CFG[ot]["script"]["Open UI JS"]["keywords"];
+    let files = BCRM_REPO_SCAN_MANIFEST_FILES;
+    let script = "";
+    for (f in files) {
+        insight = {
+            "Status": "",
+            "Lookup Object Type": ot,
+            "Lookup Object Name": on,
+            "Active Lines": [],
+            "Inactive Lines": []
+        };
+        script = files[f]["Script"];
+        for (let i = 0; i < kwds.length; i++) {
+            if (script.indexOf(kwds[i]) > -1) {
+                if (script.indexOf(s_on) > -1) {
+                    item = files[f];
+                    insight["Status"] = "Found keyword " + kwds[i];
+                    insight["Lookup Object Type"] = ot;
+                    insight["Lookup Object Name"] = on;
+                    insight["Active Lines"].push(script.substring(script.indexOf(s_on) - 20, script.indexOf(s_on) + s_on.length + 20));
+                    item["Insight"] = insight;
+                    BCRM_REPO_SCAN_CACHE[label].push(item);
+                }
+            }
+        }
+    }
+};
+
+BCRMRepoScanProcessScript = function (items, on, ot) {
+    //TODO: Use regex from REPO_SCAN_CFG query to identify matching lines
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanProcessScript") : 0;
+    //Goal: parse script (e.g. object could be inside a comment)
+    //TODO: Can do better with false positives
+    var insight;
+    var keepers = [];
+    var active = 0;
+    var insideblock = false;
+    var s_on = ["\"" + on + "\""];
+    if (ot == "Business Component") {
+        s_on = ["BusComp", "\"" + on + "\""];
+    }
+    if (ot == "Field") {
+        s_on = ["FieldValue", "\"" + on + "\""];
+    }
+    for (let i = 0; i < items.length; i++) {
+        insight = {
+            "Status": "",
+            "Lookup Object Type": ot,
+            "Lookup Object Name": on,
+            "Active Lines": [],
+            "Inactive Lines": []
+        };
+        let script = items[i]["Script"];
+        let lines = script.split("\n");
+        active = 0;
+        insideblock = false;
+        for (let l = 0; l < lines.length; l++) {
+            //single line comments
+            if (!insideblock) {
+                if (lines[l].indexOf("//") > -1) {
+                    let cidx = lines[l].indexOf("//");
+                    for (let i1 = 0; i1 < s_on.length; i1++) {
+                        if (lines[l].indexOf(s_on[i1]) > cidx) {
+                            //object in a single line comment
+                            i1 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_LINE: " + lines[l]) : 0;
+                        }
+                    }
+                }
+                //block comments
+                else if (lines[l].indexOf("/*") > -1) {
+                    insideblock = true;
+                    let bidx = lines[l].indexOf("/*");
+                    for (let i2 = 0; i2 < s_on.length; i2++) {
+                        if (lines[l].indexOf(s_on[i2]) > bidx) {
+                            //object in a block comment
+                            i2 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]) : 0;
+                        }
+                    }
+                }
+                else {
+                    if (!insideblock) {
+                        for (let i3 = 0; i3 < s_on.length; i3++) {
+                            if (lines[l].indexOf(s_on[i3]) > -1) {
+                                //object in active code
+                                i3 + 1 == s_on.length ? insight["Active Lines"].push("[" + l + "]_ACTIVE_CODE: " + lines[l]) : 0;
+                                i3 + 1 == s_on.length ? active++ : 0;
+                            }
+                        }
+                    }
+                }
+            }
+            if (insideblock) {
+                for (let i4 = 0; i4 < s_on.length; i4++) {
+                    if (lines[l].indexOf(s_on[i4]) > -1) {
+                        //object in a block comment
+                        i4 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]) : 0;
+                    }
+                }
+                if (lines[l].indexOf("*/") > -1) {
+                    //end of block comment
+                    let eidx = lines[l].indexOf("*/");
+                    for (let i5 = 0; i5 < s_on.length; i5++) {
+                        if (lines[l].indexOf(s_on[i5]) > -1 && lines[l].indexOf(s_on[i5]) < eidx) {
+                            //object in a block comment
+                            i5 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]) : 0;
+                        }
+                    }
+                    insideblock = false;
+                }
+            }
+        }//end for each line
+        if (active > 0) {
+            insight["Status"] = "Active";
+        }
+        else {
+            insight["Status"] = "Inactive";
+        }
+        items[i]["Insight"] = insight;
+        keepers.push(items[i]);
+    }//end for each script
+    return keepers;
+};
+
+BCRMRepoScanClear = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanClear") : 0;
+    BCRM_REPO_SCAN_HTML = undefined;
+    BCRM_REPO_SCAN_CACHE = [];
+    BCRM_REPO_SCAN_MANIFEST_FILES = {};
+    BCRM_ENTPROFILES = [];
+    $("#bcrm_reposcan_results").empty();
+    BCRMToast("Dependency Finder clean-up complete.");
+};
+
+/*
+BCRMRepoScanWarmUp = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanWarmUp") : 0;
+    setTimeout(function () {
+        BCRMGetEntProfileParamsQuery(BCRM_REPO_SCAN_CFG["Business Service"]["ent"]['EAI Data Handling Subsystem'], "EAI Siebel Adapter");
+    }, 100);
+    setTimeout(function () {
+        BCRMRepoScan("Manifest File", "*");
+        BCRMToast("Web Files/Manifest Warm-up complete.");
+    }, 100);
+};
+*/
+BCRMRepoScanGetList = function (ot, on) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanGetList") : 0;
+    $("sl-menu.bcrm-auto").remove();
+    let sc = BCRM_REPO_SCAN_CFG[ot].search;
+    var t = [];
+    if (typeof (sc) !== "undefined") {
+        BCRMGetWSContext();
+        var ws = sessionStorage.BCRMCurrentWorkspace;
+        var ver = sessionStorage.BCRMCurrentWorkspaceVersion;
+        var searchspec = sc.query.replaceAll("$OBJ_NAME", on);
+        var nf = sc.fields.split(",")[0];
+        var url = location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/" + sc.bc + "?fields=" + sc.fields + "&searchspec=" + searchspec + "&workspace=" + ws + "&childlinks=None&uniformresponse=y&version=" + ver;
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow'
+        };
+
+        fetch(url, requestOptions)
+            .then(response => response.text())
+            .then(result => {
+                let res = JSON.parse(result);
+                if (typeof (res.items) !== "undefined") {
+                    let items = res.items;
+                    let m = $("<sl-menu class='bcrm-auto'>");
+                    for (i in items) {
+                        let val = items[i][nf];
+                        if (typeof (val) !== "undefined") {
+                            //dedup
+                            if (t.indexOf(val) == -1) {
+                                t.push(val);
+                                let mi = $("<sl-menu-item value='" + val + "'>" + val + "</sl-menu-item>");
+                                m.append(mi);
+                            }
+                        }
+                    }
+                    if (m.find("sl-menu-item").length > 0) {
+                        m[0].addEventListener("sl-select", event => {
+                            let selectedItem = event.detail.item;
+                            let on = selectedItem.cachedTextLabel;
+                            $("#bcrm_reposcan_on").val(on);
+                            $("sl-menu.bcrm-auto").remove();
+                        });
+                        if ($("sl-menu.bcrm-auto").length == 0) {
+                            $("#bcrm_reposcan_on").after(m);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                //do nothing
+            });
+    }
+};
+
+BCRMRepoScanUI = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanUI") : 0;
+    let cfg = BCRM_REPO_SCAN_CFG;
+    let types = [];
+    for (c in cfg) {
+        if (c != "defaults") {
+            types.push(c);
+        }
+    }
+    let dlg = $("<sl-dialog style='--width: 90vw;' id='bcrm_reposcan' label='" + "🏬 devpops Dependency Finder" + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
+    const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+    closeButton.addEventListener('click', () => $("#bcrm_reposcan").remove());
+    let content = $("<div id='bcrm_reposcan_content' style='width:85vw;height:75vh;overflow:auto;'>");
+    let combo = $("<sl-dropdown label='Select Object Type'><sl-button id='bcrm_ot_btn' slot='trigger' caret>Object Type</sl-button></sl-dropdown>");
+    let menu = $("<sl-menu></sl-menu>");
+    for (let i = 0; i < types.length; i++) {
+        let mi = $("<sl-menu-item value='" + types[i].replaceAll(" ", "_") + "'>" + types[i] + "</sl-menu-item>")
+        menu.append(mi);
+    }
+    combo.append(menu);
+    combo[0].addEventListener('sl-select', event => {
+        const selectedItem = event.detail.item;
+        let ot = selectedItem.cachedTextLabel;
+        $("#bcrm_ot_btn").text(ot);
+        $("#bcrm_reposcan_on").val("");
+        $("#bcrm_reposcan_on").attr("list", ot);
+    });
+    content.append(combo);
+
+    let on = $("<sl-input id='bcrm_reposcan_on' style='margin-top:10px;width:40vw;' label='Object Name' clearable></sl-input>");
+    on[0].addEventListener("keyup", event => {
+        var me = $(event.target);
+        var val = me.val();
+        if (val.length <= 2) {
+            $("sl-menu.bcrm-auto").remove();
+        }
+        if (val.length >= 4) {
+            $("sl-menu.bcrm-auto sl-menu-item").filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(val.toLowerCase()) > -1)
+            });
+        }
+        if (val.length == 3) {
+            $("sl-menu.bcrm-auto").remove();
+            BCRMRepoScanGetList(me.attr("list"), val);
+        }
+    });
+    content.append(on);
+
+    let srchbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Find Dependencies</sl-button>");
+    srchbtn[0].addEventListener("click", () => {
+        let ot = $("#bcrm_ot_btn").text();
+        let on = $("#bcrm_reposcan_on").val();
+        $("#bcrm_reposcan_results").empty();
+        BCRMRepoScan(ot, on);
+    });
+    content.append(srchbtn);
+
+    /*
+    let wrmbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Warm Up</sl-button>");
+    wrmbtn[0].addEventListener("click", () => {
+        BCRMRepoScanWarmUp();
+    });
+    content.append(wrmbtn);
+    */
+
+    let expbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Data Export</sl-button>");
+    expbtn[0].addEventListener("click", () => {
+        BCRMRepoScanPopExportData();
+    });
+    content.append(expbtn);
+
+    let clrbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Tidy Up</sl-button>");
+    clrbtn[0].addEventListener("click", () => {
+        BCRMRepoScanClear();
+    });
+    content.append(clrbtn);
+
+    let results = $("<div id='bcrm_reposcan_results' style='display:grid;grid-template-columns:auto auto auto auto'>");
+    content.append(results);
+    dlg.append(content);
+    $("body").append(dlg);
+    $("#bcrm_reposcan")[0].show();
+};
+
+var BCRM_REPO_SCAN_MANIFEST_FILES = {};
+BCRMRepoScanProcessMFJS = function (label, ot, on, item, opt = { silent: false }) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanProcessMFJS") : 0;
+    var requestOptions = {
+        method: 'GET',
+        redirect: 'follow'
+    };
+
+    var file = item["Name"];
+    var path = location.origin + "/siebel/scripts/" + file;
+    fetch(path, requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            item["Script"] = result;
+            BCRM_REPO_SCAN_CACHE[label].push(item);
+            let fn = file.replaceAll("/", "__");
+            BCRM_REPO_SCAN_MANIFEST_FILES[fn] = item;
+            if (!opt.silent) {
+                BCRMRepoScanShowResults(label, ot, on);
+            }
+        })
+        .catch(error => {
+            //do nothing
+        });
+};
+//listeners
+try {
+    SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);
+    if (location.pathname.indexOf("webtools") > -1) {
+        SiebelApp.EventManager.addListner("postload", BCRMWTHelper, this);
+    }
+}
+catch (e) {
+    console.log("Error in BCRM devpops extension for Siebel Web Tools: " + e.toString());
+}
+
+//comment above/uncomment below to use a switch, e.g. localStorage
+/*
+try {
+    if (localStorage.DEVPOPS_ENABLE == "TRUE") {
+        SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);
+        if (location.pathname.indexOf("webtools") > -1) {
+            SiebelApp.EventManager.addListner("postload", BCRMWTHelper, this);
+        }
+    }
+}
+catch (e) {
+    console.log("Error in BCRM devpops extension for Siebel Web Tools: " + e.toString());
+}
+*/
 //END devpops postload.js content
