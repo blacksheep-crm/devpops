@@ -8,15 +8,9 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
-23.5 Update: https://youtu.be/GPLWjfsheV0
+23.6 Dependeny Finder: https://youtu.be/ahXJishtDr4
 
-23.1 Sneak Preview (Siebel Friday 30-Dec-22): https://youtu.be/g--vHWgDg28?t=965
-
-22.10 Update: https://youtu.be/zocUBVYdM2k
-
-Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
-
-Installation: https://youtu.be/gl7PljwLbbo
+YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
 # What's New in 23.6
 
