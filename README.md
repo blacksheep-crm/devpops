@@ -18,15 +18,15 @@ Features (22.2 or earlier): https://youtu.be/xenmD6euvPU
 
 Installation: https://youtu.be/gl7PljwLbbo
 
-# What's New in 23.5
+# What's New in 23.6
 
-shoelace menu and UX demos
+Dependency Finder: Uses REST API to find dependencies for various object types
 
-Cross-session history tracking (experimental/beta)
+Web Tools: List Applet record hover menu
 
-# Update to 23.5
+# Update to 23.6 (if you do a new installation, keep scrolling)
 
-Import IO_Base BCRM Modified Object.sif and deliver
+Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif, then deliver.
 
 Copy postload.js to vanilla postload.js
 
@@ -34,7 +34,7 @@ Copy devpops.js to siebel/custom
 
 Copy blacksheep.css to files/custom
 
-# Features (23.1 and earlier)
+# Features (23.5 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -120,7 +120,11 @@ Web Tools/Application: Custom style for custom (devpops) dialogs
 
 Application: Open View in new tab for printing
 
-# Installation
+shoelace menu and UX demos
+
+Cross-session history tracking (inactive)
+
+# New Installation
 
 1. Import all SIFs: devpops_Vxx.sif first, then any other sif file.
 
@@ -173,7 +177,7 @@ Server Manager features require Siebel Administrator responsibility
 
 # Known Issues
 
-Workspace Inspect in Application (vanilla functionality) can cause OM crashes when postload.js has custom code.
-Workaround: Use Fast Inspect or remove all custom code from postload.js (this will render devpops defunct)
+Fast Inspect can cause instability depending on degree of customization.
+Workaround: Use vanilla Workspace Inspect feature
 
 
