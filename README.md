@@ -157,9 +157,8 @@ Application: Open View in new tab for printing
 
 16. If Siebel CRM version is 23.5 or higher, verify that the following Business Objects are registered in the REST Inbound Data Access Service view:
 
-BCRM Modified Object
+![image](https://github.com/blacksheep-crm/devpops/assets/31369901/3bc2993c-f3bd-4038-a2f4-b13c26868468)
 
-BCRM devpops Storage
 
 
 # Pre-Requisites
