@@ -3820,28 +3820,21 @@ BCRMWTHelper = function () {
     }
 };
 
-//23.6+ new way of getting app version
-BCRMGetAppInfo = function () {
+//23.6+ new REST-less way of getting app version (reading <script> cache busting version, let's hope this lasts a while)
+BCRMGetAppInfo = function(){
     devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
-    var requestOptions = {
-        method: 'GET',
-        redirect: 'follow'
-    };
-    //Requires BO "BCRM Repository Details" and Base IO
-    fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/Database Version?childlinks=None", requestOptions)
-        .then(response => response.text())
-        .then(result => {
-            BCRM_SYS = JSON.parse(result);
-            let v = BCRM_SYS['Application Version'].split("v")[1];
-            BCRM_SIEBEL_V = {
-                y: v.split(".")[0],
-                m: v.split(".")[1]
-            }
-            localStorage.BCRM_SIEBEL_VERSION = v;
-        })
-        .catch(error => {
-            BCRM_SYS = "NA";
-        });
+    try{
+        let v = $("script[src*='scb']")[0].outerHTML.split("scb=")[1].split(".0")[0];
+        BCRM_SYS["Application Version"] = v;
+        BCRM_SIEBEL_V = {
+            y: v.split(".")[0],
+            m: v.split(".")[1]
+        }
+        localStorage.BCRM_SIEBEL_VERSION = v;
+    }
+    catch(e){
+        BCRM_SYS = "NA";
+    }
 };
 
 //history tracker
