@@ -163,7 +163,7 @@ Cross-session history tracking (inactive)
 
 Siebel CRM 22.12 or higher
 
-Siebel Inbound REST API enabled for anonymous authentication or Basic Authentication
+Siebel Inbound REST API enabled for anonymous authentication
 
 Ability to load 3rd-Party code via internet (CDN)
 
