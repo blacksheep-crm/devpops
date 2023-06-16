@@ -161,7 +161,7 @@ Cross-session history tracking (inactive)
 
 # Pre-Requisites
 
-Siebel CRM 20.12 or higher
+Siebel CRM 22.12 or higher
 
 Siebel Inbound REST API enabled for anonymous authentication or Basic Authentication
 
