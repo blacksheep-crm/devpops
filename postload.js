@@ -77,7 +77,7 @@ var bcrm_help_map = {
 };
 //AppInfo
 var BCRM_SIEBEL_V = {};
-var BCRM_SYS;
+var BCRM_SYS = {};
 var BCRM_WORKSPACE = {};
 
 var icon_map = new Map();
