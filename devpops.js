@@ -1,8 +1,6 @@
 //blacksheep devpops
-//EDUCATIONAL SAMPLE!!! DO NOT USE IN PRODUCTION!!!
+//EDUCATIONAL SAMPLE!!! DO NOT USE IN MISSION-CRITICAL ENVIRONMENTS!!!
 
-//TODO: Debug Menu sequence
-//TODO: Test auto cache refresh when coming out of a test case with screen view changes
 //Issue: Fast Inspect loses the context of the record whereas the traditional method does not. (SWE Params?)
 
 //globals
@@ -11,8 +9,8 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "23.6";
-var devpops_version = 60;
+var devpops_dver = "23.6.1";
+var devpops_version = 61;
 var devpops_tag = "Margaret Hamilton";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
@@ -4066,6 +4064,7 @@ BCRMApplyDefaultRedwoodBanner = function () {
 };
 
 //version checker
+BCRM_UPDATE_TOAST = false;
 async function BCRMCheckVersion() {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     //check FWK version
@@ -4092,6 +4091,13 @@ async function BCRMCheckVersion() {
 
         const response = await fetch(url, requestOptions);
         devpops_uv = await response.text();
+        //update toast
+        if (!BCRM_UPDATE_TOAST){
+            if (parseInt(devpops_uv) > devpops_version) {
+                BCRM_UPDATE_TOAST = true;
+                BCRMToast("devpops update " + devpops_uv + " available.", "warning", "exclamation-triangle", 20000);
+            }
+        }
     }
 }
 

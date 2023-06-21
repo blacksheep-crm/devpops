@@ -1601,6 +1601,7 @@ BCRMAddFavoritesButton = function () {
 };
 
 BCRMPopFavorites = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMPopFavorites") : 0;
     var opm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
     let fn = "Name";
     if (SiebelApp.S_App.GetActiveView().GetName() == "WT Repository Workflow Process List View") {
@@ -1660,72 +1661,79 @@ BCRMEnhanceFavsView = function () {
 
 BCRMGetFavorites = function (pm) {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
-    //list applets only for now
-    if (typeof (pm) === "undefined") {
-        pm = this;
-    }
-    if (pm.Get("GetListOfColumns")) {
-        if (pm.Get("BCRM_GETFAVS") !== "true") {
-            pm.AttachPMBinding("ShowSelection", BCRMGetFavorites, { sequence: true, scope: pm });
-            pm.SetProperty("BCRM_GETFAVS", "true");
+    if (BCRMSiebelVersionCheck(23, 5, "ge")) {
+        //list applets only for now
+        if (typeof (pm) === "undefined") {
+            pm = this;
         }
-        var user = SiebelApp.S_App.GetUserName();
-        var rrs = pm.Get("GetRawRecordSet");
-        var fi = pm.Get("GetFullId");
-        var ae = $("#" + fi);
-        var s = [];
+        if (typeof (pm.Get) === "function") {
+            if (pm.Get("GetListOfColumns")) {
+                var ap = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
+                if (ap.CanInvokeMethod("AddFavourites")) {
+                    if (pm.Get("BCRM_GETFAVS") !== "true") {
+                        pm.AttachPMBinding("ShowSelection", BCRMGetFavorites, { sequence: true, scope: pm });
+                        pm.SetProperty("BCRM_GETFAVS", "true");
+                    }
+                    var user = SiebelApp.S_App.GetUserName();
+                    var rrs = pm.Get("GetRawRecordSet");
+                    var fi = pm.Get("GetFullId");
+                    var ae = $("#" + fi);
+                    var s = [];
 
-        //cleanup
-        ae.find(".bcrm-fav").each(function () {
-            $(this).removeClass("bcrm-fav");
-        });
+                    //cleanup
+                    ae.find(".bcrm-fav").each(function () {
+                        $(this).removeClass("bcrm-fav");
+                    });
 
-        //CSS
-        BCRMInjectCSS("favs001", "tr.bcrm-fav td{background:lightyellow!important;}");
+                    //CSS
+                    BCRMInjectCSS("favs001", "tr.bcrm-fav td{background:lightyellow!important;}");
 
-        //get row-ids in a row for searching
-        for (r in rrs) {
-            if (typeof (rrs[r]["Id"]) !== "undefined") {
-                s.push("[Record Id]='" + rrs[r]["Id"] + "'");
+                    //get row-ids in a row for searching
+                    for (r in rrs) {
+                        if (typeof (rrs[r]["Id"]) !== "undefined") {
+                            s.push("[Record Id]='" + rrs[r]["Id"] + "'");
+                        }
+                    }
+                    var searchspec = s.join(" OR ");
+                    searchspec = "(" + searchspec + ")";
+                    searchspec += " AND [Owner Name]='" + user + "'";
+
+                    var myHeaders = new Headers();
+                    //myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
+
+                    var requestOptions = {
+                        method: 'GET',
+                        headers: myHeaders,
+                        redirect: 'follow'
+                    };
+
+                    fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/BCRM List Of Favourites?uniformresponse=y&searchspec=" + searchspec, requestOptions)
+                        .then(response => response.text())
+                        .then(result => {
+                            let res = JSON.parse(result);
+                            if (typeof (res.items) !== "undefined") {
+                                let items = res.items;
+                                ae.find("tr[role='row']").each(function () {
+                                    let row = $(this);
+                                    if (typeof (row.attr("id")) !== "undefined") {
+                                        let x = parseInt(row.attr("id")) - 1;
+                                        let rowid = rrs[x]["Id"];
+                                        for (i in items) {
+                                            if (items[i]["Record Id"] == rowid) {
+                                                row.addClass("bcrm-fav");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            //do nothing
+                        });
+                }
             }
         }
-        var searchspec = s.join(" OR ");
-        searchspec = "(" + searchspec + ")";
-        searchspec += " AND [Owner Name]='" + user + "'";
-
-        var myHeaders = new Headers();
-        //myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
-
-        var requestOptions = {
-            method: 'GET',
-            headers: myHeaders,
-            redirect: 'follow'
-        };
-
-        fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/BCRM List Of Favourites?uniformresponse=y&searchspec=" + searchspec, requestOptions)
-            .then(response => response.text())
-            .then(result => {
-                let res = JSON.parse(result);
-                if (typeof (res.items) !== "undefined") {
-                    let items = res.items;
-                    ae.find("tr[role='row']").each(function () {
-                        let row = $(this);
-                        if (typeof (row.attr("id")) !== "undefined") {
-                            let x = parseInt(row.attr("id")) - 1;
-                            let rowid = rrs[x]["Id"];
-                            for (i in items) {
-                                if (items[i]["Record Id"] == rowid) {
-                                    row.addClass("bcrm-fav");
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                //do nothing
-            });
     }
 };
 
@@ -3821,9 +3829,9 @@ BCRMWTHelper = function () {
 };
 
 //23.6+ new REST-less way of getting app version (reading <script> cache busting version, let's hope this lasts a while)
-BCRMGetAppInfo = function(){
+BCRMGetAppInfo = function () {
     devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
-    try{
+    try {
         let v = $("script[src*='scb']")[0].outerHTML.split("scb=")[1].split(".0")[0];
         BCRM_SYS["Application Version"] = v;
         BCRM_SIEBEL_V = {
@@ -3832,10 +3840,36 @@ BCRMGetAppInfo = function(){
         }
         localStorage.BCRM_SIEBEL_VERSION = v;
     }
-    catch(e){
+    catch (e) {
         BCRM_SYS = "NA";
     }
 };
+
+/*RIP Restful way
+BCRMGetAppInfo = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
+    var requestOptions = {
+        method: 'GET',
+        redirect: 'follow'
+    };
+    //Requires BO "BCRM Repository Details" and Base IO
+    //fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*
+    /Database Version?childlinks=None", requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            BCRM_SYS = JSON.parse(result);
+            let v = BCRM_SYS['Application Version'].split("v")[1];
+            BCRM_SIEBEL_V = {
+                y: v.split(".")[0],
+                m: v.split(".")[1]
+            }
+            localStorage.BCRM_SIEBEL_VERSION = v;
+        })
+        .catch(error => {
+            BCRM_SYS = "NA";
+        });
+};
+*/
 
 //history tracker
 //TODO: fix bug with CheckAppletReady function (random error)
@@ -3967,46 +4001,61 @@ var BCRM_CUR_BOX;
 var BCRM_BOX_INT = [];
 BCRMAddListRecordHover = function (pm) {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
-
+    if (typeof (pm) === "undefined") {
+        pm = this;
+    }
     if (typeof (pm.Get) === "function") {
-        //show faves
-        BCRMGetFavorites(pm);
-        var fi = pm.Get("GetFullId");
-        var ae = $("#" + fi);
-
-        //clean up
-        $("[id^='bcrm_box']").each(function () {
-            $(this).remove();
-        });
-
-        //list applets only
         if (pm.Get("GetListOfColumns")) {
 
-            BCRMInjectCSS("hover001", "tr[bcrm-box='true']:{border:1px solid lightgray!important;}");
+            if (pm.Get("BCRM_LISTHOVER") !== "true") {
+                pm.AttachPMBinding("ShowSelection", BCRMAddListRecordHover, { sequence: true, scope: pm });
+                pm.AddMethod("InvokeMethod", function () {
+                    $("[id^='bcrm_box']").each(function () {
+                        $(this).remove();
+                    });
+                }, { scope: pm, sequence: true });
+                pm.SetProperty("BCRM_LISTHOVER", "true");
+            }
+            //show faves (23.5 or higher)
+            BCRMGetFavorites(pm);
 
-            //clean up globally on any other method, e.g. nextrecordset
-            pm.AddMethod("InvokeMethod", function () {
-                $("[id^='bcrm_box']").each(function () {
-                    $(this).remove();
-                });
-            }, { scope: pm, sequence: true });
+            var fi = pm.Get("GetFullId");
+            var ae = $("#" + fi);
 
+            //clean up
+            $("[id^='bcrm_box']").each(function () {
+                $(this).remove();
+            });
+
+            BCRMInjectCSS("hover001", "tr[bcrm-box='true']{border:1px solid lightgray!important;}");
+
+            //remove distracting tooltips (this could be done elsewhere)
+            $("#s_" + fi + "_div").removeAttr("title");
+            ae.find("td[title]").each(function () {
+                $(this).removeAttr("title");
+            });
             $("#_sweview").removeAttr("title");
 
+            //for each row
+            if (!(ae.find("tr[role='row']").length > 0)){
+                setTimeout(function(){
+                    BCRMAddListRecordHover(pm);
+                },200);
+            }
             ae.find("tr[role='row']").each(function () {
                 if (typeof ($(this).attr("id")) !== "undefined") {
 
                     //main mouseover event handler
-                    $(this).on("mouseover", function (e) {
-                        //remove distracting tooltips (this could be done elsewhere)
-                        $("#s_" + fi + "_div").removeAttr("title");
-                        ae.find("td[title]").each(function () {
-                            $(this).removeAttr("title");
-                        });
+                    //$(this).on("mouseover", function (e) {
+                    $(this).off("contextmenu");
+                    $(this).on("contextmenu", function (e) {
 
                         //tr = table row/record
                         var tr = $(this);
                         var i = parseInt(tr.attr("id"));
+
+                        pm.ExecuteMethod("HandleRowSelect", i - 1);
+
                         let rrs = pm.Get("GetRawRecordSet");
 
                         //use ROW_ID for identification
@@ -4046,11 +4095,45 @@ BCRMAddListRecordHover = function (pm) {
 
                                 //add buttons to do record-specific stuff, e.g. About Record, Add to Faves (TBD), Show Details, Drilldown,...
 
+                                //Dependency Finder (Web Tools only)
+                                if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
+                                    let dfbtn = $("<button title='Find Dependencies' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>🏬</button>");
+                                    dfbtn.on("click", function () {
+                                        pm.ExecuteMethod("HandleRowSelect", i - 1);
+                                        BCRMRepoScanFromList(pm);
+                                    });
+                                    let bc = pm.Get("GetBusComp").GetName();
+                                    let ot = bc.replace("Repository ", "");
+                                    let vn = SiebelApp.S_App.GetActiveView().GetName();
+                                    if (vn == "WT List of Values View") {
+                                        ot = "LOV Type";
+                                    }
+                                    if (typeof (BCRM_REPO_SCAN_CFG[ot]) !== "undefined") {
+                                        box.append(dfbtn);
+                                    }
+                                }
+
+                                //Script Editor (Web Tools only)
+                                if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
+                                    let scbtn = $("<button title='Server Script Editor' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>📓</button>");
+                                    scbtn.on("click", function () {
+                                        pm.ExecuteMethod("HandleRowSelect", i - 1);
+                                        var svc = SiebelApp.S_App.GetService("Script Editor UI Service");
+                                        var ips = SiebelApp.S_App.NewPropertySet();
+                                        var ops = svc.InvokeMethod("Edit Server Scripts", ips);
+                                    });
+                                    let bc = pm.Get("GetBusComp").GetName();
+                                    let scriptables = ["Repository Applet", "Repository Application", "Repository Business Component", "Repository Business Service"];
+                                    if (scriptables.includes(bc)) {
+                                        box.append(scbtn);
+                                    }
+                                }
+
                                 //Faves 23.6+ (Web Tools only)
                                 if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools" && BCRMSiebelVersionCheck(23, 5, "ge")) {
                                     let fbtn = $("<button title='Add To Favorites' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>⭐</button>");
                                     if (tr.hasClass("bcrm-fav")) {
-                                        fbtn.text("🤩");
+                                        fbtn.text("🌟");
                                         fbtn.attr("title", "Already a fave");
                                     }
                                     fbtn.on("click", function () {
@@ -4059,7 +4142,11 @@ BCRMAddListRecordHover = function (pm) {
                                             BCRMPopFavorites();
                                         }
                                     });
-                                    box.append(fbtn);
+                                    let objname = pm.GetObjName();
+                                    let ap = SiebelApp.S_App.GetActiveView().GetApplet(objname);
+                                    if (ap.CanInvokeMethod("AddFavourites")) {
+                                        box.append(fbtn);
+                                    }
                                 }
 
                                 //About Record
@@ -4108,6 +4195,7 @@ BCRMAddListRecordHover = function (pm) {
                                 tr.attr("bcrm-box", "true");
                             }
                         }
+                        return false;
                     });
 
                     //reset row status on mouseout
@@ -4125,6 +4213,26 @@ BCRMAddListRecordHover = function (pm) {
 };
 
 //23.6+ Repo Scanner, it not only scans the repo, it scans any other ol' BC for clues what the fella who quit 5 years ago really did leave behind
+BCRMRepoScanFromList = function (pm) {
+    if (pm && typeof (pm.Get) === "function") {
+        let rrs = pm.Get("GetRawRecordSet");
+        let fn = "Name"
+        let vn = SiebelApp.S_App.GetActiveView().GetName();
+        if (vn == "WT Repository Workflow Process List View") {
+            fn = "Process Name";
+        }
+        if (vn == "WT List of Values View") {
+            fn = "Type";
+        }
+        let on = rrs[pm.Get("GetSelection")][fn];
+        let bc = pm.Get("GetBusComp").GetName();
+        let ot = bc.replace("Repository ", "");
+        if (vn == "WT List of Values View") {
+            ot = "LOV Type";
+        }
+        BCRMRepoScanUI(on, ot, true);
+    }
+};
 BCRMGetEntProfileParamsQuery = function (cfg, on) {
     devpops_debug ? console.log(Date.now(), "BCRMGetEntProfileParamsQuery") : 0;
     var retval;
@@ -4521,6 +4629,13 @@ var BCRM_REPO_SCAN_CFG = {
                 query: "([Business Component Field] = '$OBJ_NAME' OR [Value/Search Specification] LIKE '*$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
                 fields: "Name,Type,Business Component,Business Component Field,Value/Search Specification,GParent Name,Parent Name,Comments",
                 xfield: "Business Component Field"
+            },
+            "Job Template Parameter": { //kudos to Jason
+                bc: "BCRM Component Job Parameter", //custom BC /w Joins to display Job Template and Component
+                query: "[Parameter Code] = 'SearchSpec' AND [Value] LIKE '*[$OBJ_NAME]*'",
+                fields: "Job Template Name,Job Template Short Name,Component Name,Job Template Enabled,Name,Parameter Code,Value,Description",
+                xfield: "Value",
+                pfield: "Job Template Name" //used as Root/Parent field in Data Export
             }
         },
         script: {
@@ -4627,6 +4742,13 @@ var BCRM_REPO_SCAN_CFG = {
                 query: "[Expression] LIKE '*ProfileAttr*(*\"$OBJ_NAME\"*)*' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
                 fields: "Expression,Name,Web Tmpl Name,Item Identifier,GParent Name,Comments",
                 xfield: "Expression"
+            },
+            "Workflow Step": //kudos to Yiannis
+            {
+                bc: "BCRM Repository WF Step IO Argument",
+                query: "([Value/Search Specification] LIKE '*$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y' AND [GParent Inactive] <> 'Y'",
+                fields: "Name,Type,Parent Business Service Name,Parent Business Service Method,Method Arg,Output Arg,Parent Type,Value/Search Specification,GParent Name,Parent Name,Comments",
+                xfield: "Arg/Value/Search Specification"
             }
         },
         script: {
@@ -4715,10 +4837,11 @@ var BCRM_REPO_SCAN_CFG = {
         },
         ref: {
             "Job Template": {
-                bc: "Component Job Parameter",
+                bc: "BCRM Component Job Parameter", //custom BC
                 query: "[Value] LIKE '$OBJ_NAME'",
-                fields: "Name,Value,Parameter Code,Component Job Id",
-                xfield: "Value"
+                fields: "Job Template Name,Job Template Short Name,Component Name,Job Template Enabled,Name,Parameter Code,Value,Description",
+                xfield: "Value",
+                pfield: "Job Template Name" //used as Root/Parent field in Data Export
             },
             "Applet User Property": {
                 bc: "Repository Applet User Prop",
@@ -4766,7 +4889,141 @@ var BCRM_REPO_SCAN_CFG = {
                 xfield: "Script"
             }
         }
+    },
+    "Full Text Search": {
+        ref: {
+            "Applet": {
+                bc: "Repository Applet",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Business Component] ~LIKE '*$OBJ_NAME*' OR [Search Specification] ~LIKE '*$OBJ_NAME*' OR [Associate Applet] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Business Component,Search Specification,Associate Applet,Comments",
+                xfield: "Full Text Search"
+            },
+            "Application User Property": {
+                bc: "Repository Application User Prop",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Value] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Parent Name,Parent Inactive,Comments,Value",
+                xfield: "Full Text Search"
+            },
+            "Runtime Event Action": {
+                bc: "Personalization Action",
+                query: "[Name] ~LIKE '$OBJ_NAME*' OR [BusProc Name] ~LIKE '*$OBJ_NAME*'OR [Description] ~LIKE '*$OBJ_NAME*' OR [BusProc Method] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Description,BusProc Name,BusProc Method,BusProc Context,Condition Expression",
+                xfield: "Full Text Search"
+            },
+            "Command": {
+                bc: "Repository Command",
+                query: "[Name] ~LIKE '$OBJ_NAME*' OR  [Business Service] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Business Service,Method,Comments",
+                xfield: "Full Text Search"
+            },
+            "Predefined Query": {
+                bc: "Admin Query List",
+                query: "[Business Object] ~LIKE '*$OBJ_NAME*' OR [Description] ~LIKE '*$OBJ_NAME*' OR [Query] ~LIKE '*$OBJ_NAME*'",
+                fields: "Business Object,Description,Query",
+                xfield: "Full Text Search"
+            },
+            "Applet User Property": {
+                bc: "Repository Applet User Prop",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Value] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Parent Name,Parent Inactive,Comments,Value",
+                xfield: "Full Text Search"
+            },
+            "Business Object": {
+                bc: "Repository Business Object",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Primary Business Component] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Comments,Primary Business Component",
+                xfield: "Full Text Search"
+            },
+            "Business Component": {
+                bc: "Repository Business Component",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Search Specification] ~LIKE '*$OBJ_NAME*'  OR [Sort Specification] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Search Specification,Sort Specification,Comments",
+                xfield: "Full Text Search"
+            },
+            "BC User Property": {
+                bc: "Repository Business Component User Prop",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Value] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Parent Name,Parent Inactive,Comments,Value",
+                xfield: "Full Text Search"
+            },
+            "Business Object Component": {
+                bc: "Repository Business Object Component",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Link] ~LIKE '*$OBJ_NAME*'OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Parent Name,Name,BusComp,Comments",
+                xfield: "Full Text Search"
+            },
+            "State Model": {
+                bc: "State Model",
+                query: "[BusComp Name] ~LIKE '*$OBJ_NAME*' OR [Name] ~LIKE '*$OBJ_NAME*' OR [Field Name] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,BusComp Name,Field Name,Activation Date/Time,Expiration Date/Time",
+                xfield: "Full Text Search"
+            },
+            "Workflow Step": {
+                bc: "Repository WF Step",
+                query: "[Parent Name] ~LIKE '*$OBJ_NAME*' OR [Business Component] ~LIKE '*$OBJ_NAME*' OR [Name] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Parent Name,Parent Inactive,Business Component,Comments",
+                xfield: "Full Text Search"
+            },
+            "Workflow Step I/O Argument": {
+                bc: "BCRM Repository WF Step IO Argument",
+                query: "[Value/Search Specification] ~LIKE '*$OBJ_NAME*' OR [Business Component] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Value/Search Specification,Business Component,GParent Name,GParent Inactive,Comments",
+                xfield: "Full Text Search"
+            },
+            "Data Validation Rule": {
+                bc: "FINS Validation Rule",
+                query: "[Business Component] ~LIKE '*$OBJ_NAME*' OR [Name] ~LIKE '*$OBJ_NAME*' OR [Expression] ~LIKE '*$OBJ_NAME*' OR [Description] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Err Msg Text,Expression,Rule Set Id,Business Component,Apply To Type,Description,End Date",
+                xfield: "Full Text Search"
+            },
+            "Audit Trail": {
+                bc: "Audit Trail Buscomp",
+                query: "[Buscomp] ~LIKE '*$OBJ_NAME*' OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Buscomp,Start Date,End Date,Comments",
+                xfield: "Full Text Search"
+            },
+            "Client-Side Script": {
+                bc: "Business Service Script",
+                query: "[Script] ~LIKE '*$OBJ_NAME*'",
+                fields: "Name,Inactive,Parent Name,Parent Inactive,Script,Comments",
+                xfield: "Script"
+            },
+            "Job Template Parameter": {
+                bc: "BCRM Component Job Parameter", //custom BC /w Joins to display Job Template and Component
+                query: "[Job Template Name] ~LIKE '*$OBJ_NAME*' OR [Name] ~LIKE '*$OBJ_NAME*' OR [Value] ~LIKE '*$OBJ_NAME*' OR [Description] ~LIKE '*$OBJ_NAME*'",
+                fields: "Job Template Name,Job Template Short Name,Component Name,Job Template Enabled,Name,Parameter Code,Value,Description",
+                xfield: "Value",
+                pfield: "Job Template Name" //used as Root/Parent field in Data Export
+            }
+        },
+        script: {
+            "Repository Script": {
+                query: "([Script] ~LIKE '*$OBJ_NAME*')",
+                fields: "Name,Inactive,Parent Name,Parent Inactive,Script,Comments",
+                xfield: "Script"
+            },
+            "Open UI JS": {
+                keywords: [],
+                xfield: "Script"
+            }
+        }
     }
+};
+
+BCRMRepoScanHideZeros = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanHideZeros") : 0;
+    $("sl-card:contains('0 hits')").each(function () {
+        if ($(this).text().indexOf("Details") == -1) {
+            $(this).hide();
+        }
+    });
+};
+
+BCRMRepoScanShowZeros = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanShowZeros") : 0;
+    $("sl-card:contains('0 hits')").each(function () {
+        $(this).show();
+    });
 };
 
 BCRMRepoScan = function (ot, on, wsn, wsv, opt = { silent: false }) {
@@ -4861,10 +5118,12 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
 
     var bc = rdef.bc;
     var xfield = rdef.xfield;
+    var pfield = rdef.pfield;
 
     if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
         BCRM_REPO_SCAN_CACHE[label] = [];
     }
+
     let requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -4876,6 +5135,21 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
 
     //Requires BO "BCRM Repository Details" and Base IO
     let url = location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/" + bc + "?fields=" + fields + "&searchspec=" + searchspec + "&PageSize=" + pagesize + "&pagination=Y&StartRowNum=" + srownum + "&workspace=" + wsn + "&version=" + wsv + "&childlinks=None&uniformresponse=y";
+
+    if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) === "undefined") {
+        let info = {
+            bc: bc,
+            start: Date.now(),
+            end: 0,
+            time: 0,
+            url: url,
+            searchspec: searchspec,
+            requests: 0,
+            count: 0
+        };
+        BCRM_REPO_SCAN_CACHE[label]["info"] = info;
+    }
+
     if (!opt.silent) {
         BCRMRepoScanShowResults(label, ot, on, true);
     }
@@ -4883,14 +5157,19 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
         .then(response => response.text())
         .then(result => {
             let res = JSON.parse(result);
+            if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
+                BCRM_REPO_SCAN_CACHE[label]["info"]["requests"] = 1 + BCRM_REPO_SCAN_CACHE[label]["info"]["requests"];
+            }
             if (typeof (res.items) !== "undefined") {
                 let items = res.items;
-
+                if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
+                    BCRM_REPO_SCAN_CACHE[label]["info"]["count"] = items.length + BCRM_REPO_SCAN_CACHE[label]["info"]["count"];
+                }
                 if (label.indexOf("Script") > -1) {
                     items = BCRMRepoScanProcessScript(items, on, ot);
                 }
 
-                BCRMRepoScanProcessExportData(items, on, ot, label, xfield);
+                BCRMRepoScanProcessExportData(items, on, ot, label, xfield, pfield);
 
                 if (label == "Manifest File JS") {
                     for (let f = 0; f < items.length; f++) {
@@ -4904,17 +5183,30 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
                 if (!opt.silent) {
                     BCRMRepoScanShowResults(label, ot, on);
                 }
+
                 //pagination
                 let links = res.Link;
+                let hasnext = false;
                 for (let i = 0; i < links.length; i++) {
                     if (links[i].rel == "nextSet") {
                         BCRMRepoScanFetchData(wsn, wsv, rdef, label, on, ot, opt, srownum + pagesize);
+                        hasnext = true;
                         break;
+                    }
+                }
+                if (!hasnext) {
+                    if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
+                        BCRM_REPO_SCAN_CACHE[label]["info"]["end"] = Date.now();
+                        BCRM_REPO_SCAN_CACHE[label]["info"]["time"] = BCRM_REPO_SCAN_CACHE[label]["info"]["end"] - BCRM_REPO_SCAN_CACHE[label]["info"]["start"];
                     }
                 }
             }
             else {
                 //no results
+                if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
+                    BCRM_REPO_SCAN_CACHE[label]["info"]["end"] = Date.now();
+                    BCRM_REPO_SCAN_CACHE[label]["info"]["time"] = BCRM_REPO_SCAN_CACHE[label]["info"]["end"] - BCRM_REPO_SCAN_CACHE[label]["info"]["start"];
+                }
                 if (!opt.silent) {
                     BCRMRepoScanShowResults(label, ot, on);
                 }
@@ -4924,6 +5216,33 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
             //console.log('error', error);
         });
 };
+
+BCRMRepoScanPopInfo = function (label, ot, on) {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanPopInfo") : 0;
+    let info = BCRM_REPO_SCAN_CACHE[label]["info"];
+    if (typeof (info) !== "undefined") {
+        let dlg = $("<sl-dialog style='--width:50vw;' id='bcrm_reposcan_info_dlg' label='" + "Query Info" + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
+        const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+        closeButton.addEventListener('click', () => $("#bcrm_reposcan_info_dlg").remove());
+        let cont = $("<div style='overflow:auto'>");
+        cont.append("<p>Query Time: " + info.time + " ms</p>");
+        cont.append("<p>Bus Comp: " + info.bc + "</p>");
+        cont.append("<p>Search Text: " + on + "</p>");
+        cont.append("<p>Search Spec: " + info.searchspec + "</p>");
+        cont.append("<p>Record Count: " + info.count + "</p>");
+        cont.append("<hr>");
+        let url = $("<p style='cursor:pointer;'>REST URL: " + info.url + "</p>");
+        url.on("click", function () {
+            window.open(info.url);
+        })
+        cont.append(url);
+        dlg.append(cont);
+        $("#bcrm_reposcan_info_dlg").remove();
+        $("body").append(dlg);
+        $("#bcrm_reposcan_info_dlg")[0].show();
+    }
+};
+
 
 BCRMRepoScanShowResults = function (label, ot, on, init = false) {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanShowResults") : 0;
@@ -4938,8 +5257,14 @@ BCRMRepoScanShowResults = function (label, ot, on, init = false) {
         let card_content = $("<div class='bcrm-reposcan-card-content'>");
         if ($("#bcrm_reposcan_results").find("[bcrm-label='" + label + "']").length == 0) {
             card = $("<div bcrm-label='" + label + "'>");
-            card = $("<sl-card style='margin:8px;' bcrm-label='" + label + "'><div slot='header'><strong>" + label + "</strong></div><div class='bcrm-reposcan-card-footer' slot='footer'></div></sl-card>");
+            card = $("<sl-card style='margin:8px;' bcrm-label='" + label + "'><div class='bcrm-reposcan-card-header' slot='header'><strong>" + label + "</strong></div><div class='bcrm-reposcan-card-footer' slot='footer'></div></sl-card>");
             card.append(card_content);
+
+            let ibtn = $('<sl-icon-button class="bcrm-reposcan-info-icon" name="info-circle" style="color:#0284c7;top:-2px;position:relative;float:right;" title="Show the nerd stuff"></sl-icon-button>');
+            ibtn[0].addEventListener("click", () => {
+                BCRMRepoScanPopInfo(label, ot, on);
+            });
+            card.find(".bcrm-reposcan-card-header").append(ibtn);
             $("#bcrm_reposcan_results").append(card);
         }
         else {
@@ -5010,6 +5335,7 @@ BCRMRepoScanPopExportData = function () {
 
 BCRMRepoScanPopDetails = function (label, ot, on) {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanPopDetails") : 0;
+    let s_on = [on, on.toLowerCase(), on.toUpperCase(), on.toLowerCase().charAt(0).toUpperCase() + on.slice(1)];
     let title = label + " definitions with references to " + ot + " [" + on + "]";
     let dlg = $("<sl-dialog style='--width:90vw;' id='bcrm_reposcan_details_dlg' label='" + title + "'><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Close</sl-button></sl-dialog>");
     const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
@@ -5033,10 +5359,10 @@ BCRMRepoScanPopDetails = function (label, ot, on) {
             if (d == "Insight") {
                 p = $("<div><hr><p><strong>Script Insight</strong></p><p>" + "Script Status" + ": " + item[d]["Status"] + "</p><div>");
                 for (let la = 0; la < item[d]["Active Lines"].length; la++) {
-                    p.append("<p style='line-height:1.2;font-family:monospace;'>" + item[d]["Active Lines"][la] + "</p>");
+                    p.append("<p style='font-family:monospace;'>" + item[d]["Active Lines"][la] + "</p>");
                 }
                 for (let li = 0; li < item[d]["Inactive Lines"].length; li++) {
-                    p.append("<p style='line-height:1.2;font-family:monospace;'>" + item[d]["Inactive Lines"][li] + "</p>");
+                    p.append("<p style='font-family:monospace;'>" + item[d]["Inactive Lines"][li] + "</p>");
                 }
             }
             else if (d == "Link") {
@@ -5056,7 +5382,20 @@ BCRMRepoScanPopDetails = function (label, ot, on) {
                 });
             }
             else {
-                p = $("<p style='line-height:1.2;'>" + d + ": " + item[d] + "</p>");
+                p = $("<p>" + d + ": " + item[d] + "</p>");
+            }
+            p.css({
+                "line-height": "1.2",
+                "width": "fit-content"
+            });
+            if (d != "Insight") {
+                for (let s = 0; s < s_on.length; s++) {
+                    if (p.text().indexOf(s_on[s]) > -1) {
+                        p.css({
+                            "background": "rgb(226 193 95 / 40%)"
+                        });
+                    }
+                }
             }
             card.append(p);
         }
@@ -5070,7 +5409,7 @@ BCRMRepoScanPopDetails = function (label, ot, on) {
 };
 
 var BCRM_REPO_SCAN_HTML;
-BCRMRepoScanProcessExportData = function (items, on, ot, label, xfield) {
+BCRMRepoScanProcessExportData = function (items, on, ot, label, xfield, pfield) {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanProcessExportData") : 0;
     //let cfg = BCRM_REPO_SCAN_CACHE[ot];
     let cols = ["Object Type", "Object Name", "Referenced By OT", "Referenced By ON", "Root Object Name", "Reference", "Comments"];
@@ -5085,40 +5424,58 @@ BCRMRepoScanProcessExportData = function (items, on, ot, label, xfield) {
         table.append(hd);
         BCRM_REPO_SCAN_HTML = table;
     }
+    if (ot == "Manifest File" && on == "*") {
+        //no export
+    }
+    else {
+        for (let i = 0; i < items.length; i++) {
+            let row = $("<tr>");
 
-    for (let i = 0; i < items.length; i++) {
-        let row = $("<tr>");
-        let c1 = $("<td style='border:1px solid lightgrey;'>" + ot + "</td>");
-        let c2 = $("<td style='border:1px solid lightgrey;'>" + on + "</td>");
-        let c3 = $("<td style='border:1px solid lightgrey;'>" + label + "</td>");
-        let name = items[i]["Name"];
-        if (typeof (name) === "undefined") {
-            if (typeof (items[i]["Responsibility Name"]) !== "undefined") {
-                name = items[i]["Responsibility Name"];
+            let c1 = $("<td style='border:1px solid lightgrey;'>" + ot + "</td>");
+
+            let c2 = $("<td style='border:1px solid lightgrey;'>" + on + "</td>");
+
+            let c3 = $("<td style='border:1px solid lightgrey;'>" + label + "</td>");
+            let name = items[i]["Name"];
+            if (typeof (name) === "undefined") {
+                if (typeof (items[i]["Responsibility Name"]) !== "undefined") {
+                    name = items[i]["Responsibility Name"];
+                }
             }
+
+            let c4 = $("<td style='border:1px solid lightgrey;'>" + name + "</td>");
+
+            let c5 = $("<td style='border:1px solid lightgrey;'></td>");
+            if (typeof (items[i]["Parent Name"]) !== "undefined") {
+                c5.text(items[i]["Parent Name"]);
+            }
+            if (typeof (items[i]["GParent Name"]) !== "undefined") {
+                c5.text(items[i]["GParent Name"]);
+            }
+            if (typeof (pfield) !== "undefined") {
+                c5.text(items[i][pfield]);
+            }
+
+            let c6 = $("<td style='border:1px solid lightgrey;'></td>");
+            c6.text(xfield);
+
+            let c7 = $("<td style='border:1px solid lightgrey;'></td>");
+            if (typeof (items[i]["Comments"]) !== "undefined") {
+                c7.text(items[i]["Comments"]);
+            }
+            else if (typeof (items[i]["Description"]) !== "undefined") {
+                c7.text(items[i]["Description"]);
+            }
+
+            row.append(c1);
+            row.append(c2);
+            row.append(c3);
+            row.append(c4);
+            row.append(c5);
+            row.append(c6);
+            row.append(c7);
+            BCRM_REPO_SCAN_HTML.append(row);
         }
-        let c4 = $("<td style='border:1px solid lightgrey;'>" + name + "</td>");
-        let c5 = $("<td style='border:1px solid lightgrey;'></td>");
-        if (typeof (items[i]["Parent Name"]) !== "undefined") {
-            c5.text(items[i]["Parent Name"]);
-        }
-        if (typeof (items[i]["GParent Name"]) !== "undefined") {
-            c5.text(items[i]["GParent Name"]);
-        }
-        let c6 = $("<td style='border:1px solid lightgrey;'></td>");
-        c6.text(xfield);
-        let c7 = $("<td style='border:1px solid lightgrey;'></td>");
-        if (typeof (items[i]["Comments"]) !== "undefined") {
-            c7.text(items[i]["Comments"]);
-        }
-        row.append(c1);
-        row.append(c2);
-        row.append(c3);
-        row.append(c4);
-        row.append(c5);
-        row.append(c6);
-        row.append(c7);
-        BCRM_REPO_SCAN_HTML.append(row);
     }
 };
 
@@ -5131,6 +5488,10 @@ BCRMRepoScanProcessOUIJS = function (on, ot, label) {
     var item = {};
     var s_on = "\"" + on + "\"";
     var kwds = BCRM_REPO_SCAN_CFG[ot]["script"]["Open UI JS"]["keywords"];
+    if (ot == "Full Text Search") {
+        s_on = on;
+        kwds = [on, on.toLowerCase(), on.toUpperCase(), on.toLowerCase().charAt(0).toUpperCase() + on.slice(1)];
+    }
     let files = BCRM_REPO_SCAN_MANIFEST_FILES;
     let script = "";
     for (f in files) {
@@ -5144,14 +5505,25 @@ BCRMRepoScanProcessOUIJS = function (on, ot, label) {
         script = files[f]["Script"];
         for (let i = 0; i < kwds.length; i++) {
             if (script.indexOf(kwds[i]) > -1) {
-                if (script.indexOf(s_on) > -1) {
+                if (ot == "Full Text Search") {
                     item = files[f];
                     insight["Status"] = "Found keyword " + kwds[i];
                     insight["Lookup Object Type"] = ot;
-                    insight["Lookup Object Name"] = on;
-                    insight["Active Lines"].push(script.substring(script.indexOf(s_on) - 20, script.indexOf(s_on) + s_on.length + 20));
+                    insight["Lookup Object Name"] = kwds[i];
+                    insight["Active Lines"].push(script.substring(script.indexOf(kwds[i]) - 20, script.indexOf(kwds[i]) + kwds[i].length + 20));
                     item["Insight"] = insight;
                     BCRM_REPO_SCAN_CACHE[label].push(item);
+                }
+                else {
+                    if (script.indexOf(s_on) > -1) {
+                        item = files[f];
+                        insight["Status"] = "Found keyword " + kwds[i];
+                        insight["Lookup Object Type"] = ot;
+                        insight["Lookup Object Name"] = on;
+                        insight["Active Lines"].push(script.substring(script.indexOf(s_on) - 20, script.indexOf(s_on) + s_on.length + 20));
+                        item["Insight"] = insight;
+                        BCRM_REPO_SCAN_CACHE[label].push(item);
+                    }
                 }
             }
         }
@@ -5174,6 +5546,9 @@ BCRMRepoScanProcessScript = function (items, on, ot) {
     if (ot == "Field") {
         s_on = ["FieldValue", "\"" + on + "\""];
     }
+    if (ot == "Full Text Search") {
+        s_on = [on, on.toLowerCase(), on.toUpperCase(), on.toLowerCase().charAt(0).toUpperCase() + on.slice(1)];
+    }
     for (let i = 0; i < items.length; i++) {
         insight = {
             "Status": "",
@@ -5192,6 +5567,10 @@ BCRMRepoScanProcessScript = function (items, on, ot) {
                 if (lines[l].indexOf("//") > -1) {
                     let cidx = lines[l].indexOf("//");
                     for (let i1 = 0; i1 < s_on.length; i1++) {
+                        if (ot == "Full Text Search" && lines[l].indexOf(s_on[i1]) > -1) {
+                            insight["Inactive Lines"].push("[" + l + "]_COMMENT_LINE: " + lines[l]);
+                            break;
+                        }
                         if (lines[l].indexOf(s_on[i1]) > cidx) {
                             //object in a single line comment
                             i1 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_LINE: " + lines[l]) : 0;
@@ -5203,6 +5582,10 @@ BCRMRepoScanProcessScript = function (items, on, ot) {
                     insideblock = true;
                     let bidx = lines[l].indexOf("/*");
                     for (let i2 = 0; i2 < s_on.length; i2++) {
+                        if (ot == "Full Text Search" && lines[l].indexOf(s_on[i2]) > -1) {
+                            insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]);
+                            break;
+                        }
                         if (lines[l].indexOf(s_on[i2]) > bidx) {
                             //object in a block comment
                             i2 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]) : 0;
@@ -5214,6 +5597,10 @@ BCRMRepoScanProcessScript = function (items, on, ot) {
                         for (let i3 = 0; i3 < s_on.length; i3++) {
                             if (lines[l].indexOf(s_on[i3]) > -1) {
                                 //object in active code
+                                if (ot == "Full Text Search") {
+                                    insight["Active Lines"].push("[" + l + "]_ACTIVE_CODE: " + lines[l]);
+                                    break;
+                                }
                                 i3 + 1 == s_on.length ? insight["Active Lines"].push("[" + l + "]_ACTIVE_CODE: " + lines[l]) : 0;
                                 i3 + 1 == s_on.length ? active++ : 0;
                             }
@@ -5225,6 +5612,10 @@ BCRMRepoScanProcessScript = function (items, on, ot) {
                 for (let i4 = 0; i4 < s_on.length; i4++) {
                     if (lines[l].indexOf(s_on[i4]) > -1) {
                         //object in a block comment
+                        if (ot == "Full Text Search") {
+                            insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]);
+                            break;
+                        }
                         i4 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]) : 0;
                     }
                 }
@@ -5232,6 +5623,10 @@ BCRMRepoScanProcessScript = function (items, on, ot) {
                     //end of block comment
                     let eidx = lines[l].indexOf("*/");
                     for (let i5 = 0; i5 < s_on.length; i5++) {
+                        if (ot == "Full Text Search" && lines[l].indexOf(s_on[i5]) > -1) {
+                            insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]);
+                            break;
+                        }
                         if (lines[l].indexOf(s_on[i5]) > -1 && lines[l].indexOf(s_on[i5]) < eidx) {
                             //object in a block comment
                             i5 + 1 == s_on.length ? insight["Inactive Lines"].push("[" + l + "]_COMMENT_BLOCK: " + lines[l]) : 0;
@@ -5329,7 +5724,7 @@ BCRMRepoScanGetList = function (ot, on) {
     }
 };
 
-BCRMRepoScanUI = function () {
+BCRMRepoScanUI = function (on_in, ot_in, go_in) {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanUI") : 0;
     let cfg = BCRM_REPO_SCAN_CFG;
     let types = [];
@@ -5356,6 +5751,7 @@ BCRMRepoScanUI = function () {
         $("#bcrm_reposcan_on").val("");
         $("#bcrm_reposcan_on").attr("list", ot);
     });
+
     content.append(combo);
 
     let on = $("<sl-input id='bcrm_reposcan_on' style='margin-top:10px;width:40vw;' label='Object Name' clearable></sl-input>");
@@ -5375,13 +5771,16 @@ BCRMRepoScanUI = function () {
             BCRMRepoScanGetList(me.attr("list"), val);
         }
     });
+
     content.append(on);
 
-    let srchbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Find Dependencies</sl-button>");
+    let srchbtn = $("<sl-button id='bcrm_reposcan_srchbtn' title='Start Search' style='margin-top:10px;margin-right:10px;' variant='primary'>Find Dependencies</sl-button>");
     srchbtn[0].addEventListener("click", () => {
         let ot = $("#bcrm_ot_btn").text();
         let on = $("#bcrm_reposcan_on").val();
         $("#bcrm_reposcan_results").empty();
+        $("#bcrm_zsbtn").hide();
+        $("#bcrm_zhbtn").show();
         BCRMRepoScan(ot, on);
     });
     content.append(srchbtn);
@@ -5394,23 +5793,51 @@ BCRMRepoScanUI = function () {
     content.append(wrmbtn);
     */
 
-    let expbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Data Export</sl-button>");
+    let expbtn = $("<sl-button title='Export collected data to an exportable html table' style='margin-top:10px;margin-right:10px;' variant='primary'>Data Export</sl-button>");
     expbtn[0].addEventListener("click", () => {
         BCRMRepoScanPopExportData();
     });
     content.append(expbtn);
 
-    let clrbtn = $("<sl-button style='margin-top:10px;margin-right:10px;' variant='primary'>Tidy Up</sl-button>");
+    let clrbtn = $("<sl-button title='Clear all caches' style='margin-top:10px;margin-right:10px;' variant='primary'>Tidy Up</sl-button>");
     clrbtn[0].addEventListener("click", () => {
         BCRMRepoScanClear();
     });
     content.append(clrbtn);
+
+    let zhbtn = $("<sl-button title='Hide result cards with zero result' id='bcrm_zhbtn' style='margin-top:10px;margin-right:10px;' variant='primary'>Hide 0 Hits</sl-button>");
+    zhbtn[0].addEventListener("click", () => {
+        BCRMRepoScanHideZeros();
+        $("#bcrm_zsbtn").show();
+        $("#bcrm_zhbtn").hide();
+    });
+    content.append(zhbtn);
+
+    let zsbtn = $("<sl-button title='Show result cards with zero result'  id='bcrm_zsbtn' style='display:none;margin-top:10px;margin-right:10px;' variant='primary'>Show 0 Hits</sl-button>");
+    zsbtn[0].addEventListener("click", () => {
+        BCRMRepoScanShowZeros();
+        $("#bcrm_zsbtn").hide();
+        $("#bcrm_zhbtn").show();
+    });
+    content.append(zsbtn);
 
     let results = $("<div id='bcrm_reposcan_results' style='display:grid;grid-template-columns:auto auto auto auto'>");
     content.append(results);
     dlg.append(content);
     $("body").append(dlg);
     $("#bcrm_reposcan")[0].show();
+
+    setTimeout(function () {
+        if (typeof (ot_in) !== "undefined") {
+            $("#bcrm_ot_btn").text(ot_in);
+        }
+        if (typeof (on_in) !== "undefined") {
+            $("#bcrm_reposcan_on").val(on_in);
+        }
+        if (go_in) {
+            $("#bcrm_reposcan_srchbtn").click();
+        }
+    }, 300);
 };
 
 var BCRM_REPO_SCAN_MANIFEST_FILES = {};
