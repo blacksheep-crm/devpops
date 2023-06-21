@@ -12,13 +12,17 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
-# What's New in 23.6
+# What's New in 23.6.1
 
 Dependency Finder: Uses REST API to find dependencies for various object types (Special thanks to Jason)
 
+23.6.1: Enhanced Dependency Finder (kudos to Yiannis and Jason)
+
 Web Tools: List Applet record hover menu
 
-# Update to 23.6 (if you do a new installation, keep scrolling)
+23.6.1: Changed from hover/mouseover to less annoying right-click/contextmenu
+
+# Update to 23.6.1 (if you do a new installation, keep scrolling)
 
 Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif, then deliver.
 
