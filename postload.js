@@ -3298,6 +3298,22 @@ BCRMLoadShoelace = function () {
 }
 BCRMLoadShoelace();
 
+//cytoscape
+var BCRM_CS_LOADED = false;
+BCRMLoadCytoscape = function () {
+    if (!BCRM_CS_LOADED) {
+        if (location.href.indexOf("WSUI+Dashboard+View") == -1) {
+            devpops_debug ? console.log(Date.now(), "Loading cytoscape.js") : 0;
+            if ($("script[src*='cytoscape']").length == 0) {
+                let csjs = $('<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.25.0/cytoscape.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>');
+                $("head").append(csjs);
+                BCRM_CS_LOADED = true;
+            }
+        }
+    }
+}
+BCRMLoadCytoscape();
+
 //add pretty tooltips
 BCRMTooltipMod = function () {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
@@ -3669,6 +3685,9 @@ BCRMWTHelper = function () {
                 //load shoelace
                 BCRMLoadShoelace();
 
+                //load cytoscape
+                BCRMLoadCytoscape();
+
                 //General enhancements
                 BCRMWebToolsEnhancer();
 
@@ -3812,9 +3831,11 @@ BCRMWTHelper = function () {
                 $("[id^='bcrm_box']").each(function () {
                     $(this).remove();
                 });
-                for (a in am) {
-                    BCRMAddListRecordHover(am[a].GetPModel());
-                }
+				if (!(vn == "WSUI Dashboard View" || vn == "WT Attribute Differences View")){
+					for (a in am) {
+						BCRMAddListRecordHover(am[a].GetPModel());
+					}
+				}
 
                 console.log("BCRM devpops extension for Siebel Web Tools loaded");
 
@@ -4037,10 +4058,10 @@ BCRMAddListRecordHover = function (pm) {
             $("#_sweview").removeAttr("title");
 
             //for each row
-            if (!(ae.find("tr[role='row']").length > 0)){
-                setTimeout(function(){
+            if (!(ae.find("tr[role='row']").length > 0)) {
+                setTimeout(function () {
                     BCRMAddListRecordHover(pm);
-                },200);
+                }, 200);
             }
             ae.find("tr[role='row']").each(function () {
                 if (typeof ($(this).attr("id")) !== "undefined") {
@@ -4322,7 +4343,7 @@ BCRMGetEntProfileParamsQuery = function (cfg, on) {
 };
 
 var BCRM_REPO_SCAN_CACHE = [];
-var BCRM_REPO_SCAN_CFG = {
+const BCRM_REPO_SCAN_CFG = {
     "defaults": {
         "Repository Script": {
             bc: ["Repository Application Server Script", "Repository Application Browser Script", "Repository Applet Server Script", "Repository Applet Browser Script", "Repository BusComp Server Script", "Repository BusComp Browser Script", "Repository Business Service Server Script", "Repository Business Service Browser Script",]
@@ -4379,6 +4400,185 @@ var BCRM_REPO_SCAN_CFG = {
             }
         }
     },
+    "Application": { //example for hierarchy analysis
+        search: {
+            bc: "Repository Application",
+            query: "[Inactive]<>'Y' AND [Name] ~LIKE '*$OBJ_NAME*'",
+            fields: "Name"
+        },
+        ref: {
+            "Screens": {
+                bc: "Repository Screen Menu Item",
+                query: "[Parent Name]='$OBJ_NAME' AND [Inactive]<>'Y'",
+                fields: "Name,Screen,Parent Name,Comments",
+                xfield: "Application Screen",
+                //rfield: "Screen",
+                parent: "Application"
+            },
+            "Views": {
+                bc: "Repository Screen View",
+                query: '[Parent Name]="$OBJ_NAME"',
+                fields: "View,Name,Parent Name,Comments",
+                xfield: "Screen View",
+                //rfield: "View",
+                parent: "Screens"
+            },
+            "Applets": {
+                bc: "Repository View Web Template Item",
+                query: '[GParent Name]="$OBJ_NAME"',
+                fields: "Name,Applet,GParent Name,Comments",
+                xfield: "View WTI",
+                rfield: "Applet",
+                parent: "Views"
+            },
+            "Assoc Applets": {
+                bc: "Repository Applet",
+                query: '[Name]="$OBJ_NAME" AND ([Associate Applet] IS NOT NULL)',
+                fields: "Name,Associate Applet,Comments",
+                rfield: "Associate Applet",
+                xfield: "Assoc Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "MVG Applets Control": {
+                bc: "Repository Control",
+                query: '[Parent Name]="$OBJ_NAME" AND ([MVG Applet] IS NOT NULL)',
+                fields: "Name,MVG Applet,Parent Name,Comments",
+                rfield: "MVG Applet",
+                xfield: "Control MVG Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "MVG Applets List Column": {
+                bc: "Repository List Column",
+                query: '[GParent Name]="$OBJ_NAME" AND ([MVG Applet] IS NOT NULL)',
+                fields: "Name,MVG Applet,GParent Name,Comments",
+                rfield: "MVG Applet",
+                xfield: "List Column MVG Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "Pick Applets Control": {
+                bc: "Repository Control",
+                query: '[Parent Name]="$OBJ_NAME" AND ([Pick Applet] IS NOT NULL)',
+                fields: "Name,Pick Applet,Parent Name,Comments",
+                rfield: "Pick Applet",
+                xfield: "Control Pick Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "Pick Applets List Column": {
+                bc: "Repository List Column",
+                query: '[GParent Name]="$OBJ_NAME" AND ([Pick Applet] IS NOT NULL)',
+                fields: "Name,Pick Applet,GParent Name,Comments",
+                rfield: "Pick Applet",
+                xfield: "List Column Pick Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "MVG Assoc Applets Control": {
+                bc: "Repository Applet",
+                query: '[Name]="$OBJ_NAME" AND ([Associate Applet] IS NOT NULL)',
+                fields: "Name,Associate Applet,Comments",
+                rfield: "Associate Applet",
+                xfield: "MVG Assoc Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "MVG Assoc Applets List Column": {
+                bc: "Repository Applet",
+                query: '[Name]="$OBJ_NAME" AND ([Associate Applet] IS NOT NULL)',
+                fields: "Name,Associate Applet,Comments",
+                rfield: "Associate Applet",
+                xfield: "MVG Assoc Applet",
+                parent: "Applets",
+                addto: "Applets",
+                autoplay: true
+            },
+            "Business Objects": {
+                bc: "Repository View",
+                query: '[Name]="$OBJ_NAME"',
+                fields: "Name,Business Object,Comments",
+                rfield: "Business Object",
+                xfield: "View BO",
+                parent: "Views",
+                autoplay: true
+            },
+            "Business Components": {
+                bc: "Repository Applet",
+                query: '[Name]="$OBJ_NAME"',
+                fields: "Name,Business Component,Comments",
+                rfield: "Business Component",
+                xfield: "Applet BC",
+                parent: "Applets"
+            },
+            "Tables": {
+                bc: "Repository Business Component",
+                query: '[Name]="$OBJ_NAME" AND ([Table] IS NOT NULL)',
+                fields: "Name,Table,Comments",
+                rfield: "Table",
+                xfield: "BC Base Table",
+                parent: "Business Components",
+                autoplay: true
+            },
+            "Primary Business Components": {
+                bc: "Repository Business Object",
+                query: '[Name]="$OBJ_NAME" AND([Primary Business Component] IS NOT NULL)',
+                fields: "Name,Primary Business Component,Comments",
+                rfield: "Primary Business Component",
+                xfield: "Primary Business Component",
+                parent: "Business Objects",
+                autoplay: true
+            },
+            /*
+            "Parent Links":{
+                bc: "Repository Link",
+                query: '[Parent Business Component]="$OBJ_NAME" OR [Child Business Component]="$OBJ_NAME"',
+                fields: "Name,Child Business Component,Parent Business Component,Inter Table,Comments",
+                rfield: "Name",
+                xfield: "Link Name",
+                parent: "Primary Business Components",
+                autoplay: true
+            },
+            "Intersection Tables":{
+                bc: "Repository Link",
+                query: '[Name]="$OBJ_NAME" AND ([Inter Table] IS NOT NULL)',
+                fields: "Name,Child Business Component,Parent Business Component,Inter Table,Comments",
+                rfield: "Inter Table",
+                xfield: "Intersection Table",
+                parent: "Links",
+                addto: "Tables",
+                autoplay: true
+            },
+            */
+            "Joined Tables": {
+                bc: "Repository Join",
+                query: '[Parent Name]="$OBJ_NAME"',
+                fields: "Name,Parent Name,Table,Comments",
+                rfield: "Table",
+                xfield: "BC Joined Table",
+                parent: "Business Components",
+                addto: "Tables",
+                autoplay: true
+            },
+            "Extension Tables": {
+                bc: "Repository Field",
+                query: '[Parent Name]="$OBJ_NAME" AND ([Join] LIKE "S_*_*X*")',
+                fields: "Name,Parent Name,Join,Comments",
+                rfield: "Join",
+                xfield: "1x1 Table",
+                parent: "Business Components",
+                addto: "Tables",
+                autoplay: true
+            }
+        }
+    },
     "Business Component": {
         search: {
             bc: "Repository Business Component",
@@ -4405,9 +4605,9 @@ var BCRM_REPO_SCAN_CFG = {
                 xfield: "Primary Business Component"
             },
             "Business Object Component": {
-                bc: "Repository Business Object Component",
-                query: "([BusComp]='$OBJ_NAME' OR [Link] LIKE '*/$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
-                fields: "Parent Name,Name,BusComp,Comments",
+                bc: "BCRM Repository Business Object Component",
+                query: "([BusComp]='$OBJ_NAME' OR [Link Name] LIKE '*/$OBJ_NAME*') AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Parent Name,Name,Link Name,BusComp,Comments",
                 xfield: "BusComp/Link(Child)"
             },
             "State Model": {
@@ -4776,6 +4976,12 @@ var BCRM_REPO_SCAN_CFG = {
                 fields: "Name,Table,Comments",
                 xfield: "Table"
             },
+            "Foreign Key": {
+                bc: "Repository Column",
+                query: "[Foreign Key Table Name]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
+                fields: "Name, Parent Name, Foreign Key Table Name",
+                xfield: "Foreign Key"
+            },
             "Join": {
                 bc: "Repository Join",
                 query: "[Table]='$OBJ_NAME' AND [Inactive] <> 'Y' AND [Parent Inactive] <> 'Y'",
@@ -4947,9 +5153,9 @@ var BCRM_REPO_SCAN_CFG = {
                 xfield: "Full Text Search"
             },
             "Business Object Component": {
-                bc: "Repository Business Object Component",
-                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Link] ~LIKE '*$OBJ_NAME*'OR [Comments] ~LIKE '*$OBJ_NAME*'",
-                fields: "Parent Name,Name,BusComp,Comments",
+                bc: "BCRM Repository Business Object Component",
+                query: "[Name] ~LIKE '*$OBJ_NAME*' OR [Link Name] ~LIKE '*$OBJ_NAME*'OR [Comments] ~LIKE '*$OBJ_NAME*'",
+                fields: "Parent Name,Link Name,Name,BusComp,Comments",
                 xfield: "Full Text Search"
             },
             "State Model": {
@@ -5110,6 +5316,7 @@ BCRMRepoScanOUIJS = function (on, ot, label) {
     }, timer);
 };
 
+var BCRM_REPO_SCAN_TNA = {};
 BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent: false }, srownum = 0) {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanFetchData") : 0;
     let myHeaders = new Headers();
@@ -5119,102 +5326,167 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
     var bc = rdef.bc;
     var xfield = rdef.xfield;
     var pfield = rdef.pfield;
-
-    if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
-        BCRM_REPO_SCAN_CACHE[label] = [];
+    var rfield = rdef.rfield;
+    var parent = rdef.parent;
+    var addto = rdef.addto;
+    var ishier = false;
+    if (typeof (parent) === "undefined") {
+        parent = ot;
     }
+    else {
+        ishier = true;
+    }
+    if (typeof (addto) !== "undefined") {
+        label = addto;
+    }
+    if (parent == ot) { //non-hierarchy or first in hierarchy, do the search
 
-    let requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        redirect: 'follow'
-    };
+        if (typeof (BCRM_REPO_SCAN_CACHE[label]) === "undefined") {
+            BCRM_REPO_SCAN_CACHE[label] = [];
+        }
+        if (typeof (BCRM_REPO_SCAN_TNA[label]) === "undefined") {
+            BCRM_REPO_SCAN_TNA[label] = [];
+        }
 
-    let searchspec = rdef.query.replaceAll("$OBJ_NAME", on);
-    let fields = rdef.fields;
-
-    //Requires BO "BCRM Repository Details" and Base IO
-    let url = location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/" + bc + "?fields=" + fields + "&searchspec=" + searchspec + "&PageSize=" + pagesize + "&pagination=Y&StartRowNum=" + srownum + "&workspace=" + wsn + "&version=" + wsv + "&childlinks=None&uniformresponse=y";
-
-    if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) === "undefined") {
-        let info = {
-            bc: bc,
-            start: Date.now(),
-            end: 0,
-            time: 0,
-            url: url,
-            searchspec: searchspec,
-            requests: 0,
-            count: 0
+        let requestOptions = {
+            method: 'GET',
+            headers: myHeaders,
+            redirect: 'follow'
         };
-        BCRM_REPO_SCAN_CACHE[label]["info"] = info;
-    }
 
-    if (!opt.silent) {
-        BCRMRepoScanShowResults(label, ot, on, true);
-    }
-    fetch(url, requestOptions)
-        .then(response => response.text())
-        .then(result => {
-            let res = JSON.parse(result);
-            if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
-                BCRM_REPO_SCAN_CACHE[label]["info"]["requests"] = 1 + BCRM_REPO_SCAN_CACHE[label]["info"]["requests"];
+        let searchspec = rdef.query.replaceAll("$OBJ_NAME", on);
+        let fields = rdef.fields;
+
+        //Requires BO "BCRM Repository Details" and Base IO
+        let url = location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/" + bc + "?fields=" + fields + "&searchspec=" + searchspec + "&PageSize=" + pagesize + "&pagination=Y&StartRowNum=" + srownum + "&workspace=" + wsn + "&version=" + wsv + "&childlinks=None&uniformresponse=y";
+
+        if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) === "undefined") {
+            let info = {
+                bc: bc,
+                start: Date.now(),
+                end: 0,
+                time: 0,
+                url: url,
+                searchspec: searchspec,
+                requests: 0,
+                count: 0,
+                shows: 0
+            };
+            if (typeof (rdef.addquery) !== "undefined") {
+                info.userfilter = rdef.addquery;
             }
-            if (typeof (res.items) !== "undefined") {
-                let items = res.items;
+            BCRM_REPO_SCAN_CACHE[label]["info"] = info;
+        }
+
+        if (!opt.silent) {
+            BCRMRepoScanShowResults(label, ot, on, true);
+        }
+        fetch(url, requestOptions)
+            .then(response => response.text())
+            .then(result => {
+                let res = JSON.parse(result);
                 if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
-                    BCRM_REPO_SCAN_CACHE[label]["info"]["count"] = items.length + BCRM_REPO_SCAN_CACHE[label]["info"]["count"];
+                    BCRM_REPO_SCAN_CACHE[label]["info"]["requests"] = 1 + BCRM_REPO_SCAN_CACHE[label]["info"]["requests"];
                 }
-                if (label.indexOf("Script") > -1) {
-                    items = BCRMRepoScanProcessScript(items, on, ot);
-                }
+                if (typeof (res.items) !== "undefined") {
+                    let items = res.items;
+                    if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
+                        BCRM_REPO_SCAN_CACHE[label]["info"]["count"] = items.length + BCRM_REPO_SCAN_CACHE[label]["info"]["count"];
+                    }
+                    if (label.indexOf("Script") > -1) {
+                        items = BCRMRepoScanProcessScript(items, on, ot);
+                    }
 
-                BCRMRepoScanProcessExportData(items, on, ot, label, xfield, pfield);
 
-                if (label == "Manifest File JS") {
-                    for (let f = 0; f < items.length; f++) {
-                        BCRMRepoScanProcessMFJS(label, ot, on, items[f], opt);
+
+                    if (label == "Manifest File JS") {
+                        for (let f = 0; f < items.length; f++) {
+                            BCRMRepoScanProcessMFJS(label, ot, on, items[f], opt);
+                        }
+                    }
+
+                    if (label != "Manifest File JS") {
+                        if (ishier) { //hierarchy search: e.g. Application
+                            var nitems = [];
+                            var alreadyfound = false;
+
+                            //dedupe items
+
+                            for (let n = 0; n < items.length; n++) {
+                                alreadyfound = false;
+
+                                if (typeof (rfield) !== "undefined") {
+                                    let temp = items[n]["Name"];
+                                    items[n]["Parent Name"] = temp;
+                                    items[n]["Name"] = items[n][rfield];
+                                }
+
+                                let tn = items[n]["Name"];
+
+                                if (tn != "") {
+
+                                    if (BCRM_REPO_SCAN_TNA[label].indexOf(tn) == -1) {
+                                        BCRM_REPO_SCAN_TNA[label].push(tn);
+                                    }
+                                    else {
+                                        alreadyfound = true;
+                                    }
+                                    if (!alreadyfound) {
+                                        nitems.push(items[n]);
+                                    }
+                                }
+                            }
+
+                            //nitems = [...new Set(items)];
+                            //BCRM_REPO_SCAN_CACHE[label].push(...nitems);
+                            BCRM_REPO_SCAN_CACHE[label].push(...nitems);
+                            //BCRM_REPO_SCAN_CACHE[label] = [...new Set(BCRM_REPO_SCAN_CACHE[label])];
+                            BCRMRepoScanProcessExportData(nitems, on, ot, label, xfield, pfield);
+                        }
+                        else {
+                            BCRM_REPO_SCAN_CACHE[label].push(...items);
+                            BCRMRepoScanProcessExportData(items, on, ot, label, xfield, pfield);
+                        }
+                    }
+
+                    //BCRMRepoScanProcessExportData(items, on, ot, label, xfield, pfield);
+
+                    if (!opt.silent) {
+                        BCRMRepoScanShowResults(label, ot, on);
+                    }
+
+                    //pagination
+                    let links = res.Link;
+                    let hasnext = false;
+                    for (let i = 0; i < links.length; i++) {
+                        if (links[i].rel == "nextSet") {
+                            BCRMRepoScanFetchData(wsn, wsv, rdef, label, on, ot, opt, srownum + pagesize);
+                            hasnext = true;
+                            break;
+                        }
+                    }
+                    if (!hasnext) {
+                        if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
+                            BCRM_REPO_SCAN_CACHE[label]["info"]["end"] = Date.now();
+                            BCRM_REPO_SCAN_CACHE[label]["info"]["time"] = BCRM_REPO_SCAN_CACHE[label]["info"]["end"] - BCRM_REPO_SCAN_CACHE[label]["info"]["start"];
+                        }
                     }
                 }
-
-                if (label != "Manifest File JS") {
-                    BCRM_REPO_SCAN_CACHE[label].push(...items);
-                }
-                if (!opt.silent) {
-                    BCRMRepoScanShowResults(label, ot, on);
-                }
-
-                //pagination
-                let links = res.Link;
-                let hasnext = false;
-                for (let i = 0; i < links.length; i++) {
-                    if (links[i].rel == "nextSet") {
-                        BCRMRepoScanFetchData(wsn, wsv, rdef, label, on, ot, opt, srownum + pagesize);
-                        hasnext = true;
-                        break;
-                    }
-                }
-                if (!hasnext) {
+                else {
+                    //no results
                     if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
                         BCRM_REPO_SCAN_CACHE[label]["info"]["end"] = Date.now();
                         BCRM_REPO_SCAN_CACHE[label]["info"]["time"] = BCRM_REPO_SCAN_CACHE[label]["info"]["end"] - BCRM_REPO_SCAN_CACHE[label]["info"]["start"];
                     }
+                    if (!opt.silent) {
+                        BCRMRepoScanShowResults(label, ot, on);
+                    }
                 }
-            }
-            else {
-                //no results
-                if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
-                    BCRM_REPO_SCAN_CACHE[label]["info"]["end"] = Date.now();
-                    BCRM_REPO_SCAN_CACHE[label]["info"]["time"] = BCRM_REPO_SCAN_CACHE[label]["info"]["end"] - BCRM_REPO_SCAN_CACHE[label]["info"]["start"];
-                }
-                if (!opt.silent) {
-                    BCRMRepoScanShowResults(label, ot, on);
-                }
-            }
-        })
-        .catch(error => {
-            //console.log('error', error);
-        });
+            })
+            .catch(error => {
+                //console.log('error', error);
+            });
+    }
 };
 
 BCRMRepoScanPopInfo = function (label, ot, on) {
@@ -5226,6 +5498,7 @@ BCRMRepoScanPopInfo = function (label, ot, on) {
         closeButton.addEventListener('click', () => $("#bcrm_reposcan_info_dlg").remove());
         let cont = $("<div style='overflow:auto'>");
         cont.append("<p>Query Time: " + info.time + " ms</p>");
+        cont.append("<p>Requests (fetch): " + info.requests + "</p>");
         cont.append("<p>Bus Comp: " + info.bc + "</p>");
         cont.append("<p>Search Text: " + on + "</p>");
         cont.append("<p>Search Spec: " + info.searchspec + "</p>");
@@ -5243,16 +5516,30 @@ BCRMRepoScanPopInfo = function (label, ot, on) {
     }
 };
 
-
 BCRMRepoScanShowResults = function (label, ot, on, init = false) {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanShowResults") : 0;
     if ($("#bcrm_reposcan_results").length == 1) {
         let items = BCRM_REPO_SCAN_CACHE[label];
+        let rdefs = BCRM_REPO_SCAN_CFG[ot]["ref"];
+        let info = BCRM_REPO_SCAN_CACHE[label]["info"];
+        if (typeof (info) !== "undefined") {
+            if (typeof (info.shows) !== "undefined") {
+                info.shows = info.shows + 1;
+            }
+        }
         let l = items.length;
-        let card;
-        let counter = l + " hit" + (l == 1 ? "" : "s");
+        var card;
+        let counter = $("<div class='bcrm-repo-scan-counter' style='float:left;'>");
+        let ctext = l + " hit" + (l == 1 ? "" : "s");
+        let spinner = $("<sl-spinner style='--speed:4s;margin-left:4px;'></sl-spinner>");
+        if (typeof (info) !== "undefined") {
+            if (typeof (info.userfilter) !== "undefined") {
+                ctext += " (filtered)";
+            }
+        }
+        counter.text(ctext);
         if (init) {
-            counter = $("<sl-spinner style='--speed:4s'></sl-spinner>");
+            //removed
         }
         let card_content = $("<div class='bcrm-reposcan-card-content'>");
         if ($("#bcrm_reposcan_results").find("[bcrm-label='" + label + "']").length == 0) {
@@ -5271,10 +5558,40 @@ BCRMRepoScanShowResults = function (label, ot, on, init = false) {
             card = $("#bcrm_reposcan_results").find("[bcrm-label='" + label + "']");
         }
         if (init) {
-            card.find(".bcrm-reposcan-card-content").append(counter);
+            if (card.find("sl-spinner").length == 0) {
+                card.find(".bcrm-reposcan-card-content").append(spinner);
+            }
         }
         else {
-            card.find(".bcrm-reposcan-card-content").text(counter);
+            card.find(".bcrm-repo-scan-counter").remove();
+            card.find(".bcrm-reposcan-card-content").prepend(counter);
+            if (typeof (info) !== "undefined") {
+                if (typeof (info.shows) !== "undefined") {
+                    if (info.shows == info.requests * 2) {
+                        card.find("sl-spinner").remove();
+                        if (card.find(".bcrm-reposcan-card-tree-btn[bcrm-autoplay='true']").length > 0) {
+                            card.find(".bcrm-reposcan-card-tree-btn[bcrm-autoplay='true']").each(function () {
+                                BCRMToast("Retrieving data for " + $(this).attr("bcrm-r") + ". Please stand by.");
+                                var b = $(this);
+                                b.attr("bcrm-autoplay", "done");
+                                b.click();
+                                setTimeout(function () { //2nd click, could be more elegant
+                                    BCRMToast("Retrieving data for " + b.attr("bcrm-r") + ". Please stand by.");
+                                    b.click();
+
+                                }, 5000);
+                                setTimeout(function () { //3rd click, could be more elegant
+                                    BCRMToast("Retrieving data for " + b.attr("bcrm-r") + ". Please stand by.");
+                                    b.click();
+                                }, 10000);
+                            });
+                        }
+                    }
+                }
+            }
+            else {
+                card.find("sl-spinner").remove();
+            }
         }
 
         if (l > 0) {
@@ -5285,6 +5602,92 @@ BCRMRepoScanShowResults = function (label, ot, on, init = false) {
                 });
                 card.find(".bcrm-reposcan-card-footer").append(fbtn);
             }
+            if (card.find(".bcrm-reposcan-card-viz-btn").length == 0) {
+                let vbtn = $("<sl-button style='margin-left:6px;' class='bcrm-reposcan-card-viz-btn' title='Show Graph (might get ugly with large result sets)' variant='primary' outline pill size='small'>Graph</sl-button>");
+                vbtn[0].addEventListener("click", () => {
+                    BCRMRepoScanVisualize(label, ot, on);
+                });
+                card.find(".bcrm-reposcan-card-footer").append(vbtn);
+            }
+            for (r in rdefs) {
+                if (typeof (rdefs[r].parent) !== "undefined") {
+                    if (rdefs[r].parent == label) {
+                        if (card.find(".bcrm-reposcan-card-tree-btn." + r.replaceAll(" ", "-")).length == 0) {
+                            let tbtn = $("<sl-button style='margin-left:6px;margin-top:4px;' class='bcrm-reposcan-card-tree-btn " + r.replaceAll(" ", "-") + "' title='Tree/Hierarchy Search' variant='primary' outline pill size='small'>" + "Find " + r + "</sl-button>");
+                            tbtn.attr("bcrm-ot", ot);
+                            tbtn.attr("bcrm-on", on);
+                            tbtn.attr("bcrm-label", label);
+                            tbtn.attr("bcrm-r", r);
+                            if (rdefs[r].autoplay) {
+                                tbtn.attr("bcrm-autoplay", "true");
+                            }
+                            tbtn[0].addEventListener("click", (e) => {
+                                let b = $(e.currentTarget);
+                                let addquery = "";
+                                if (typeof (b.attr("bcrm-autoplay")) === "undefined") {
+                                    addquery = SiebelApp.Utils.Prompt("Enter additional filter critera (Siebel Query Lang)\nor leave empty.\nExample:[View] LIKE 'LOY*'");
+                                }
+                                if (b.find("sl-icon").length == 0) {
+                                    b.prepend('<sl-icon slot="prefix" name="check2-circle"></sl-icon>');
+                                }
+                                BCRMRepoScanTreeSearch(b.attr("bcrm-ot"), b.attr("bcrm-on"), b.attr("bcrm-label"), b.attr("bcrm-r"), addquery);
+                            });
+                            card.find(".bcrm-reposcan-card-footer").append(tbtn);
+                        }
+                        //break;
+                    }
+                }
+            }
+        }
+    }
+};
+
+BCRMRepoScanTreeSearch = function (ot, on, parent, child, addquery = "") {
+    devpops_debug ? console.log(Date.now(), "BCRMRepoScanTreeSearch") : 0;
+    var rdef = BCRM_REPO_SCAN_CFG[ot]["ref"][child];
+    var psize = 20;
+    var inc = psize;
+    var q = [];
+    var pdata = BCRM_REPO_SCAN_CACHE[parent];
+    /*
+    var pfn = "Parent Name";
+    if (rdef.fields.indexOf("GParent") > -1) {
+        pfn = "GParent Name";
+    }
+    */
+    var query = rdef.query;
+    var w1 = "";
+    var q1 = query;
+    if (query.indexOf(" AND ") > -1) {
+        q1 = query.split(" AND (")[0];
+        w1 = " AND (" + query.split(" AND (")[1];
+    }
+    for (let i = 0; i < pdata.length; i++) {
+        //let qs = "[" + pfn + "]=\"" + URLEncode(pdata[i]["Name"]) + "\"";
+        let qs = q1.replaceAll("$OBJ_NAME", URLEncode(pdata[i]["Name"]));
+        q.push(qs);
+        if (i == psize || i == pdata.length - 1) {
+            var ndef = {};
+            ndef.bc = rdef.bc;
+            ndef.fields = rdef.fields;
+            ndef.xfield = rdef.xfield;
+            ndef.rfield = rdef.rfield;
+            ndef.addto = rdef.addto;
+            ndef.autoplay = rdef.autoplay;
+            psize = psize + inc;
+            var searchspec = q.join(" OR ");
+            searchspec = "(" + searchspec + ") AND [Inactive]<>'Y'" + w1;
+            if (!(addquery == "" || addquery == null)) {
+                searchspec = searchspec + " AND " + addquery;
+                ndef.addquery = addquery;
+            }
+            ndef.query = searchspec;
+            ndef.parent = ot;
+            q = [];
+            //setTimeout(function () {
+            BCRMRepoScanFetchData(sessionStorage.BCRMCurrentWorkspace, sessionStorage.BCRMCurrentWorkspaceVersion, ndef, child, on, ot);
+            //wsn, wsv, rdef, label, on, ot,
+            //}, 500);
         }
     }
 };
@@ -5652,6 +6055,7 @@ BCRMRepoScanClear = function () {
     devpops_debug ? console.log(Date.now(), "BCRMRepoScanClear") : 0;
     BCRM_REPO_SCAN_HTML = undefined;
     BCRM_REPO_SCAN_CACHE = [];
+    BCRM_REPO_SCAN_TNA = {};
     BCRM_REPO_SCAN_MANIFEST_FILES = {};
     BCRM_ENTPROFILES = [];
     $("#bcrm_reposcan_results").empty();
@@ -5865,6 +6269,112 @@ BCRMRepoScanProcessMFJS = function (label, ot, on, item, opt = { silent: false }
             //do nothing
         });
 };
+
+var BCRM_CY;
+BCRMRepoScanVisualize = function (label, ot, on) {
+    var target = ot + " [" + on + "]";
+    //container
+    $("#bcrm_cy").remove();
+    var cy_container = $("<div style='width:85%;height:85%;' id='bcrm_cy'>");
+    cy_container.dialog({
+        width: "90%",
+        height: screen.availHeight * 0.8,
+        title: label + " Dependencies for " + target,
+        buttons: {
+            "Open Image in new Tab": function () {
+                var blob = BCRM_CY.png({ output: "blob" });
+                var url = window.URL.createObjectURL(blob);
+                window.open(url);
+            },
+            "Close": function () {
+                $(this).dialog("destroy");
+            }
+        }
+    });
+
+    setTimeout(function () {
+        var sources = BCRM_REPO_SCAN_CACHE[label];
+        var dref = BCRM_REPO_SCAN_CFG[ot]["ref"][label];
+        var rfield = dref.rfield;
+        var eles = [];
+
+        for (let i = 0; i < sources.length; i++) {
+            let node = {};
+            node.group = "nodes"
+            node.data = {};
+            let node_id = sources[i]["Name"];
+            if (typeof (sources[i]["Parent Name"]) !== "undefined") {
+                node_id = sources[i]["Parent Name"] + "." + node_id;
+            }
+            if (typeof (sources[i]["GParent Name"]) !== "undefined") {
+                node_id = sources[i]["GParent Name"] + "." + node_id;
+            }
+            if (typeof (rfield) !== "undefined") {
+                node_id = sources[i][rfield];
+            }
+            if (node_id == "" || typeof (node_id) === "undefined") {
+                node_id = "undefined";
+            }
+            node_id.replaceAll("'", "_");
+
+            if (node_id != "undefined") {
+                node.data.id = node_id;
+                let edge = {};
+                edge.data = {};
+                edge.group = "edges";
+                edge.data.id = "e" + i;
+                edge.data.source = node_id;
+                edge.data.target = target;
+                eles.push(node);
+                eles.push(edge);
+            }
+        }
+
+        //target
+        let tnode = {};
+        tnode.group = "nodes";
+        tnode.style = {};
+        tnode.style["background-color"] = "darkred";
+        tnode.style.shape = "diamond";
+        tnode.style.width = 100;
+        tnode.style.height = 100;
+        tnode.data = {};
+        tnode.data.id = target;
+        eles.push(tnode);
+
+        BCRM_CY = cytoscape({
+            container: $("#bcrm_cy")[0],
+            elements: eles,
+
+            style: [ // the stylesheet for the graph
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#666',
+                        'label': 'data(id)'
+                    }
+                },
+
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 3,
+                        'line-color': '#ccc',
+                        'target-arrow-color': '#ccc',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier'
+                    }
+                }
+            ],
+
+            layout: {
+                name: 'random',
+                fit: true
+            }
+        });
+    }, 1000);
+};
+
 //listeners
 try {
     SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);

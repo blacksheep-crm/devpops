@@ -9,9 +9,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "23.6.1";
-var devpops_version = 61;
-var devpops_tag = "Margaret Hamilton";
+var devpops_dver = "23.7.1";
+var devpops_version = 62;
+var devpops_tag = "Edmund Hillary";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -4630,7 +4630,10 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     }
 
                     le.html(nl);
-                    le.attr("title", otitle);
+					if (typeof(tc) !== "undefined"){
+						le.attr("title", otitle);
+					}
+                    
                     //mark label as changed
 
                     switch (tc) {
@@ -4641,8 +4644,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         case "ShowTableColumns": le.attr("style", "color:green!important;");
                             break;
                         default: le.attr("style", "");
+							break;
                     }
-                    if (tc != "Reset") {
+                    if (typeof(tc) !== "undefined" && tc != "Reset") {
                         le.attr("bcrm-custom-label", tc);
                         le.css("padding", "2px");
                         le.css("border", "1px solid lightgrey");
