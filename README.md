@@ -12,25 +12,31 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
-# What's New in 23.6.1
+# What's New in 23.7.1
+
+Custom View on top of "SIF Attribute Differences" tables (supports Siebel CRM 23.7 and higher)
 
 Dependency Finder: Uses REST API to find dependencies for various object types (Special thanks to Jason)
 
-23.6.1: Enhanced Dependency Finder (kudos to Yiannis and Jason)
+23.7.1: Enhanced Dependency Finder (kudos to Yiannis and Jason)
 
-Web Tools: List Applet record hover menu
+# Update to 23.7.1 (if you do a new installation, keep scrolling)
 
-23.6.1: Changed from hover/mouseover to less annoying right-click/contextmenu
+Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif
 
-# Update to 23.6.1 (if you do a new installation, keep scrolling)
+If Siebel CRM version is 23.7 and higher, import BCRMImportedObjectPropertyListView.sif
 
-Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif, then deliver.
+Deliver imported objects
 
 Copy postload.js to vanilla postload.js
 
 Copy devpops.js to siebel/custom
 
 Copy blacksheep.css to files/custom
+
+If Siebel CRM version is 23.5 or higher, verify that the following Business Objects are registered in the REST Inbound Data Access Service view:
+
+![image](https://github.com/blacksheep-crm/devpops/assets/31369901/3bc2993c-f3bd-4038-a2f4-b13c26868468)
 
 # Features (23.5 and earlier)
 
@@ -122,46 +128,46 @@ shoelace menu and UX demos
 
 Cross-session history tracking (inactive)
 
+Web Tools: List Applet context (right-click) menu, check it out
+
 # New Installation
 
-1. Import all SIFs: devpops_Vxx.sif first, then any other sif file.
+1. Import all SIFs: devpops_Vxx.sif first, then any other sif file (BCRMImportedObjectPropertyListView.sif only if you are on Siebel 23.7 or higher)
 
-2. Add BCRM Modified Objects List View to a screen of your choice.
+3. Add BCRM Modified Objects List View to a screen of your choice.
 
-3. Register BCRM Modified Objects List View with a responsibility of your choice
+4. Register BCRM Modified Objects List View with a responsibility of your choice
 
-4. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser)
+5. Import BCRM Server Manager Service (only if you want to run srvrmgr commands from your browser)
    Edit the Business Service User Properties to match your Enterprise, Gateway host address and Gateway TLS port number 
 
-5. Register FWK Runtime and BCRM Server Manager Service business services with your Application(s) in Application User Prop (ClientBusinessServiceN)
+6. Register FWK Runtime and BCRM Server Manager Service business services with your Application(s) in Application User Prop (ClientBusinessServiceN)
 
-6. Deliver repository changes.
+7. Deliver repository changes.
 
-7. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
+8. Import FWK Runtime business service (XML) in Client-side Business Service admin view (kudos to Slava from http://xapuk.com/)
    If you use the BCRM Server Manager Service, check the default path in the srvrmgr method in the FWK Runtime business service and change if required.
    Also, check the path specified in var devpops_config (ses_home) in devpops.js
 
-8. If you want to use the runcmd and readFile methods, set System Preference: Runtime Scripts System Access = TRUE
+9. If you want to use the runcmd and readFile methods, set System Preference: Runtime Scripts System Access = TRUE
 
-9. If you want to use Responsibility Check, register BCRM View Helper business service with Responsibility in Business Service Access (for REST API)
+10. If you want to use Responsibility Check, register BCRM View Helper business service with Responsibility in Business Service Access (for REST API)
 
-10. Copy SiebelQueryLang.js file to /siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
+11. Copy SiebelQueryLang.js file to /siebel/scripts/3rdParty (kudos to Slava from http://xapuk.com/)
 
-11. Copy code from postload.js to vanilla postload.js
+12. Copy code from postload.js to vanilla postload.js
 
-12. Copy devpops.js to siebel/custom
+13. Copy devpops.js to siebel/custom
 
-13. Register devpops.js with Application / Common / PLATFORM INDEPENDENT in Manifest Administration
+14. Register devpops.js with Application / Common / PLATFORM INDEPENDENT in Manifest Administration
 
-14. Copy blacksheep.css to files/custom
+15. Copy blacksheep.css to files/custom
 
-15. To implement Lizard button on list applets, refer to jqgridrenderer_customization.txt
+16. To implement Lizard button on list applets, refer to jqgridrenderer_customization.txt
 
-16. If Siebel CRM version is 23.5 or higher, verify that the following Business Objects are registered in the REST Inbound Data Access Service view:
+17. If Siebel CRM version is 23.5 or higher, verify that the following Business Objects are registered in the REST Inbound Data Access Service view:
 
 ![image](https://github.com/blacksheep-crm/devpops/assets/31369901/3bc2993c-f3bd-4038-a2f4-b13c26868468)
-
-
 
 # Pre-Requisites
 
