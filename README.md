@@ -38,7 +38,7 @@ If Siebel CRM version is 23.5 or higher, verify that the following Business Obje
 
 ![image](https://github.com/blacksheep-crm/devpops/assets/31369901/3bc2993c-f3bd-4038-a2f4-b13c26868468)
 
-# Features (23.5 and earlier)
+# Features (23.6 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
