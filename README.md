@@ -12,15 +12,13 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
-# What's New in 23.7.1
+# What's New in 23.9.1
 
-Custom View on top of "SIF Attribute Differences" tables (supports Siebel CRM 23.7 and higher)
+AI Logging Central: shoelace UI to view and modify AI Profile log levels via CGW REST API
 
-Dependency Finder: Uses REST API to find dependencies for various object types (Special thanks to Jason)
+Poor man's log viewer for AI logs
 
-23.7.1: Enhanced Dependency Finder (kudos to Yiannis and Jason)
-
-# Update to 23.7.1 (if you do a new installation, keep scrolling)
+# Update to 23.9.1 (if you do a new installation, keep scrolling)
 
 Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif
 
@@ -38,7 +36,15 @@ If Siebel CRM version is 23.5 or higher, verify that the following Business Obje
 
 ![image](https://github.com/blacksheep-crm/devpops/assets/31369901/3bc2993c-f3bd-4038-a2f4-b13c26868468)
 
-# Features (23.6 and earlier)
+Follow these steps to enable the logviewer demo:
+
+   Edit logviewer.html to reflect your AI host name and port number
+
+   Save logviewer.html in applicationcontainer_external/webapps/ROOT
+
+   Create symlink from applicationcontainer_external/logs to applicationcontainer_external/siebelwebroot/smc/logs
+
+# Features (23.7 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -130,6 +136,10 @@ Cross-session history tracking (inactive)
 
 Web Tools: List Applet context (right-click) menu, check it out
 
+Custom View on top of "SIF Attribute Differences" tables (supports Siebel CRM 23.7 and higher)
+
+Dependency Finder: Uses REST API to find dependencies for various object types (Special thanks to Jason)
+
 # New Installation
 
 1. Import all SIFs: devpops_Vxx.sif first, then any other sif file (BCRMImportedObjectPropertyListView.sif only if you are on Siebel 23.7 or higher)
@@ -168,6 +178,14 @@ Web Tools: List Applet context (right-click) menu, check it out
 17. If Siebel CRM version is 23.5 or higher, verify that the following Business Objects are registered in the REST Inbound Data Access Service view:
 
 ![image](https://github.com/blacksheep-crm/devpops/assets/31369901/3bc2993c-f3bd-4038-a2f4-b13c26868468)
+
+18. Follow these steps to enable the logviewer demo:
+
+   Edit logviewer.html to reflect your AI host name and port number
+
+   Save logviewer.html in applicationcontainer_external/webapps/ROOT
+
+   Create symlink from applicationcontainer_external/logs to applicationcontainer_external/siebelwebroot/smc/logs
 
 # Pre-Requisites
 
