@@ -351,6 +351,15 @@ BCRMGetCredentials = function (next, opt = {}) {
                 if (next == "updlistcols") {
                     BCRMUpdateListColumns(BULC_PM, BULC_FMAP, true, true);
                 }
+                if (next == "deployment") {
+                    BCRMGetDeployment(BCRM_DEP_TYPE);
+                }
+                if (next == "profiles") {
+                    BCRMGetProfiles(BCRM_DEP_TYPE);
+                }
+                if (next == "updaiprofile") {
+                    BCRMUpdateSWSMProfile(BCRM_AIPROFILE);
+                }
             },
             Cancel: function (e, ui) {
                 $(this).dialog("destroy");
@@ -3831,11 +3840,11 @@ BCRMWTHelper = function () {
                 $("[id^='bcrm_box']").each(function () {
                     $(this).remove();
                 });
-				if (!(vn == "WSUI Dashboard View" || vn == "WT Attribute Differences View")){
-					for (a in am) {
-						BCRMAddListRecordHover(am[a].GetPModel());
-					}
-				}
+                if (!(vn == "WSUI Dashboard View" || vn == "WT Attribute Differences View")) {
+                    for (a in am) {
+                        BCRMAddListRecordHover(am[a].GetPModel());
+                    }
+                }
 
                 console.log("BCRM devpops extension for Siebel Web Tools loaded");
 

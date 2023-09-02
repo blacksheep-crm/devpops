@@ -9,9 +9,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "23.7.1";
-var devpops_version = 62;
-var devpops_tag = "Edmund Hillary";
+var devpops_dver = "23.9.1";
+var devpops_version = 63;
+var devpops_tag = "Vikram";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -405,6 +405,27 @@ BCRMGetSLMenu = function () {
             "onclick": function () {
                 try {
                     BCRMRepoScanUI();
+                }
+                catch (e) {
+                    //nothing
+                }
+            },
+            "img": "images/grid_matte_scales.png"
+        },
+        "LogCentral": {
+            "pos": "3.7",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_LogCentral") == "false" ? false : true,
+            "label": "🆕 AI Logging Central",
+            "title": "Expiremental, use with caution",
+            "onclick": function () {
+                try {
+                    BCRMGetDeployment("swsm");
+                    var i1 = setInterval(function () {
+                        if (typeof (BCRM_SMC.SWSMProfile) !== "undefined") {
+                            clearInterval(i1);
+                            BCRMShowAILogLevels();
+                        }
+                    }, 300);
                 }
                 catch (e) {
                     //nothing
@@ -4092,7 +4113,7 @@ async function BCRMCheckVersion() {
         const response = await fetch(url, requestOptions);
         devpops_uv = await response.text();
         //update toast
-        if (!BCRM_UPDATE_TOAST){
+        if (!BCRM_UPDATE_TOAST) {
             if (parseInt(devpops_uv) > devpops_version) {
                 BCRM_UPDATE_TOAST = true;
                 BCRMToast("devpops update " + devpops_uv + " available.", "warning", "exclamation-triangle", 20000);
@@ -4630,10 +4651,10 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                     }
 
                     le.html(nl);
-					if (typeof(tc) !== "undefined"){
-						le.attr("title", otitle);
-					}
-                    
+                    if (typeof (tc) !== "undefined") {
+                        le.attr("title", otitle);
+                    }
+
                     //mark label as changed
 
                     switch (tc) {
@@ -4644,9 +4665,9 @@ if (typeof (SiebelAppFacade.BCRMUtils) === "undefined") {
                         case "ShowTableColumns": le.attr("style", "color:green!important;");
                             break;
                         default: le.attr("style", "");
-							break;
+                            break;
                     }
-                    if (typeof(tc) !== "undefined" && tc != "Reset") {
+                    if (typeof (tc) !== "undefined" && tc != "Reset") {
                         le.attr("bcrm-custom-label", tc);
                         le.css("padding", "2px");
                         le.css("border", "1px solid lightgrey");
@@ -11390,6 +11411,348 @@ BCRMPopoutView = function () {
     st.innerHTML = css;
     head.appendChild(st);
     w.document.title = document.title;
+};
+
+//23.9: AI Logging Central
+var BCRM_SMC = {};
+var BCRM_DEP_TYPE = "";
+BCRMGetDeployment = function (type) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var retval;
+    if (typeof (type) === "undefined") {
+        type = BCRM_DEP_TYPE;
+    }
+    else {
+        BCRM_DEP_TYPE = type;
+    }
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMGetCredentials("deployment");
+    }
+    else {
+        var data = $.ajax({
+            dataType: "json",
+            url: location.origin + "/siebel/v1.0/cloudgateway/deployments/" + type,
+            async: false,
+            method: "GET",
+            "headers": {
+                "Authorization": BCRM_BASIC_AUTH
+            }
+        });
+        if (data.status == 200) {
+            if (type == "swsm") {
+                let ai_list = data.responseJSON.SWSMDeployment;
+                BCRM_SMC.SWSMDeployment = ai_list;
+                retval = ai_list;
+                BCRMGetProfiles(type);
+            }
+        }
+        else {
+            retval = data.status + ":" + data.responseText;
+        }
+    }
+    return retval;
+};
+
+BCRMGetProfiles = function (type) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var retval;
+    if (typeof (type) === "undefined") {
+        type = BCRM_DEP_TYPE;
+    }
+    else {
+        BCRM_DEP_TYPE = type;
+    }
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMGetCredentials("profiles");
+    }
+    else {
+        var data = $.ajax({
+            dataType: "json",
+            url: location.origin + "/siebel/v1.0/cloudgateway/profiles/" + type,
+            async: false,
+            method: "GET",
+            "headers": {
+                "Authorization": BCRM_BASIC_AUTH
+            }
+        });
+        if (data.status == 200) {
+            if (type == "swsm") {
+                let profile_list = data.responseJSON.SWSMProfile;
+                BCRM_SMC.SWSMProfile = profile_list;
+                retval = profile_list;
+            }
+        }
+        else {
+            retval = data.status + ":" + data.responseText;
+        }
+    }
+    return retval;
+};
+
+
+var BCRM_AIPROFILE = "";
+BCRMGetAILogLevels = function (aiprofile, proceed) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    if (typeof (aiprofile) === "undefined") {
+        aiprofile = BCRM_AIPROFILE;
+    }
+    else {
+        BCRM_AIPROFILE = aiprofile;
+    }
+    var loglevels = {
+        "UI": "",
+        "EAI": "",
+        "DAV": "",
+        "RESTInBound": "",
+        "RESTOutBound": "",
+        "SOAPOutBound": ""
+    };
+    if (typeof (BCRM_SMC.SWSMProfile) === "undefined") {
+        BCRMGetDeployment("swsm");
+        //BCRMGetAILogLevels(aiprofile,true);
+    }
+    else {
+        for (var i = 0; i < BCRM_SMC.SWSMProfile.length; i++) {
+            if (BCRM_SMC.SWSMProfile[i].Profile.ProfileName == aiprofile) {
+                for (l in loglevels) {
+                    loglevels[l] = BCRM_SMC.SWSMProfile[i].ConfigParam[l].LogProperties.LogLevel;
+                }
+            }
+        }
+    }
+    return loglevels;
+};
+
+BCRMSetAILogLevels = function (aiprofile, loglevels) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    if (typeof (aiprofile) === "undefined") {
+        aiprofile = BCRM_AIPROFILE;
+    }
+    else {
+        BCRM_AIPROFILE = aiprofile;
+    }
+    if (typeof (loglevels) === "undefined") {
+        loglevels = {
+            "UI": "INFO",
+            "EAI": "INFO",
+            "DAV": "INFO",
+            "RESTInBound": "INFO",
+            "RESTOutBound": "INFO",
+            "SOAPOutBound": "INFO"
+        };
+    }
+    for (var i = 0; i < BCRM_SMC.SWSMProfile.length; i++) {
+        if (BCRM_SMC.SWSMProfile[i].Profile.ProfileName == aiprofile) {
+            for (l in loglevels) {
+                BCRM_SMC.SWSMProfile[i].ConfigParam[l].LogProperties.LogLevel = loglevels[l];
+            }
+        }
+    }
+};
+
+BCRMUpdateSWSMProfile = function (aiprofile) {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var retval;
+    if (typeof (aiprofile) === "undefined") {
+        aiprofile = BCRM_AIPROFILE;
+    }
+    else {
+        BCRM_AIPROFILE = aiprofile;
+    }
+    if (BCRM_BASIC_AUTH == "") {
+        BCRMGetCredentials("updaiprofile");
+    }
+    else {
+        var profile;
+        for (var i = 0; i < BCRM_SMC.SWSMProfile.length; i++) {
+            if (BCRM_SMC.SWSMProfile[i].Profile.ProfileName == aiprofile) {
+                profile = JSON.stringify(BCRM_SMC.SWSMProfile[i]);
+            }
+        }
+        if (typeof (profile) !== "undefined") {
+            var data = $.ajax({
+                dataType: "json",
+                url: location.origin + "/siebel/v1.0/cloudgateway/profiles/swsm/" + aiprofile,
+                async: false,
+                method: "PUT",
+                "headers": {
+                    "Authorization": BCRM_BASIC_AUTH,
+                    "Content-Type": "application/json"
+                },
+                data: profile
+            });
+            if (data.status == 200) {
+                retval = data.responseText;
+            }
+            else {
+                retval = data.status + ":" + data.responseText;
+            }
+        }
+    }
+    return retval;
+};
+
+var BCRM_CUR_AI_PROFILE = "";
+BCRMShowAILogLevels = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMShowAILogLevels") : 0;
+    let dlg = $("<sl-dialog id='" + "bcrm_ai_lvl" + "' label='" + "📶 AI Logging Central" + "'><sl-button class='dlg-save-btn' slot='footer' variant='primary' disabled>Submit</sl-button><sl-button class='dlg-close-btn' slot='footer' variant='primary'>Cancel</sl-button></sl-dialog>");
+    const closeButton = dlg[0].querySelector('sl-button.dlg-close-btn');
+    closeButton.addEventListener('click', () => dlg.hide());
+    const saveButton = dlg[0].querySelector('sl-button.dlg-save-btn');
+    saveButton.addEventListener('click', () => {
+        BCRMUpdateSWSMProfile(BCRM_CUR_AI_PROFILE);
+        BCRMToast("AI Profile " + BCRM_CUR_AI_PROFILE + " updated.");
+    });
+    var tg = $("<sl-tab-group></sl-tab-group>");
+    dlg.append(tg);
+
+    const loglevels = {
+        "FATAL": {
+            label: "Fatal",
+            level: 10
+        },
+        "ERROR": {
+            label: "Error",
+            level: 25
+        },
+        "WARN": {
+            label: "Warning",
+            level: 40
+        },
+        "DEBUG": {
+            label: "Debug",
+            level: 55
+        },
+        "TRACE": {
+            label: "Trace",
+            level: 70
+        },
+        "INFO": {
+            label: "Information",
+            level: 85
+        },
+        "ALL": {
+            label: "All",
+            level: 100
+        }
+    };
+
+    const lvlhelper = [10, 25, 40, 55, 70, 85, 100];
+    const logcategories = {
+        "UI": {
+            label: "User Interface",
+            files: ["UI.log", "GatewayServiceFramework.log"]
+        },
+        "EAI": {
+            label: "SOAP Inbound",
+            files: ["EAI.log"]
+        },
+        "DAV": {
+            label: "CalDAV/CardDAV",
+            files: ["DAV.log"]
+        },
+        "RESTInBound": {
+            label: "REST Inbound",
+            files: ["RESTInBoundDefault.log"]
+        },
+        "RESTOutBound": {
+            label: "REST Outbound",
+            files: []
+        },
+        "SOAPOutBound": {
+            label: "SOAP Outbound",
+            files: []
+        }
+    };
+    const deployments = BCRM_SMC.SWSMDeployment;
+    let ai_list = [];
+    let ai_urls = [];
+    for (let i = 0; i < deployments.length; i++) {
+        ai_list.push(deployments[i].DeploymentInfo.ProfileName);
+        ai_urls.push("https://" + deployments[i].DeploymentInfo.PhysicalHostIP);
+    }
+    //test
+    //ai_list.push("ai_two");
+    //ai_urls.push(ai_urls[0]);
+
+    for (let a = 0; a < ai_list.length; a++) {
+        let ailvls = BCRMGetAILogLevels(ai_list[a]);
+        let ts = $('<sl-tab slot="nav" panel="' + ai_list[a] + '">' + ai_list[a] + '</sl-tab>');
+        let tp = $('<sl-tab-panel name="' + ai_list[a] + '"></sl-tab-panel>');
+        let url = ai_urls[a];
+        let aiprofile = ai_list[a];
+        tg.append(ts);
+        tg.append(tp);
+        for (l in ailvls) {
+            let lbl, lvl, cat, catlbl, files;
+            for (v in loglevels) {
+                if (v == ailvls[l]) {
+                    lbl = loglevels[v].label;
+                    lvl = loglevels[v].level;
+                    cat = l;
+                    catlbl = logcategories[l].label;
+                    files = logcategories[l].files;
+                    break;
+                }
+            }
+            let ct = $('<sl-details summary="' + catlbl + '" open></sl-details>"');
+            let pb = $('<sl-progress-bar value="' + lvl + '" id=' + cat + ' bcrm-ai="' + aiprofile + '" bcrm-level="' + v + '" style="margin-bottom:4px;cursor:pointer;">' + lbl + '</sl-progress-bar>');
+            pb.on("click", function (e) {
+                let rect = e.currentTarget.getBoundingClientRect();
+                let l = rect.left;
+                let m = l + rect.width / 2;
+                let x = e.clientX;
+                let val = this.value;
+                let aiprofile = $(this).attr("bcrm-ai");
+                let i = lvlhelper.indexOf(val);
+                let o = 0;
+                let newlvl;
+                if (x <= m) {
+                    //console.log("decrease");
+                    if (i > 0) {
+                        o = 1
+                    }
+                    newlvl = lvlhelper[i - o];
+                }
+                if (x > m) {
+                    //console.log("increase");
+                    if (i < lvlhelper.length - 1) {
+                        o = 1
+                    }
+                    newlvl = lvlhelper[i + o];
+                }
+                for (v in loglevels) {
+                    if (loglevels[v].level == newlvl) {
+                        this.value = newlvl;
+                        this.textContent = `${loglevels[v].label}`;
+                        $(this).attr("bcrm-level", v);
+                        let cat = $(this).attr("id");
+                        $(saveButton).removeAttr("disabled");
+                        BCRM_CUR_AI_PROFILE = aiprofile;
+                        for (let p = 0; p < BCRM_SMC.SWSMProfile.length; p++) {
+                            if (BCRM_SMC.SWSMProfile[p].Profile.ProfileName == aiprofile) {
+                                BCRM_SMC.SWSMProfile[p].ConfigParam[cat].LogProperties.LogLevel = v;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            });
+            ct.append(pb);
+            //file buttons
+            for (let f = 0; f < files.length; f++) {
+                //requires symlink to applicationcontainer_external/logs as siebelwebroot/smc/logs
+                let logfileurl = url + "/siebel/smc/logs/" + files[f];
+                let fbtn = $('<sl-button size="small" pill style="margin-right:4px;" href="' + logfileurl + '" target="_blank">' + files[f] + '</sl-button>');
+                ct.append(fbtn);
+            }
+            tp.append(ct);
+        }
+    }
+    $("#bcrm_ai_lvl").remove();
+    $("body").append(dlg);
+    $("#bcrm_ai_lvl")[0].show();
 };
 
 //listeners

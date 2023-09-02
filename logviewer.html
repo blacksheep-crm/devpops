@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<!--created with AI assistance (ChatGPT 3.5)-->
+
+<head>
+    <title>devpops Log Viewer</title>
+</head>
+
+<body>
+    <div id="logFilesContainer">
+        <div class="row">
+            <div class="file-frame">
+                <h5>UI.log</h5>
+                <iframe src="" data-file="https://siebtraining.vcn.oraclevcn.com/siebel/smc/logs/UI.log"
+                    frameborder="1"></iframe>
+            </div>
+            <div class="file-frame">
+                <h5>RESTInBoundDefault.log</h5>
+                <iframe src="" data-file="https://siebtraining.vcn.oraclevcn.com/siebel/smc/logs/RESTInBoundDefault.log"
+                    frameborder="1"></iframe>
+            </div>
+            <div class="file-frame">
+                <h5>siebel_1.log</h5>
+                <iframe src="" data-file="https://siebtraining.vcn.oraclevcn.com/siebel/smc/logs/siebel_1.log"
+                    frameborder="1"></iframe>
+            </div>
+        </div>
+        <div class="row">
+            <div class="file-frame">
+                <h5>access_log</h5>
+                <iframe id="accessLogFrame" src="" frameborder="1"></iframe>
+            </div>
+            <div class="file-frame">
+                <h5>CommonLogger.log</h5>
+                <iframe src="" data-file="https://siebtraining.vcn.oraclevcn.com/siebel/smc/logs/CommonLogger.log"
+                    frameborder="1"></iframe>
+            </div>
+            <div class="file-frame">
+                <h5>migration.log</h5>
+                <iframe src="" data-file="https://siebtraining.vcn.oraclevcn.com/siebel/smc/logs/migration.log"
+                    frameborder="1"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function setAccessLogFrame() {
+            const accessLogFrame = document.getElementById('accessLogFrame');
+            const currentDate = getCurrentDate();
+            const fileName = `localhost_access_log.${currentDate}.txt`;
+            accessLogFrame.setAttribute('data-file', 'https://siebtraining.vcn.oraclevcn.com/siebel/smc/logs/' + fileName);
+        }
+
+        // Function to filter log data based on an exclude list of keywords
+        function filterLogData(data, excludeKeywords, highlightKeywords) {
+            const lines = data.split('\n');
+            const filteredLines = [];
+
+            for (const line of lines) {
+                let includeLine = true;
+                for (const excludeKeyword of excludeKeywords) {
+                    if (line.includes(excludeKeyword)) {
+                        includeLine = false;
+                        break;
+                    }
+                }
+
+                if (includeLine) {
+                    let highlightedLine = line;
+                    for (const highlightKeyword of highlightKeywords) {
+                        if (highlightedLine.includes(highlightKeyword)) {
+                            highlightedLine = '<br><span style="font-family:monospace;font-size:10px;background:coral;">' + highlightedLine + '</span>';
+                        }
+                        else {
+                            highlightedLine = '<br><span style="font-family:monospace;font-size:9px;">' + highlightedLine + '</span>';
+                        }
+                    }
+                    filteredLines.push(highlightedLine);
+                }
+            }
+
+            return filteredLines.join('\n');
+        }
+
+        function updateLogFiles() {
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                const file = iframe.getAttribute('data-file');
+                
+                // Append a unique query parameter to the file URL to prevent caching
+                const fileUrl = `${file}?_=${Date.now()}`;
+                
+                // Provide an array of keywords you want to exclude (complete line will be omitted)
+                const filterKeywords = ['smc/logs']; // Change this to your desired keywords
+                
+                // Provide an array of keywords you want to highlight in the log data (complete line will be highlighted)
+                const highlightKeywords = [' 404 ', 'ERROR']; // Change this to your desired keywords to highlight
+                
+                const scrollLeft = parseInt(iframe.getAttribute('data-scroll-left')) || 0; // Get the stored horizontal scroll position or default to 0
+
+                fetch(fileUrl)
+                    .then(response => response.text())
+                    .then(data => {
+
+                        // Filter the log data based on the keywords
+                        const filteredData = filterLogData(data, filterKeywords, highlightKeywords);
+
+                        // Replace the entire content with the filtered and highlighted log data
+                        iframe.contentDocument.open();
+                        iframe.contentDocument.write(filteredData);
+                        iframe.contentDocument.close();
+
+                        // Set the stored horizontal scroll position
+                        iframe.setAttribute('data-scroll-left', scrollLeft);
+                    })
+                    .catch(error => console.error('Error fetching log file:', error));
+            });
+        }
+
+        // Register the event listener after the content is fully loaded
+        function registerEventListeners() {
+            document.querySelectorAll('iframe').forEach(iframe => {
+                iframe.addEventListener('load', function () {
+                    // Handle the scrolling to store the horizontal scroll position
+                    const scrollLeft = parseInt(iframe.getAttribute('data-scroll-left')) || 0;
+                    iframe.contentWindow.scrollTo(scrollLeft, iframe.contentDocument.body.scrollHeight);
+
+                    iframe.contentDocument.addEventListener('scroll', function () {
+                        const leftScrollPos = this.documentElement.scrollLeft || this.body.scrollLeft;
+                        iframe.setAttribute('data-scroll-left', leftScrollPos);
+                    });
+                });
+            });
+        }
+
+        // Refresh the iframes
+        setInterval(updateLogFiles, 5000);
+
+        // Initial load of the log files
+        setAccessLogFrame();
+        updateLogFiles();
+        registerEventListeners();
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #logFilesContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-around;
+            /* margin-bottom: 20px; */
+            width: 98vw;
+        }
+
+        .file-frame {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 35%;
+            height: 42vh;
+        }
+
+        h2 {
+            margin: 10px 0;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            overflow-y: scroll;
+            box-sizing: border-box;
+        }
+
+        .highlight {
+            background: coral;
+        }
+    </style>
+</body>
+
+</html>
