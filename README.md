@@ -8,7 +8,7 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
-23.6 Dependeny Finder: https://youtu.be/ahXJishtDr4
+23.6 Dependency Finder: https://youtu.be/ahXJishtDr4
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
