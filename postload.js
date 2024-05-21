@@ -74,6 +74,18 @@ var bcrm_help_map = {
     "23.10": "F26413_46",
     "23.11": "F26413_47",
     "23.12": "F26413_48",
+    "24.1": "F26413_49",
+    "24.2": "F26413_50",
+    "24.3": "F26413_51",
+    "24.4": "F26413_52",
+    "24.5": "F26413_53",
+    "24.6": "F26413_54",
+    "24.7": "F26413_55",
+    "24.8": "F26413_56",
+    "24.9": "F26413_57",
+    "24.10": "F26413_58",
+    "24.11": "F26413_59",
+    "24.12": "F26413_60"
 };
 //AppInfo
 var BCRM_SIEBEL_V = {};
@@ -295,7 +307,7 @@ BCRMWebToolsEnhancer = function () {
 //Collect user credentials for use in REST calls, stored as variable BCRM_BASIC_AUTH
 var BCRM_BASIC_AUTH = "";
 BCRMGetCredentials = function (next, opt = {}) {
-    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    devpops_debug ? console.log(Date.now(), "BCRMGetCredentials") : 0;
     var dlg = $("<div id='bcrm_cred_dlg' style='display:grid;'>");
     var user = $("<input id='username' type='text' placeholder='User Name'>");
     var pw = $("<input id='password' type='password' placeholder='Password'>");
@@ -3023,9 +3035,9 @@ BCRMInjectDialogStyle = function () {
     BCRMInjectCSS("bcrmdlg1", ".ui-dialog.bcrm-dialog, .ui-dialog.bcrm-dialog div, .ui-dialog.bcrm-dialog span {background: #29303f;color: papayawhip;font-family: 'Roboto';font-weight: 300!important;line-height: 1.6;}");
     BCRMInjectCSS("bcrmdlg2", ".ui-dialog.bcrm-dialog input, .ui-dialog.bcrm-dialog select, .ui-dialog.bcrm-dialog textarea {background: papayawhip;border: none;line-height: 1.6;font-family: 'Roboto'!important;font-weight: 300!important;margin-bottom:4px;}");
     BCRMInjectCSS("bcrmdlg3", ".ui-dialog.bcrm-dialog button {background: papayawhip;border: none!important;line-height: 1.6;font-family: 'Roboto'!important;font-weight: 300!important;font-size: 1.6em!important;border-radius: 10px;cursor: pointer;}");
-    BCRMInjectCSS("bcrmdlg4", ".ui-dialog.bcrm-dialog .ui-dialog-titlebar-close {display: none;}");
+    BCRMInjectCSS("bcrmdlg4", ".ui-dialog.bcrm-dialog .ui-dialog-titlebar-close {background:transparent;}");
     BCRMInjectCSS("bcrmdlg5", ".ui-dialog.bcrm-dialog .ui-resizable-se {width: 9px;height: 9px;right: -5px;bottom: -5px;}");
-    BCRMInjectCSS("bcrmdlg6", ".ui-dialog.bcrm-dialog {box-shadow: none!important;margin: 0px!important;}");
+    BCRMInjectCSS("bcrmdlg6", ".ui-dialog.bcrm-dialog {box-shadow: none!important;margin: 0px!important;border: 7px solid papayawhip;}");
     BCRMInjectCSS("bcrmdlg7", ".ui-dialog.bcrm-dialog .CodeMirror * {background: papayawhip;color: #29303f;font-family: monospace;font-size: 14px;}");
     BCRMInjectCSS("bcrmdlg8", ".ui-dialog.bcrm-dialog canvas {background: papayawhip!important;border-radius: 10px;}");
     BCRMInjectCSS("bcrmdlg9", ".ui-dialog.bcrm-dialog .bcrm-av * {z-index: 100;background: white;}");
@@ -3598,7 +3610,7 @@ BCRMGetToolsHelpURL = function () {
     if (typeof (localStorage.BCRM_SIEBEL_VERSION) === "undefined") {
         //alert("Siebel version information not found. Please log in to a Siebel application session with devpops in the same browser and try again.");
         //default
-        seblver = "21.12";
+        seblver = "24.2";
     }
     else {
         seblver = localStorage.BCRM_SIEBEL_VERSION.split(".")[0] + "." + localStorage.BCRM_SIEBEL_VERSION.split(".")[1];
@@ -3611,20 +3623,23 @@ BCRMGetToolsHelpURL = function () {
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMSetToolsHelpContent = function () {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
-    var url = BCRMGetToolsHelpURL();
-    if (typeof (url) != "undefined") {
-        $("[data-caption='&Help']").find("a").each(function (x) {
-            if ($(this).text().indexOf("Contents") != -1) {
-                $(this).off("click");
-                $(this).parent().off("click");
-                $(this).attr("href", url);
-                $(this).attr("target", "_blank");
-                $(this).text("Online Help");
-                $(this).on("click", function (e) {
-                    e.stopImmediatePropagation();
-                });
-            }
-        });
+    //24.3 introduces Web Tools Help
+    if (BCRMSiebelVersionCheck(24, 3, "lt")) {
+        var url = BCRMGetToolsHelpURL();
+        if (typeof (url) != "undefined") {
+            $("[data-caption='&Help']").find("a").each(function (x) {
+                if ($(this).text().indexOf("Contents") != -1) {
+                    $(this).off("click");
+                    $(this).parent().off("click");
+                    $(this).attr("href", url);
+                    $(this).attr("target", "_blank");
+                    $(this).text("Online Help");
+                    $(this).on("click", function (e) {
+                        e.stopImmediatePropagation();
+                    });
+                }
+            });
+        }
     }
 };
 
@@ -3738,6 +3753,10 @@ BCRMWTHelper = function () {
                     BCRMEnhanceScreenViewListApplet();
                 }
 
+                //ERD Viewer
+                if (vn == "WT Repository View List View"){
+                    BCRMAddERDViewer(vn);
+                }
                 //add screen menu
                 BCRMAddWTScreenMenu();
 
@@ -5475,6 +5494,16 @@ BCRMRepoScanFetchData = function (wsn, wsv, rdef, label, on, ot, opt = { silent:
                         }
                     }
                     if (!hasnext) {
+                        //24.1+ new response value "lastpage": "false"
+                        //ISSUE: StartRowNum > 0 causes 404
+                        if (typeof (res.lastpage) !== "undefined") {
+                            if (res.lastpage == "false") {
+                                BCRMRepoScanFetchData(wsn, wsv, rdef, label, on, ot, opt, srownum + pagesize);
+                                hasnext = true;
+                            }
+                        }
+                    }
+                    if (!hasnext) {
                         if (typeof (BCRM_REPO_SCAN_CACHE[label]["info"]) !== "undefined") {
                             BCRM_REPO_SCAN_CACHE[label]["info"]["end"] = Date.now();
                             BCRM_REPO_SCAN_CACHE[label]["info"]["time"] = BCRM_REPO_SCAN_CACHE[label]["info"]["end"] - BCRM_REPO_SCAN_CACHE[label]["info"]["start"];
@@ -6384,9 +6413,1044 @@ BCRMRepoScanVisualize = function (label, ot, on) {
     }, 1000);
 };
 
+//Demo to set jqgrid row height, since pure CSS does not always suffice
+
+BCRMMakeAppletResizable = function (pm) {
+    try {
+        if (typeof (pm.Get) === "function") {
+            let ae = $("#s_" + pm.Get("GetFullId") + "_div");
+            let lh = ae.find("tr#1").height();
+            let lc = pm.Get("GetRecordSet").length;
+            ae.resizable({
+                resize: function (event, ui) {
+                    let oh = ui.originalSize.height;
+                    let nh = ui.size.height;
+                    let d = nh - oh;
+                    if (d % lc == 0) {
+                        BCRMSetRowHeight(pm, lh + d / lc);
+                    }
+                }
+            });
+        }
+    }
+    catch (e) {
+        console.error(e.toString());
+    }
+};
+
+var BCRM_NH; //"caching for dummies Vol.2"
+BCRMSetRowHeight = function (pm, nh) {
+    try {
+        //take care of arguments if not passed directly
+        if (typeof (pm) === "undefined") {
+            pm = this;
+        }
+        if (typeof (nh) === "undefined") {
+            nh = BCRM_NH;
+        }
+        else {
+            BCRM_NH = nh;
+        }
+        //check if pm is of a valid list applet
+        if (typeof (pm.Get) === "function") {
+            if (typeof (pm.Get("GetListOfColumns")) !== "undefined") {
+
+                const pr = pm.GetRenderer();
+                const ae = $("#" + pm.Get("GetFullId"));
+
+                //work the grid
+                if (typeof (pr.GetGrid) === "function") {
+                    var grid = pr.GetGrid();
+                    const ids = grid.getDataIDs();
+                    //let ngh = 0;
+
+                    //we need to call this function whenever the selection changes or a method is invoked
+                    if (pm.Get("BCRM_CH_ENABLED") !== "true") {
+                        pm.AttachPMBinding("ShowSelection", BCRMSetRowHeight, { scope: pm, sequence: false });
+                        pm.SetProperty("BCRM_CH_ENABLED", "true");
+                    }
+
+                    //tag applet and each table cell (td)
+                    //the tag will be used in the CSS (see BCRMGridImprover)
+                    ae.attr("bcrmch", "Y");
+                    ae.find("tr.jqgrow").find("td").attr("bcrmch", "Y");
+
+                    //this is crucial, use jqgrid to set the row height, CSS won't cut it
+                    for (let i = 0; i < ids.length; i++) {
+                        grid.setRowData(ids[i], false, { height: nh });
+                        //ngh += nh;
+                    }
+
+                    //adjust grid height
+                    //grid.setGridHeight(ngh + nh);
+                    grid.setGridHeight('auto');
+                }
+            }
+        }
+    }
+    catch (e) {
+        console.error(e.toString());
+    }
+};
+//example wrapper for list applet row height, call from PR or PL
+BCRMGridImprover = function () {
+    const MIN_ROW_HEIGHT = 22;
+    //we are devpops, so we inject CSS. You can also put this in a custom stylesheet
+    BCRMInjectCSS("bcrmgrid1", "td[bcrmch='Y'] .siebui-extend-icon, td[bcrmch='Y'] .siebui-icon-calc, td[bcrmch='Y'] .siebui-icon-currency, td[bcrmch='Y'] .siebui-icon-date, td[bcrmch='Y'] .siebui-icon-datetime, td[bcrmch='Y'] .siebui-icon-detail, td[bcrmch='Y'] .siebui-icon-dropdown, td[bcrmch='Y'] .siebui-icon-effdate, td[bcrmch='Y'] .siebui-icon-mvg, td[bcrmch='Y'] .siebui-icon-pick, td[bcrmch='Y'] .siebui-icon-phone-outbound, td[bcrmch='Y'] .siebui-icon-mailto, td[bcrmch='Y'] .siebui-icon-date {padding-bottom:0px;padding-top:0px;}");
+    BCRMInjectCSS("bcrmgrid2", "div[bcrmch='Y'] tr.jqgrow td{height:" + MIN_ROW_HEIGHT + "px!important;}");
+
+    //do it for all list applets. You might want to apply to certain applets only
+    let am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    for (a in am) {
+        if (typeof (am[a].GetPModel().Get("GetListOfColumns")) !== "undefined") {
+            let pm = am[a].GetPModel();
+            BCRMMakeAppletResizable(pm);
+        }
+    }
+};
+
+//START ERDViewer*******************************************************
+//kudos to James MacDonald
+if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
+    SiebelJS.Namespace("SiebelAppFacade.ERDViewer");
+    SiebelAppFacade.ERDViewer = (function () {
+        function ERDViewer(options) { }
+
+        ERDViewer.prototype.businessObjectERD = async function(type, viewName, autoview) {
+            let output;
+
+            async function lookupAppletBrowserScript(applet) {
+                let appletBrowserScriptObject;
+                let appletBrowserScriptQuery = `Applet/${applet}/Applet Browser Script?searchspec=[Inactive]='N'&fields=Procedure`;
+                const appletBrowserScriptOutput = await RESTWorkspaceAsync(appletBrowserScriptQuery);
+                if (appletBrowserScriptOutput.length > 0) {
+                    appletBrowserScriptObject = appletBrowserScriptOutput;
+                }
+                return appletBrowserScriptObject;
+            }
+
+            async function lookupAppletServerScript(applet) {
+                let appletServerScriptObject;
+                let appletServerScriptQuery = `Applet/${applet}/Applet Server Script?searchspec=[Inactive]='N'&fields=Name,Program Language`;
+                const appletServerScriptOutput = await RESTWorkspaceAsync(appletServerScriptQuery);
+                if (appletServerScriptOutput.length > 0) {
+                    appletServerScriptObject = appletServerScriptOutput;
+                }
+                return appletServerScriptObject;
+            }
+
+            async function lookupApplet(applet) {
+                let appletObject;
+                applet = applet.replaceAll("&","%26");
+                applet = applet.replaceAll("(","%28");
+                applet = applet.replaceAll(")","%29");
+                let appletQuery = `Applet?searchspec=[Name]='${applet}'&fields=Business Component,Search Specification,No Delete,No Insert,No Update`;
+                const appletOutput = await RESTWorkspaceAsync(appletQuery);
+                if (appletOutput.length == 1) {
+                    appletObject = appletOutput[0];
+                }
+                return appletObject;
+            }
+
+            async function lookupView(view) {
+                let viewObject;
+                view = view.replaceAll("&","%26");
+                view = view.replaceAll("(","%28");
+                view = view.replaceAll(")","%29");
+                let viewQuery = `View?searchspec=[Name]='${view}'&fields=Business Object,Visibility Applet Type,Admin Mode Flag`;
+                const viewOutput = await RESTWorkspaceAsync(viewQuery);
+                if (viewOutput.length == 1) {
+                    viewObject = viewOutput[0];
+                }
+                return viewObject;
+            }
+
+            async function lookupViewWTI(view) {
+                let viewQuery = `View/${view}/View Web Template/Base/View Web Template Item?searchspec=[Inactive]<>'Y'&fields=Applet,Applet Mode,Item Identifier`;
+                const viewOutput = await RESTWorkspaceAsync(viewQuery);
+                return viewOutput;
+            }
+
+            async function lookupBC(busComp) {
+                let bcObject;
+                let bcQuery = `Business Component?searchspec=[Name]='${busComp}'&fields=Table,Search Specification,Sort Specification,No Delete,No Insert,No Update`;
+                const bcOutput = await RESTWorkspaceAsync(bcQuery);
+                if (bcOutput.length == 1) {
+                    bcObject = bcOutput[0];
+                }
+                return bcObject;
+            }
+
+            async function lookupLink(linkName) {
+                let linkObject;
+                let linkQuery = `Link?searchspec=[Name]='${linkName}'`;
+                const linkOutput = await RESTWorkspaceAsync(linkQuery);
+                if (linkOutput.length == 1) {
+                    linkObject = linkOutput[0];
+                }
+                return linkObject;
+            }
+
+            async function lookupBOComponent(busObject, busComp) {
+                let linkName = '';
+                // must add &uniformresponse=N to get the Link string in addition to the Link relationship array
+                let bocQuery = `Business Object/${busObject}/Business Object Component?searchspec=[Name]='${busComp}'&fields=Link&uniformresponse=N'`;
+                const bocOutput = await RESTWorkspaceAsync(bocQuery);
+                if (bocOutput.length == 1) {
+                    linkName = bocOutput[0].Link[0];
+                }
+                return linkName;
+            }
+
+            async function lookupBO(busObject) {
+                let primaryBCName = '';
+                let boQuery = `Business Object?searchspec=[Name]='${busObject}'&fields=Primary Business Component`;
+                const boOutput = await RESTWorkspaceAsync(boQuery);
+                if (boOutput.length == 1) {
+                    primaryBCName = boOutput[0]['Primary Business Component'];
+                }
+                return primaryBCName;
+            }
+
+            async function lookupBCServerScript(busComp) {
+                let bcServerScriptObject;
+                let bcServerScriptQuery = `Business Component/${busComp}/BusComp Server Script?searchspec=[Inactive]='N'&fields=Name,Program Language`;
+                const bcServerScriptOutput = await RESTWorkspaceAsync(bcServerScriptQuery);
+                if (bcServerScriptOutput.length > 0) {
+                    bcServerScriptObject = bcServerScriptOutput;
+                }
+                return bcServerScriptObject;
+            }
+
+            async function lookupBCField(busComp, field) {
+                let bcFieldObject;
+                let bcFieldQuery = `Business Component/${busComp}/Field?searchspec=[Name]='${field}'&fields=Join,Column`;
+                const bcFieldOutput = await RESTWorkspaceAsync(bcFieldQuery);
+                if (bcFieldOutput.length == 1) {
+                    bcFieldObject = bcFieldOutput[0];
+                }
+                return bcFieldObject;
+            }
+
+            async function lookupBCUserProps(busComp, userProp) {
+                let bcUserPropObject;
+                let bcUserPropQuery = `Business Component/${busComp}/Business Component User Prop?searchspec=[Name] LIKE '${userProp}*'&fields=Value`;
+                const bcUserPropOutput = await RESTWorkspaceAsync(bcUserPropQuery);
+                if (bcUserPropOutput.length > 0) {
+                    bcUserPropObject = bcUserPropOutput;
+                }
+                return bcUserPropObject;
+            }
+
+            async function replaceFieldWithColumn(busComp, field) {
+                if (field == "" || field == "Id") {
+                    return "ROW_ID";
+                } else {
+                    bcFieldObject = await lookupBCField(busComp, field);
+                    return bcFieldObject['Column'];
+                }
+            }
+
+            //const viewName = SiebelApp.S_App.GetActiveView().GetName();
+            const applets = SiebelApp.S_App.GetActiveView().GetAppletMap();
+            let appletArray = [];
+            let erdArray = [];
+            let boName, viewObject, appletObject, linkObject, bcObject, bcFieldObject, bcUserPropObject, appletBrowserScriptObject, appletServerScriptObject, bcServerScriptObject;
+
+            let viewWTI = await lookupViewWTI(viewName);
+            for (let i = 0; i < viewWTI.length; i++){
+                appletArray.push(viewWTI[i]["Applet"]);
+            }
+            viewObject = await lookupView(viewName);
+            // get BO name from any applet and bo bc links
+            for (let i=0; i < appletArray.length; i++) {
+                let appletName = appletArray[i];
+                //let pm = applets[appletName].GetPModel();
+                //let appletId = pm.Get("GetId");
+                boName = '';
+                //viewObject = null;
+                appletObject = null;
+                linkObject = null;
+                bcObject = null;
+                bcFieldObject = null;
+                bcUserPropObject = null;
+                appletBrowserScriptObject = null;
+                appletServerScriptObject = null;
+                bcServerScriptObject = null;
+
+                let erdObject = {
+                    viewName: viewName,
+                    visibility: '',
+                    adminMode: '',
+                    applet: '',
+                    appletReadOnly: '',
+                    appletSearchSpec: '',
+                    appletBrowserScript: '',
+                    appletServerScript: '',
+                    appletCustomQuery: '',
+                    bo: '',
+                    primaryBC: '',
+                    bc: '',
+                    bcReadOnly: '',
+                    isPrimaryBC: '',
+                    link: '',
+                    intersectionTable: '',
+                    intersectionParentCol: '',
+                    intersectionChildCol: '',
+                    linkSourceCol: '',
+                    linkDestinationCol: '',
+                    parentBC: '',
+                    table: '',
+                    bcSearchSpec: '',
+                    bcSortSpec: '',
+                    bcServerScript: '',
+                    bcCustomQuery: '',
+                    rowId: ''
+                };
+
+                //erdObject.rowId = applets[appletName].GetBusComp().GetFieldValue("Id");
+                if (!autoview){
+                    erdObject.rowId = SiebelApp.S_App.GetActiveView().GetApplet(appletName).GetBusComp().GetFieldValue("Id");
+                }
+                //viewObject = await lookupView(viewName);
+                
+                erdObject.visibility = viewObject['Visibility Applet Type'];
+                erdObject.adminMode = viewObject['Admin Mode Flag'];
+
+                erdObject.applet = appletName;
+
+                appletObject = await lookupApplet(appletName);
+                erdObject.appletSearchSpec = appletObject['Search Specification'];
+                if (appletObject['No Delete'] == 'Y' && appletObject['No Insert'] == 'Y' && appletObject['No Update'] == 'Y') {
+                    erdObject.appletReadOnly = 'Y';
+                }
+
+                appletBrowserScriptObject = await lookupAppletBrowserScript(appletName);
+                if (appletBrowserScriptObject !== undefined) {
+                    erdObject.appletBrowserScript = appletBrowserScriptObject.length;
+                }
+
+                appletServerScriptObject = await lookupAppletServerScript(appletName);
+                if (appletServerScriptObject !== undefined) {
+                    erdObject.appletServerScript = appletServerScriptObject.length;
+                    if (appletServerScriptObject.find(a => a.Name === 'WebApplet_Load') !== undefined) {
+                        erdObject.appletCustomQuery = 'Y';
+                    }
+                }
+                /*
+                if (!autoview){
+                    erdObject.bc = SiebelApp.S_App.GetActiveView().GetApplet(appletName).GetBusComp().GetName();
+                }*/
+                erdObject.bc = appletObject["Business Component"];
+                if (boName == "") {
+                    //boName = applets[appletName].GetBusComp().GetBusObj().GetName();
+                    boName = viewObject["Business Object"];
+                    erdObject.bo = boName;
+                    erdObject.primaryBC = await lookupBO(boName);
+                }
+
+                erdObject.isPrimaryBC = (erdObject.bc == erdObject.primaryBC);
+
+                if (!erdObject.isPrimaryBC) {
+                    erdObject.link = await lookupBOComponent(erdObject.bo, erdObject.bc);
+
+                    if (erdObject.link != '') {
+                        linkObject = await lookupLink(erdObject.link);
+                        erdObject.intersectionTable = linkObject['Inter Table'];
+                        erdObject.intersectionParentCol = linkObject['Inter Parent Column'];
+                        erdObject.intersectionChildCol = linkObject['Inter Child Column'];
+                        erdObject.parentBC = linkObject['Parent Business Component'];
+                        erdObject.linkSourceCol = await replaceFieldWithColumn(erdObject.parentBC, linkObject['Source Field']);
+                        erdObject.linkDestinationCol = await replaceFieldWithColumn(erdObject.bc, linkObject['Destination Field']);
+                    }
+                }
+
+                bcObject = await lookupBC(erdObject.bc);
+                if (bcObject['Table'] != '') {
+                    erdObject.table = bcObject['Table'];
+                } else {
+                    erdObject.table = 'Virtual';
+                }
+                erdObject.bcSearchSpec = bcObject['Search Specification'];
+                erdObject.bcSortSpec = bcObject['Sort Specification'];
+                if (bcObject['No Delete'] == 'Y' && bcObject['No Insert'] == 'Y' && bcObject['No Update'] == 'Y') {
+                    erdObject.bcReadOnly = 'Y';
+                }
+
+                bcUserPropObject = await lookupBCUserProps(erdObject.bc, 'Inner Join Extension Table'); // e.g. User has 2 user props
+                if (bcUserPropObject !== undefined) {
+                    bcUserPropObject.forEach((innerJoinTable) => {
+                        erdObject.table += ',' + innerJoinTable.Value;
+                    });
+                }
+
+                bcServerScriptObject = await lookupBCServerScript(erdObject.bc);
+                if (bcServerScriptObject !== undefined) {
+                    erdObject.bcServerScript = bcServerScriptObject.length;
+                    if (bcServerScriptObject.find(a => a.Name === 'BusComp_PreQuery') !== undefined) {
+                        erdObject.bcCustomQuery = 'Y';
+                    }
+                }
+
+                erdArray.push(erdObject);
+
+            }; // end for applets
+
+            function FormatERD(erdArray) {
+                let erdDisplayArray = [], erdJoinArray = [], erdLineArray = [], erdLineId = 0, viewId = 'v', id = '', uniqueId = 96; // start with character before a
+                const tableFormatStart = '[', tableFormatEnd = ']', viewFormatStart = '(', viewFormatEnd = ')';
+                const appletFormatStart = '(', appletFormatEnd = ')', bcFormatStart = '[[', bcFormatEnd = ']]', colFormat1Start = '[/', colFormat1End = '\\]', colFormat2Start = '[\\', colFormat2End = '/]';
+                const arrowOneToOne = ' --- ', arrowOneToMany = ' --- ', doubleQuote = '#quot;';
+                const classApplet = 'classApplet', classBC = 'classBC';
+                const styleView = ' stroke:#FF0000,stroke-width:4px', styleApplet = ' stroke:#FF0000,stroke-width:2px', styleBC = ' stroke:#FFA500,stroke-width:2px', styleTable = ' stroke:#008000,stroke-width:3px';
+                //const styleLink = 'linkStyle default stroke:#008000,stroke-width:2px';
+                const faBrowserScript = ' fa:fa-laptop-code', faServerScript = ' fa:fa-server', faCustomQuery = ' fa:fa-magnifying-glass', faReadOnly = ' fa:fa-shield';
+
+                // htmlLabels:true for fontawesome
+                function FormatHeader() {
+                    return [
+                        "%%{init: {'theme':'dark', 'flowchart': {'curve': 'stepBefore','htmlLabels': true}} }%%",
+                        "flowchart TB",
+                    ];
+                }
+
+                function AddClasses() {
+                    return [
+                        "classDef " + classApplet + styleApplet,
+                        "classDef " + classBC + styleBC
+                        // styleLink
+                    ];
+                }
+
+                function FormatView(object) {
+                    let viewArray = [], visibility = '';
+                    viewArray.push("subgraph v[ ]");
+                    viewArray.push("style v " + styleView);
+                    viewArray.push(viewId + "1" + viewFormatStart + "\"`**" + object.viewName + "**`\"" + viewFormatEnd);
+                    viewArray.push(viewId + "1" + ":::" + classApplet);
+                    viewArray.push("click " + viewId + "1" + " href \"javascript:BCRMERDClickHandler('View','" + object.viewName + "')\"");
+
+                    visibility = object.adminMode == 'Y' ? 'Admin Mode' : object.visibility;
+                    if (visibility != '') {
+                        viewArray.push(viewId + "2" + viewFormatStart + 'Visibility=' + visibility + viewFormatEnd);
+                        viewArray.push(viewId + "2" + ":::" + classApplet);
+                    }
+
+                    viewArray.push(viewId + "3" + bcFormatStart + object.bo + bcFormatEnd);
+                    viewArray.push(viewId + "3" + ":::" + classBC);
+                    viewArray.push("click " + viewId + "3" + " href \"javascript:BCRMERDClickHandler('Business Object','" + object.bo + "')\"");
+
+                    viewArray.push("end");
+                    return viewArray;
+                }
+
+                // Lines are styled in order that they are defined in erdJoinArray
+                function StyleLine(lineClass) {
+                    erdLineArray.push("linkStyle " + erdLineId + lineClass);
+                    erdLineId++;
+                }
+
+                function FormatObjectJoin(idParent, idChild, label1, label2, lineClass) {
+                    StyleLine(lineClass);
+
+                    if (label1 != "" && label2 != "") {
+                        return [
+                            idParent + " -- " + "\"`**" + label1,
+                            label2 + "**`\"" + arrowOneToMany + idChild
+                        ];
+                    } else if (label1 != "") {
+                        return [
+                            idParent + " -- " + "\"`**" + label1 + "**`\"" + arrowOneToMany + idChild
+                        ];
+                    } else if (label2 != "") {
+                        return [
+                            idParent + " -- " + "\"`**" + label2 + "**`\"" + arrowOneToMany + idChild
+                        ];
+                    } else {
+                        return [
+                            idParent + arrowOneToOne + idChild
+                        ];
+                    }
+                }
+
+                function FormatApplet(id, object) {
+                    let appletArray = [], appletSearchSpec = "", bcSearchSpec = "", bcSortSpec = '', applet = '', bc = '';
+
+                    appletArray.push("subgraph " + id + tableFormatStart + "\"`**" + object.table + "**`\"" + tableFormatEnd);
+                    appletArray.push("style " + id + styleTable);
+
+                    applet = object.applet;
+                    if (object.appletBrowserScript != '') applet += faBrowserScript;
+                    if (object.appletServerScript != '') applet += faServerScript;
+                    if (object.appletReadOnly == 'Y') applet += faReadOnly;
+                    if (object.appletCustomQuery == 'Y') applet += faCustomQuery;
+                    appletArray.push(id + "1" + appletFormatStart + "\"`" + applet + "`\"" + appletFormatEnd);
+                    appletArray.push(id + "1:::" + classApplet);
+                    appletArray.push("click " + id + "1" + " href \"javascript:BCRMERDClickHandler('Applet','" + object.applet + "')\"");
+
+                    if (object.appletSearchSpec != "") {
+                        appletSearchSpec = object.appletSearchSpec.toString().replace(/"/g, doubleQuote);
+                        appletArray.push(id + "2" + appletFormatStart + "\"`" + appletSearchSpec + "`\"" + appletFormatEnd);
+                        appletArray.push(id + "2:::" + classApplet);
+                        erdJoinArray.push(...FormatObjectJoin(id + "1", id + "2", "", "", styleApplet));
+                    }
+
+                    bc = object.bc;
+                    if (object.bcServerScript != '') bc += faServerScript;
+                    if (object.bcReadOnly == 'Y') bc += faReadOnly;
+                    if (object.bcCustomQuery == 'Y') bc += faCustomQuery;
+                    appletArray.push(id + "4" + bcFormatStart + "\"`" + bc + "`\"" + bcFormatEnd);
+                    appletArray.push(id + "4:::" + classBC);
+                    appletArray.push("click " + id + "4" + " href \"javascript:BCRMERDClickHandler('Business Component','" + object.bc + "')\"");
+
+                    if (object.bcSearchSpec != "") {
+                        bcSearchSpec = object.bcSearchSpec.toString().replace(/"/g, doubleQuote);
+                        appletArray.push(id + "5" + bcFormatStart + "\"`" + bcSearchSpec + "`\"" + bcFormatEnd);
+                        appletArray.push(id + "5:::" + classBC);
+                        erdJoinArray.push(...FormatObjectJoin(id + "4", id + "5", "", "", styleBC));
+                    }
+
+                    if (object.bcSortSpec != "") {
+                        bcSortSpec = object.bcSortSpec.toString().replace(/"/g, doubleQuote);
+                        appletArray.push(id + "6" + bcFormatStart + "\"`" + bcSortSpec + "`\"" + bcFormatEnd);
+                        appletArray.push(id + "6:::" + classBC);
+                        erdJoinArray.push(...FormatObjectJoin(id + "4", id + "6", "", "", styleBC));
+                    }
+
+                    appletArray.push("end");
+                    return appletArray;
+                }
+
+                function FormatIntersectionTable(id, object) {
+                    return [
+                        "subgraph " + id + "[\"`**" + object.intersectionTable + "**`\"]",
+                        "style " + id + styleTable,
+                        id + "1" + colFormat1Start + "\"`" + object.intersectionParentCol + "`\"" + colFormat1End,
+                        id + "2" + colFormat2Start + "\"`" + object.intersectionChildCol + "`\"" + colFormat2End,
+                        "end"
+                    ]
+                }
+
+                function ProcessIntersectionTable(parentId, childId, object) {
+                    uniqueId++;
+                    intersectionId = String.fromCharCode(uniqueId);
+                    erdDisplayArray.push(...FormatIntersectionTable(intersectionId, object));
+                    erdJoinArray.push(...FormatObjectJoin(parentId, intersectionId, object.linkSourceCol, "", styleTable));
+                    erdJoinArray.push(...FormatObjectJoin(intersectionId, childId, object.linkDestinationCol, "", styleTable));
+                }
+
+                function RecursiveProcessChildObject(parentId, bcName) {
+                    const childBCs = erdArray.filter(e => e.parentBC == bcName);
+                    childBCs.forEach((childBC) => {
+                        uniqueId++;
+                        id = String.fromCharCode(uniqueId);
+                        erdDisplayArray.push(...FormatApplet(id, childBC));
+                        if (childBC.intersectionTable != "") {
+                            ProcessIntersectionTable(parentId, id, childBC);
+                        } else {
+                            erdJoinArray.push(...FormatObjectJoin(parentId, id, childBC.linkSourceCol, childBC.linkDestinationCol, styleTable));
+                        }
+                        RecursiveProcessChildObject(childBC.bc)
+                    });
+                }
+
+                erdDisplayArray.push(...FormatHeader());
+                erdDisplayArray.push(...FormatView(erdArray[0]));
+
+                const topLevelBCs = erdArray.filter(e => e.parentBC == '');
+                topLevelBCs.forEach((topLevelBC) => {
+                    uniqueId++;
+                    id = String.fromCharCode(uniqueId);
+                    erdDisplayArray.push(...FormatApplet(id, topLevelBC));
+                    erdJoinArray.push(...FormatObjectJoin(viewId, id, "", "", styleView));
+                    RecursiveProcessChildObject(id, topLevelBC.bc)
+                });
+
+                erdDisplayArray.push(...erdJoinArray);
+                erdDisplayArray.push(...AddClasses());
+                erdDisplayArray.push(...erdLineArray);
+
+                output = erdDisplayArray;
+            } // end FormatERD
+
+            function FormatSQL(erdArray) {
+                const newline = '\n';
+                const select = 'SELECT' + newline, from = 'FROM' + newline, where = "WHERE" + newline, join = 'INNER JOIN ', pad = '  ', tableOwner = 'SIEBEL.', tableAlias = 'T', rowId = 'ROW_ID';
+                const virtual = 'Virtual';
+                let viewSQL = '', sql = '';
+                let table1 = '', alias1 = '', column1 = '', id1 = '', table2 = '', alias2 = '', column2 = '', column2b = '', id2 = '', table3 = '', alias3 = '', column3 = '', id3 = '';
+
+                function BuildSQL() {
+                    // M:M
+                    if (table3 != '') {
+                        if (table3 != virtual) {
+                            sql += select;
+                            sql += pad + alias1 + ".*, " + alias2 + ".*, " + alias3 + ".* " + newline + from;
+                            sql += pad + tableOwner + table1 + " " + alias1 + newline;
+                            sql += pad + join + tableOwner + table2 + " " + alias2 + " ON " + alias1 + "." + column1 + " = " + alias2 + "." + column2 + newline;
+                            sql += pad + join + tableOwner + table3 + " " + alias3 + " ON " + alias2 + "." + column2b + " = " + alias3 + "." + column3 + newline;
+
+                            if (id1 != '') {
+                                sql += where;
+                                sql += pad + alias1 + "." + rowId + " = '" + id1 + "'" + newline;
+                                if (id3 != '') {
+                                    sql += pad + "AND " + alias3 + "." + rowId + " = '" + id3 + "';" + newline;
+                                } else {
+                                    sql += ";" + newline;
+                                }
+                            } else {
+                                if (id3 != '') {
+                                    sql += where;
+                                    sql += pad + alias3 + "." + rowId + " = '" + id3 + "';" + newline;
+                                }
+                            }
+                        } else {
+                            sql += '--' + virtual + newline;
+                        }
+                    }
+                    // 1:M
+                    else if (table2 != '') {
+                        if (table2 != virtual) {
+                            sql += select;
+                            sql += pad + alias1 + ".*, " + alias2 + ".*" + newline + from;
+                            sql += pad + tableOwner + table1 + " " + alias1 + newline;
+                            sql += pad + join + tableOwner + table2 + " " + alias2 + " ON " + alias1 + "." + column1 + " = " + alias2 + "." + column2 + newline;
+
+                            if (id1 != '') {
+                                sql += where;
+                                sql += pad + alias1 + "." + rowId + " = '" + id1 + "'" + newline;
+                                if (id2 != '') {
+                                    sql += pad + "AND " + alias2 + "." + rowId + " = '" + id2 + "';" + newline;
+                                } else {
+                                    sql += ";" + newline;
+                                }
+                            } else {
+                                if (id2 != '') {
+                                    sql += where;
+                                    sql += pad + alias2 + "." + rowId + " = '" + id2 + "' + newline";
+                                }
+                            }
+                        } else {
+                            sql += '--' + virtual + newline;
+                        }
+                    }
+                    // 1
+                    else if (table1 != '') {
+                        if (table1 != virtual) {
+                            sql += select;
+                            sql += pad + alias1 + ".*" + newline + from;
+                            sql += pad + tableOwner + table1 + " " + alias1 + newline;
+
+                            if (id1 != '') {
+                                sql += where;
+                                sql += pad + alias1 + "." + rowId + " = '" + id1 + "';" + newline;
+                            } else {
+                                sql + ";" + newline;
+                            }
+                        } else {
+                            sql += '--' + virtual + newline;
+                        }
+                    }
+                }
+
+                function ReturnSQL(object, parent) {
+                    let tableArray = object.table.split(",");
+                    if (tableArray.length > 1) {
+                        object.table = tableArray[1];
+                    }
+
+                    if (parent == null) {
+                        table1 = object.table;
+                        alias1 = tableAlias + "1";
+                        column1 = object.linkSourceCol;
+                        id1 = object.rowId;
+                        table2 = '';
+                        alias2 = '';
+                        column2 = '';
+                        column2b = '';
+                        id2 = '';
+                        table3 = '';
+                        alias3 = '';
+                        column3 = '';
+                        id3 = '';
+                    } else {
+                        let tableArray = parent.table.split(",");
+                        if (tableArray.length > 1) {
+                            parent.table = tableArray[1];
+                        }
+
+                        table1 = parent.table;
+                        alias1 = tableAlias + "1";
+                        column1 = object.linkSourceCol;
+                        id1 = parent.rowId;
+
+                        if (object.intersectionTable != '') {
+                            table2 = object.intersectionTable;
+                            alias2 = tableAlias + "2";
+                            column2 = object.intersectionParentCol;
+                            column2b = object.intersectionChildCol;
+                            id2 = '';
+                            table3 = object.table;
+                            alias3 = tableAlias + "3";
+                            column3 = object.linkDestinationCol;
+                            id3 = object.rowId;
+                        } else if (object.parentBC != '') {
+                            table2 = object.table;
+                            alias2 = tableAlias + "2";
+                            column2 = object.linkDestinationCol;
+                            column2b = '';
+                            id2 = object.rowId;
+                            table3 = '';
+                            alias3 = '';
+                            column3 = '';
+                            id3 = '';
+                        }
+                    }
+
+                    let appletHeader = "--APPLET:" + object.applet + newline;
+                    appletHeader += object.appletSearchSpec == '' ? '' : "--APPLET SEARCHSPEC:" + object.appletSearchSpec + newline;
+
+                    let bcHeader = "--BC:" + object.bc + newline;
+                    bcHeader += object.bcSearchSpec == '' ? '' : "--BC SEARCHSPEC:" + object.bcSearchSpec + newline;
+                    bcHeader += object.bcSortSpec == '' ? '' : "--BC SORTSPEC:" + object.bcSortSpec + newline;
+                    sql = appletHeader + bcHeader;
+
+                    BuildSQL(table1, alias1, column1, id1, table2, alias2, column2, id2, table3, alias3, column3, id3);
+
+                    return sql + newline;
+                }
+
+                function RecursiveProcessChildObject(bcName, topLevelBC) {
+                    const childBCs = erdArray.filter(e => e.parentBC == bcName);
+                    childBCs.forEach((childBC) => {
+                        viewSQL += ReturnSQL(childBC, topLevelBC);
+                    });
+                }
+
+                const topLevelBCs = erdArray.filter(e => e.parentBC == '');
+                topLevelBCs.forEach((topLevelBC) => {
+                    viewSQL += ReturnSQL(topLevelBC, null);
+                    RecursiveProcessChildObject(topLevelBC.bc, topLevelBC)
+                });
+
+                const viewHeader = "--VIEW:" + erdArray[0].viewName + newline + newline;
+                output = viewHeader + viewSQL;
+            }
+
+            if (erdArray.length > 0) {
+                switch (type) {
+                    case "ERD":
+                        FormatERD(erdArray);
+                        break;
+                    case "SQL":
+                        FormatSQL(erdArray);
+                        break;
+                    default:
+                        break;
+                }
+            } // end FormatSQL
+
+            return output;
+        };
+
+        ERDViewer.prototype.getERD = async function(CMContainer, mermaidContainer, mermaid, viewName, autoview){
+            document.querySelector('.mermaid').innerHTML = '';
+            document.querySelector('.mermaid').removeAttribute("data-processed");
+            if (typeof(viewName) === "undefined"){
+                viewName = SiebelApp.S_App.GetActiveView().GetName();
+            }
+            let erd = new SiebelAppFacade.ERDViewer();
+            const output = await erd.businessObjectERD("ERD",viewName, autoview);
+            CMContainer.style.display = 'none';
+            mermaidContainer.style.display = 'flex';
+
+            if (output) {
+                const element = document.querySelector('.mermaid')
+                output.forEach((i) => element.innerHTML += '\n' + i)
+
+                mermaid.init();
+                setTimeout(() => {
+                    svgPanZoom('.mermaid svg');
+                }, 1000)
+            }
+        };
+
+        ERDViewer.prototype.viewERD = async function (viewName, autoview) {
+            //that.activeStep = 'viewERD';
+            if (typeof(viewName) === "undefined"){
+                viewName = SiebelApp.S_App.GetActiveView().GetName();
+            }
+            BCRMInjectCSS("mermaid1","#erdviewer .mermaid{width:100%;height:100%;cursor:grabbing;}");
+            BCRMInjectCSS("mermaid2","#erdviewer .mermaid svg{width:100%;height:100%;max-width:100%!important;}");
+            BCRMInjectCSS("mermaid3",".developer-tools__mermaid{width:88vw;height:75vh;overflow:hidden;background:#29313f!important;}");
+            BCRMInjectCSS("mermaid4",".mermaid div {background:transparent!important;}");
+            BCRMInjectCSS("mermaid5",".developer-tools__button-group button {margin-right: 10px;float: right;}");
+            BCRMInjectCSS("mermaid6",".mermaid strong {position: relative;top: -4px;}");
+            let container = $("<div id='erdviewer'>");
+            container.css("width","90vw");
+            container.css("height","90vh");
+            //$("#_sweview").after(container);
+
+            container.innerHTML = '';
+
+            if (!document.querySelector('.mermaidLibrary')) {
+                // load font awesome library
+                let fontAwesomeStyles = document.createElement('link');
+                fontAwesomeStyles.rel = 'stylesheet';
+                fontAwesomeStyles.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
+                document.head.append(fontAwesomeStyles);
+
+                //load pan-zoom library
+                const panZoomScript = document.createElement('script');
+                panZoomScript.src = "https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js";
+                document.head.append(panZoomScript);
+
+                //load mermaid library
+                const script = document.createElement('script');
+                script.type = "module";
+                script.classList.add("mermaidLibrary");
+                script.innerHTML = `
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+                window.mermaid = mermaid;
+            `
+                document.head.append(script);
+            } else {
+                window.mermaid.initialize({ startOnLoad: true,securityLevel: 'loose' });
+            }
+
+            let mermaidContainer = document.createElement('div');
+            mermaidContainer.classList.add('developer-tools__mermaid');
+            let mermaidPreTag = document.createElement('pre');
+            mermaidPreTag.classList.add('mermaid');
+            mermaidContainer.append(mermaidPreTag);
+            container.append(mermaidContainer);
+
+            let CMContainer = document.createElement('div');
+            CMContainer.classList.add('developer-tools__codemirror');
+            let editor = document.createElement('textarea');
+            CMContainer.append(editor);
+            CMContainer.style.display = 'none';
+
+            let CM = CodeMirror.fromTextArea(editor, {
+                readOnly: true,
+                lineWrapping: true,
+                mode: 'javascript'
+            });
+            container.append(CMContainer);
+
+            let buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('developer-tools__button-group');
+
+            let cmdClearButton = document.createElement('button');
+            cmdClearButton.innerText = 'Clear';
+            cmdClearButton.addEventListener('click', () => {
+                document.querySelector('.mermaid').innerHTML = '';
+                CM.setValue('');
+                setTimeout(() => { CM.refresh(); }, 1);// fixes a bug where the record set only shows when you click into the box
+            });
+
+            container.dialog({
+                title: "ERD Viewer: " + viewName,
+                width: window.innerWidth*0.9,
+                height: window.innerHeight*0.9,
+                classes: {
+                    "ui-dialog": "bcrm-dialog"
+                },
+                close: function(){
+                    $(this).dialog("destroy");
+                }
+            });
+
+            let cmdCopyButton = document.createElement('button');
+            cmdCopyButton.innerText = 'Copy SQL to Clipboard';
+            cmdCopyButton.addEventListener('click', () => {
+                copyToClipboard.call(this, CM.getValue());
+                console.log("SQL successfully copied to clipboard 📋");
+            });
+
+            let cmdGenerateSQLButton = document.createElement('button');
+            cmdGenerateSQLButton.innerText = 'Generate SQL';
+            cmdGenerateSQLButton.addEventListener('click', async () => {
+                mermaidContainer.style.display = 'none';
+                CMContainer.style.display = 'flex';
+                let vn = SiebelApp.S_App.GetActiveView().GetName();
+                let erd = new SiebelAppFacade.ERDViewer();
+                const output = await erd.businessObjectERD("SQL", vn);
+                CM.setValue(output);
+                setTimeout(() => { CM.refresh(); }, 1);// fixes a bug where the record set only shows when you click into the box
+            });
+
+            let cmdGenerateERDButton = document.createElement('button');
+            cmdGenerateERDButton.innerText = 'Generate ERD';
+            cmdGenerateERDButton.addEventListener('click', async () => {
+               let erd = new SiebelAppFacade.ERDViewer();
+               erd.getERD(CMContainer, mermaidContainer, mermaid, viewName, autoview);
+            });
+
+            buttonContainer.append(cmdClearButton, cmdCopyButton, cmdGenerateSQLButton, cmdGenerateERDButton); // cmdHelpButton, 
+            container.append(buttonContainer);
+
+            if (autoview){
+                let erd = new SiebelAppFacade.ERDViewer();
+                erd.getERD(CMContainer, mermaidContainer, mermaid, viewName, autoview);
+            }
+        };
+        return ERDViewer;
+    }());
+};
+
+BCRMERDClickHandler = function (ot, rn){
+    BCRMDisplayWSHistory(rn, ot);
+};
+
+RESTWorkspaceAsync = function (entity, workspaceName) {
+    if (!workspaceName) workspaceName = sessionStorage.BCRMCurrentWorkspace;
+    const host = "Development";
+    const method = "GET";
+    let startRowNum = 0;
+    const pageSize = 100;
+    const uri = `${GetOriginREST(host)}workspace/${workspaceName}/${entity}&uniformresponse=Y`;
+    return RESTAsync(method, uri, null, false, null, startRowNum, pageSize);
+};
+
+RESTAsync = function (method, uri, body, async, authHeader, startRowNum, pageSize) {
+    return new Promise(result => {
+        //toggleLoader(true);
+        function fetchData(method, uri, body, startRowNum, pageSize, items) {
+            let settings = {
+                dataType: "json",
+                method: method,
+                async: async,
+                headers: GetAuthHeader(authHeader)
+            };
+            let url = uri;
+            switch (method) {
+                case "POST":
+                case "PUT":
+                    settings.body = (body) ? body : "{}";
+                    break;
+                case "GET":
+                    if ((startRowNum !== null) && (pageSize !== null)) {
+                        let newQuery = startRowNum == 0 ? true : false;
+                        //const executionMode = "ForwardOnly";
+                        //let paging = `&StartRowNum=${startRowNum}&NewQuery=${newQuery}&PageSize=${pageSize}&ExecutionMode=${executionMode}`;
+                        let paging = `&StartRowNum=${startRowNum}&NewQuery=${newQuery}&PageSize=${pageSize}`;
+                        url += paging;
+                    }
+                    break;
+            } // end switch
+
+            fetch(url, settings).then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    let error;
+                    switch (response.status) {
+                        case 401:
+                            error = new Error('Not authorised');
+                            break;
+                        case 404:
+                            //error = new Error('Data not found'); // could be end of recordset and therefore valid
+                            break;
+                        case 500:
+                            error = new Error('500');
+                            break;
+                        default:
+                            error = new Error('Unexpected error ' + response.status);
+                            break;
+                    } // end switch
+                    //toggleLoader(false);
+                    response.status == 404 ? result(items) : result(error);
+                }
+            }).then(item => {
+                if (item) {
+                    if (item.hasOwnProperty("items")) {
+                        items = items.concat(item.items);
+
+                        if (method == "GET" && item.items.length == pageSize) {
+                            startRowNum += pageSize;
+                            return fetchData(method, uri, body, startRowNum, pageSize, items);
+                        } else {
+                            //toggleLoader(false);
+                            result(items);
+                        }
+                    } else {
+                        //toggleLoader(false);
+                        result(item);
+                    }
+                } else {
+                    //toggleLoader(false);
+                }
+            });
+        }
+        fetchData(method, uri, body, startRowNum, pageSize, []);
+    })
+}
+
+
+GetOriginREST = function (override) {
+    try {
+        return location.origin + "/siebel/v1.0/";
+    }
+    catch (e) {
+        console.error(`Error: ${e}`);
+    };
+}
+
+
+GetAuthHeader = function (auth) {
+    headers = {
+        "Content-Type": "application/json"
+    };
+    if (auth && auth != '') {
+        switch (auth) {
+            case 'sadmin':
+                headers['Authorization'] = BASIC_AUTH_SADMIN;
+                break;
+            case 'user':
+            default:
+                headers['Authorization'] = BASIC_AUTH;
+                break;
+        } // end switch
+    }
+    return headers;
+}
+
+//Add ERD Viewer button for selected view
+BCRMAddERDViewer = function(vn){
+    let an, fn;
+    if (vn == "View Administration View"){
+        an = "View List Administration Applet";
+        fn = "Name";
+    }
+    if (vn == "WT Repository View List View"){
+        an = "WT Repository View List Applet";
+        fn = "Name";
+    }
+    let pm = SiebelApp.S_App.GetActiveView().GetApplet(an).GetPModel();
+    let fi = pm.Get("GetFullId");
+    let ae = $("#" + fi);
+    let bg = ae.find(".siebui-btn-grp-applet");
+    
+    let btn;
+    if (ae.find("#bcrm_view_erd").length == 0) {
+        btn = $("<button id='bcrm_view_erd' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='View ERD'>View ERD</button>");
+        bg.prepend(btn);
+        btn.on("click", function () {
+            let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+            let erdview = r[fn];
+            let erd = new SiebelAppFacade.ERDViewer();
+            erd.viewERD(erdview,true);
+        })
+    }
+}
+//END ERDViewer*******************************************************
+
 //listeners
 try {
     SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);
+    //SiebelApp.EventManager.addListner("postload", BCRMGridImprover, this);
     if (location.pathname.indexOf("webtools") > -1) {
         SiebelApp.EventManager.addListner("postload", BCRMWTHelper, this);
     }
@@ -6400,6 +7464,7 @@ catch (e) {
 try {
     if (localStorage.DEVPOPS_ENABLE == "TRUE") {
         SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);
+        //SiebelApp.EventManager.addListner("postload", BCRMGridImprover, this);
         if (location.pathname.indexOf("webtools") > -1) {
             SiebelApp.EventManager.addListner("postload", BCRMWTHelper, this);
         }
