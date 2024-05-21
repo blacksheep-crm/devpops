@@ -12,13 +12,11 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
-# What's New in 23.9.1
+# What's New in 24.5
 
-AI Logging Central: shoelace UI to view and modify AI Profile log levels via CGW REST API
+ERD Viewer (Courtesy of James MacDonald)
 
-Poor man's log viewer for AI logs
-
-# Update to 23.9.1 (if you do a new installation, keep scrolling)
+# Update to 24.5 (if you do a new installation, keep scrolling)
 
 Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif
 
@@ -44,7 +42,7 @@ Follow these steps to enable the logviewer demo:
 
    Create symlink from applicationcontainer_external/logs to applicationcontainer_external/siebelwebroot/smc/logs
 
-# Features (23.7 and earlier)
+# Features (23.9 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -139,6 +137,10 @@ Web Tools: List Applet context (right-click) menu, check it out
 Custom View on top of "SIF Attribute Differences" tables (supports Siebel CRM 23.7 and higher)
 
 Dependency Finder: Uses REST API to find dependencies for various object types (Special thanks to Jason)
+
+AI Logging Central: shoelace UI to view and modify AI Profile log levels via CGW REST API
+
+Poor man's log viewer for AI logs
 
 # New Installation
 
