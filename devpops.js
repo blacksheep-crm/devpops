@@ -9,9 +9,9 @@ var dt = [];
 var trace_raw;
 var trace_parsed;
 var trace_norr;
-var devpops_dver = "23.9.1";
-var devpops_version = 63;
-var devpops_tag = "Vikram";
+var devpops_dver = "24.5";
+var devpops_version = 64;
+var devpops_tag = "Polaris";
 var devpops_uv = 0;
 var fwk_min_ver = 52;
 var devpops_vcheck = false;
@@ -198,6 +198,18 @@ BCRMGetSLMenu = function () {
                 BCRMRunSilentXRay();
             },
             "img": "images/grid_matte_ship.png"
+        },
+        "ERDViewer": {
+            "pos": "1.6",
+            "enable": localStorage.getItem("BCRM_MENU_ENABLE_ERDViewer") == "false" ? false : true,
+            "label": "🆕 ERD Viewer",
+            "title": "Kudos to James MacDonald",
+            "onclick": function () {
+                let erd = new SiebelAppFacade.ERDViewer();
+                erd.viewERD();
+                return BCRMCloseDebugMenu();
+            },
+            "img": "images/grid_matte_financialinformation.png"
         },
         "tracing": {
             "pos": "2",
@@ -4299,6 +4311,9 @@ BCRMWSHelper = function () {
             BCRMWSEnhancer(pm);
         }
 
+        if (vn == "View Administration View"){
+            BCRMAddERDViewer(vn);
+        }
         //enhance application
         if (SiebelApp.S_App.GetAppName() != "Siebel Web Tools" && $("#SiebComposerConfig").find("a").length > 0) {
             if (vn != "WSUI Dashboard View") {
@@ -11372,7 +11387,6 @@ BCRMPopoutView = function () {
             lh.css("background", "#90caf9");
             ct.append(lh);
 
-
             tbl.addClass("bcrm-table");
             tbl.css("font-family", "arial,sans-serif");
             tbl.css("font-size", "18px");
@@ -11488,7 +11502,6 @@ BCRMGetProfiles = function (type) {
     }
     return retval;
 };
-
 
 var BCRM_AIPROFILE = "";
 BCRMGetAILogLevels = function (aiprofile, proceed) {
@@ -11755,9 +11768,439 @@ BCRMShowAILogLevels = function () {
     $("#bcrm_ai_lvl")[0].show();
 };
 
+//cfgmerge 4.0 export, compare (and hopefully merge) enterprise configurations
+
+BCRM_EMERGE_DATA = {
+    "Enterprises": {}
+};
+BCRM_EMERGE_AUTH = "";
+BCRM_EMERGE_MSG = $("<div>");
+BCRMEmergeFetchData = function (url, enterprise, type, alias) {
+    if (BCRM_EMERGE_AUTH == "") {
+        BCRM_EMERGE_AUTH = "Basic " + btoa(prompt("Provide username:password\nExample: SADMIN:Welcome1", "SADMIN:Welcome1"));
+    }
+    if (typeof (BCRM_EMERGE_DATA["Enterprises"][enterprise]) === "undefined") {
+        BCRM_EMERGE_DATA["Enterprises"][enterprise] = {};
+    }
+    let myHeaders = new Headers();
+    myHeaders.append("Authorization", BCRM_EMERGE_AUTH);
+
+    const requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+    BCRM_EMERGE_MSG.append("<p>Fetching data for enterprise '" + enterprise + ": " + type + "</p>");
+    fetch(url, requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            let data = JSON.parse(result)["Result"];
+            if (typeof (alias) === "undefined") {
+                BCRM_EMERGE_DATA["Enterprises"][enterprise][type] = data;
+                BCRM_EMERGE_MSG.append("<p>Fetch complete for enterprise '" + enterprise + ": " + type + "</p>");
+            }
+            else { //process child data
+                let ptype = type.split("_")[0];
+                let ctype = type.split("_")[1] + "_" + type.split("_")[2];
+                let parents = BCRM_EMERGE_DATA["Enterprises"][enterprise][ptype];
+                for (p in parents) {
+                    if (ptype == "compdefs") {
+                        if (parents[p]["CC_ALIAS"] == alias) {
+                            parents[p][ctype] = data;
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+        .catch(error => console.log('error', error));
+};
+
+//get compdefs
+BCRMEmergeGetCompDefs = function (enterprise) {
+    const url = location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + enterprise + "/compdefs";
+    BCRMEmergeFetchData(url, enterprise, "compdefs");
+};
+
+//get compgroups
+BCRMEmergeGetCompGroups = function (enterprise) {
+    const url = location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + enterprise + "/compgroups";
+    BCRMEmergeFetchData(url, enterprise, "compgroups");
+};
+
+//get servers
+BCRMEmergeGetServers = function (enterprise) {
+    const url = location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + enterprise + "/servers";
+    BCRMEmergeFetchData(url, enterprise, "servers");
+};
+
+//get named subsystems
+BCRMEmergeGetNamedSubsystems = function (enterprise) {
+    const url = location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + enterprise + "/namedsubsystems";
+    BCRMEmergeFetchData(url, enterprise, "namedsubsystems");
+};
+
+//get ent params
+BCRMEmergeGetEntParams = function (enterprise) {
+    let url = location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + enterprise + "/parameters";
+    BCRMEmergeFetchData(url, enterprise, "entparams_basic");
+    BCRMEmergeFetchData(url + "?advanced=true", enterprise, "entparams_advanced");
+    BCRMEmergeFetchData(url + "?hidden=true", enterprise, "entparams_hidden");
+};
+
+BCRMEmergeGetParamsForCompDef = function (enterprise, compdef) {
+    let url = location.origin + "/siebel/v1.0/cloudgateway/enterprises/" + enterprise + "/compdefs/" + compdef + "/parameters";
+    BCRMEmergeFetchData(url, enterprise, "compdefs_params_basic", compdef);
+    BCRMEmergeFetchData(url + "?advanced=true", enterprise, "compdefs_params_advanced", compdef);
+    BCRMEmergeFetchData(url + "?hidden=true", enterprise, "compdefs_params_hidden", compdef);
+};
+
+BCRMEmergeGetAll = function (enterprise) {
+    BCRM_EMERGE_MSG = $("<div>");
+    BCRMEmergeGetCompDefs(enterprise);
+    BCRMEmergeGetCompGroups(enterprise);
+    BCRMEmergeGetServers(enterprise);
+    BCRMEmergeGetNamedSubsystems(enterprise);
+    BCRMEmergeGetEntParams(enterprise);
+    $(BCRM_EMERGE_MSG).dialog({
+        "title": "Fetch Complete",
+        width: 500,
+        height: 500
+    }
+    );
+    /*
+    //TODO: fetch params only for "in-use" compdefs/comps
+    setTimeout(function(){
+        let compdefs = BCRM_EMERGE_DATA["Enterprises"][enterprise]["compdefs"];
+        for (c in compdefs){
+            BCRMEmergeGetParamsForCompDef(enterprise,compdefs[c]["CC_ALIAS"]);
+        }
+    },30000);
+    */
+};
+
+//mutation observer to catch rogue popups
+//https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+
+BCRMCreatePopupObserver = function () {
+    // Select the node that will be observed for mutations
+    const body = $("body")[0];
+
+    // Options for the observer (which mutations to observe)
+    const config = { attributes: false, childList: true, subtree: true };
+
+    // Callback function to execute when mutations are observed
+    const callback = (mutationList, observer) => {
+        for (const mutation of mutationList) {
+            if (mutation.type === "childList") {
+                //console.log("A child node has been added or removed.");
+                const cm = SiebelAppFacade.ComponentMgr;
+                const applets = ["blacksheep Import Popup Applet", "Another Applet"];
+                for (let i = 0; i < applets.length; i++) {
+                    var an = applets[i];
+                    if (cm.FindComponent(an) !== null) {
+                        //popup is open
+                        setTimeout(function () {
+                            BCRMEnhancePopupApplet(an);
+                        }, 100);
+                        break;
+                    }
+                }
+            } else if (mutation.type === "attributes") {
+                //console.log(`The ${mutation.attributeName} attribute was modified.`);
+            }
+        }
+    };
+
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver(callback);
+
+    // Start observing the target node for configured mutations
+    observer.observe(body, config);
+};
+
+// Later, you can stop observing
+//observer.disconnect();
+
+BCRMEnhancePopupApplet = function (an) {
+
+    const cm = SiebelAppFacade.ComponentMgr;
+    const pm = cm.FindComponent(an).GetPM();
+    const pr = pm.GetRenderer();
+    const fi = pm.Get("GetFullId");
+    const cs = pm.Get("GetControls");
+    let ae = $("#" + fi);
+    let dc = ae.closest(".ui-dialog-content");
+
+    if (pm.Get("BCRM_ENHANCED") !== "true") {
+        if (an == "blacksheep Import Popup Applet") {
+
+            let bel = pr.GetUIWrapper(cs["Browse"]).GetEl();
+            let iel = pr.GetUIWrapper(cs["Import"]).GetEl();
+            let filesArray = bel[0].files;
+            var err_text = "";
+
+            ae.find("#bcrm_pbar").remove();
+            dc.dialog("option", { width: 500 });
+
+            if (filesArray.length == 0) {
+                iel.addClass("appletButtonDis");
+            }
+
+            bel.on("change", function (e) {
+                let filesArray = this.files;
+                if (filesArray.length > 0) {
+                    //let iel = pr.GetUIWrapper(cs["Import"]).GetEl();
+                    iel.removeClass("appletButtonDis");
+                    ae.find("#bcrm_error").remove();
+                }
+            });
+
+            iel.on("click", function (e) {
+                pm.SetProperty("BCRM_ERROR", "false");
+                let filesArray = bel[0].files;
+                pm.SetProperty("BCRM_FILENAME", filesArray[0].name);
+                pm.SetProperty("BCRM_FILESIZE", filesArray[0].size);
+                if (ae.find("#bcrm_pbar").length == 0) {
+                    let pbar = $("<div id='bcrm_pbar'>");
+                    ae.find(".AppletButtons").parent().parent().before(pbar);
+                    pbar.progressbar({ value: false });
+                }
+            });
+
+
+            dc.parent().on("dialogclose", function (e, ui) {
+                e.stopImmediatePropagation();
+                let profile2 = SiebelApp.S_App.GetProfileAttr("blacksheep_IMPORT_2");
+                profile2 = profile2.replace(/\'/g, "\"");
+                profile2 = profile2.replace(/\\/g, "\\\\");
+                profile2 = JSON.parse(profile2);
+                let csv_count = profile2["RecordCountCSV"];
+                csv_count = csv_count.replace(/,/g, '');
+                let fileinfo = "\nFile: " + pm.Get("BCRM_FILENAME") + "\nSize: " + pm.Get("BCRM_FILESIZE") + " bytes"
+                fileinfo += "\nRecord Count: " + csv_count;
+                if (pm.Get("BCRM_ERROR") == "false") {
+                    SiebelApp.Utils.Alert("Import completed successfully." + fileinfo);
+
+                    //show status object
+                    var so = BCRMGetStatusObject();
+                    var sotbl = $("<div>").append(BCRMRS2HTML(so));
+                    sotbl.css("overflow", "auto");
+                    sotbl.dialog({
+                        title: "Status Object",
+                        width: 400,
+                        height: 600
+                    });
+
+                }
+                else {
+                    SiebelApp.Utils.Alert("Import failed" + fileinfo);
+                }
+            });
+
+            pm.AttachPostProxyExecuteBinding("Import", function (methodName, inputPS, outputPS) {
+                if (outputPS.GetChildByType("Errors") != null) {
+                    pm.SetProperty("BCRM_ERROR", "true");
+                    err_text = outputPS.GetChildByType("Errors").GetChild(0).GetProperty("ErrMsg");
+                    ae.find("#bcrm_pbar").remove();
+                    let err = $("<span id='bcrm_error' style='background:lightcoral;'>").text(HtmlDecode(err_text) + "\nUpload another file and try again.");
+                    ae.find(".AppletButtons").parent().parent().before(err);
+                }
+            });
+        }
+        pm.SetProperty("BCRM_ENHANCED", "true");
+    }
+}
+
+BCRMGetStatusObject = function () {
+    var so = SiebelApp.S_App.GetProfileAttr("blacksheep_IMPORT_SO");
+    var ps = SiebelApp.S_App.NewPropertySet();
+    ps.DecodeFromString(so);
+    ps = ps.GetChild(0);
+    var isvalid = true;
+    var soj = [];
+    var propcount = ps.GetChild(0).GetPropertyCount();
+    if (propcount == 0) {
+        isvalid = false;
+    }
+    var count = ps.GetChildCount();
+    if (isvalid) {
+        for (i = 0; i < count; i++) {
+            var obj = {};
+            var props = ps.GetChild(i).propArray;
+            for (p in props) {
+                if (typeof (props[p]) !== "function") {
+                    obj[p] = props[p];
+                }
+            }
+            soj.push(obj);
+        }
+    }
+    else {
+        //soj["Message"] = "No Status Object returned.";
+    }
+    return soj;
+};
+
+BCRMRS2HTML = function (rs) {
+    //table header
+    var t = $("<table>");
+    var h = $("<thead><tr>");
+    for (c in rs[0]) {
+        if (typeof (c) !== "undefined") {
+            var th = $("<th>");
+            th.text(c);
+            h.find("tr").append(th);
+        }
+    }
+    //table body
+    var b = $("<tbody>")
+    for (r in rs) {
+        var tr = $("<tr>");
+        for (f in rs[r]) {
+            if (typeof (f) !== "undefined") {
+                var td = $("<td>");
+                td.text(rs[r][f]);
+                tr.append(td);
+            }
+        }
+        b.append(tr);
+    }
+    t.append(h);
+    t.append(b);
+    return t;
+}
+//var BCRMATACOUNT = 0;
+//23.11 added ATA injector for Test Automation
+BCRMGenerateATAId = function (s) {
+    var retval = "";
+    var b = btoa(s[0]);
+    for (var i = b.length - 1; i > 0; i -= 1) {
+        retval += b[i];
+    }
+    //retval = BCRMATACOUNT.toString() + "_" + retval;
+    //BCRMATACOUNT++;
+    if (retval.length > 25) {
+        retval = retval.substring(0, 25);
+    }
+    return retval;
+};
+BCRMInjectATA = function (pm) {
+    try {
+        if (SiebelApp.S_App.IsAutoOn() == "true" && typeof (pm.Get) === "function") {
+            const map = new Map();
+            map.set("SELECT", "JComboBox");
+            map.set("INPUT", "JText");
+            map.set("CHECKBOX", "JCheckBox"); //<input type="checkbox">
+            map.set("TEXTAREA", "JTextArea");
+            map.set("RADIO", "JRadioButton"); //<input type="radio">
+            map.set("BUTTON", "Button");
+            map.set("A", "Button");
+
+            const ot = consts.get("SWE_PROP_AUTOM_OT");
+            const rn = consts.get("SWE_PROP_AUTOM_RN");
+            const un = consts.get("SWE_PROP_AUTOM_UN");
+            let cs = pm.Get("GetControls");
+            let fi = pm.Get("GetFullId");
+            let ae = $("#" + fi);
+
+            //find all highlighted, non-testable elements
+            ae.find(".siebui-automation-elements-highlight").each(function (x) {
+                let el = $(this);
+                let ata = {};
+                let uitype = "button"; //default to button
+                if (typeof (el.attr("name")) !== "undefined") {
+                    //try to locate the control and get the real uitype
+                    for (c in cs) {
+                        if (cs[c].GetInputName() == el.attr("name")) {
+                            uitype = cs[c].GetUIType();
+                            break;
+                        }
+                    }
+                }
+                if (uitype == "button") {
+                    //check for node type and try again
+                    uitype = map.get(el[0].nodeName);
+                    if (typeof(uitype) === "undefined"){
+                        uitype = "button";
+                    }
+                    if (el.attr("type") == "checkbox" || el.attr("type") == "radio") {
+                        uitype = map.get(el.attr("type").toUpperCase());
+                    }
+                }
+
+                if (typeof (el.attr(ot)) === "undefined") {
+                    //Generate OT
+                    ata[ot] = uitype;
+
+                    //Generate RN and UN
+                    let id = el.attr("id");
+                    if (typeof (id) === "undefined") {
+                        id = BCRMGenerateATAId(el);
+                    }
+                    ata[rn] = id;
+                    ata[un] = id;
+
+                    //apply ATA
+                    el.attr(ata);
+                    el.removeClass("siebui-automation-elements-highlight");
+                }
+            });
+        }
+    }
+    catch (e) {
+        console.log("Error in BCRMInjectATA: " + e.toString());
+    }
+};
+BCRMAddTestControls = function () {
+    if (pm.Get("BCRMTESTCONTROLS") !== "true") {
+        let fi = pm.Get("GetFullId");
+        let ae = $("#" + fi);
+        let aec = ae.find("table.GridBack");
+        let trow = $("<tr>");
+        let td;
+        let tselect = $("<select class='siebui-automation-elements-highlight'>");
+        tselect.append("<option value='option1'>Option 1</option>");
+        tselect.append("<option value='option2'>Option 2</option>");
+        tselect.append("<option value='option3'>Option 3</option>");
+        td = $("<td>");
+        td.append(tselect);
+        trow.append(td);
+        let tcheck = $("<input type='checkbox' class='siebui-automation-elements-highlight'>");
+        td = $("<td>");
+        td.append(tcheck);
+        trow.append(td);
+        aec.append(trow);
+        pm.SetProperty("BCRMTESTCONTROLS", "true");
+    }
+};
+BCRMFixATA = function () {
+    var istest = false;
+    try {
+        if (SiebelApp.S_App.IsAutoOn() == "true") {
+            var am = SiebelApp.S_App.GetActiveView().GetAppletMap();
+            for (a in am) {
+                //BCRMATACOUNT = 0;
+                let pm = am[a].GetPModel();
+                if (istest && pm.GetObjName() == "SIS Account Entry Applet") {
+                    //add test controls
+                    BCRMAddTestControls(pm);
+                }
+                BCRMInjectATA(pm);
+            }
+        }
+    }
+    catch (e) {
+        //do nothing
+    }
+};
+setInterval(function () {
+    BCRMFixATA();
+}, 500);
 //listeners
 try {
     SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
+    SiebelApp.EventManager.addListner("AppInit", BCRMCreatePopupObserver, this);
     SiebelApp.EventManager.addListner("preload", BCRMPreLoad, this);
     SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
 
@@ -11780,6 +12223,7 @@ catch (e) {
 try {
     if (localStorage.DEVPOPS_ENABLE == "TRUE") {
         SiebelApp.EventManager.addListner("AppInit", BCRMGetWSContext, this);
+        SiebelApp.EventManager.addListner("AppInit", BCRMCreatePopupObserver, this);
         SiebelApp.EventManager.addListner("preload", BCRMPreLoad, this);
         SiebelApp.EventManager.addListner("postload", BCRMWSHelper, this);
 
