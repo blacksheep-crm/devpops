@@ -535,9 +535,15 @@ BCRMUpsertResp = function (rn, vn) {
 BCRMPostInvokeHandler = function (m, i, c, r) {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (m) !== "undefined") {
+        var vn = SiebelApp.S_App.GetActiveView().GetName();
         if (m.indexOf("PositionOnRow") == 0) {
             setTimeout(function () {
-                BCRMEnhanceScreenViewListApplet();
+                if (vn == "WT Repository Screen View List View") {
+                    BCRMEnhanceScreenViewListApplet();
+                }
+                if (vn == "WT Repository Workflow Process List View") {
+                    BCRMEnhanceWorkflowListApplet();
+                }
             }, 200);
         }
     }
@@ -653,6 +659,60 @@ BCRMEnhanceScreenViewListApplet = function () {
     else {
         btn.show();
     }
+};
+
+BCRMEnhanceWorkflowListApplet = function () {
+    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+    var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
+    if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
+        pm.AttachPMBinding("ShowSelection", BCRMEnhanceWorkflowListApplet, { scope: pm, sequence: true });
+        pm.AddMethod("InvokeMethod", BCRMPostInvokeHandler, { sequence: true });
+        pm.SetProperty("BCRM_HANDLERS_ATTACHED", "true");
+    }
+    var fi = pm.Get("GetFullId");
+    var ae = $("#" + fi);
+    var bg = ae.find(".siebui-btn-grp-applet");
+    var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+    var is_active = r["Inactive"] == "N" ? true : false;
+    var wf = r["Process Name"];
+    var btn1, btn2;
+
+    if (ae.find("#bcrm_wf_viz_detail").length == 0) {
+        btn2 = $("<button id='bcrm_wf_viz_detail' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Straighten up'>Preview 2</button>");
+        bg.prepend(btn2);
+    }
+    else {
+        btn2 = ae.find("#bcrm_wf_viz_detail");
+    }
+    btn2.on("click", function () {
+        let pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
+        let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+        BCRMMetadataCollector("Workflow Process", r["Process Name"], "detail");
+    });
+
+    if (ae.find("#bcrm_wf_viz_simple").length == 0) {
+        btn1 = $("<button id='bcrm_wf_viz_simple' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Straighten up'>Preview 1</button>");
+        bg.prepend(btn1);
+    }
+    else {
+        btn1 = ae.find("#bcrm_wf_viz_simple");
+    }
+    btn1.on("click", function () {
+        let pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
+        let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+        BCRMMetadataCollector("Workflow Process", r["Process Name"], "simple");
+    });
+
+    /*
+    if (!is_active) {
+        btn1.hide();
+        btn2.hide();
+    }
+    else {
+        btn1.show();
+        btn2.show();
+    }
+    */
 };
 
 //I hear the Screen Menu comes back in style
@@ -3335,6 +3395,27 @@ BCRMLoadCytoscape = function () {
 }
 BCRMLoadCytoscape();
 
+var BCRM_MERMAID_LOADED = false;
+BCRMLoadMermaid = function () {
+    if (!BCRM_MERMAID_LOADED) {
+        if (location.href.indexOf("WSUI+Dashboard+View") == -1) {
+            devpops_debug ? console.log(Date.now(), "Loading mermaid.js") : 0;
+            if ($("script[src*='mermaid']").length == 0) {
+                let csjs = $('<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>');
+                $("head").append(csjs);
+                BCRM_MERMAID_LOADED = true;
+            }
+            //load pan-zoom library
+            if ($("script[src*='svg-pan-zoom']").length == 0) {
+                const panZoomScript = document.createElement('script');
+                panZoomScript.src = "https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js";
+                document.head.append(panZoomScript);
+            }
+        }
+    }
+}
+BCRMLoadMermaid();
+
 //add pretty tooltips
 BCRMTooltipMod = function () {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
@@ -3693,7 +3774,7 @@ BCRMSiebelVersionCheck = function (y, m, mode) {
 };
 
 //main postload function for Web Tools
-//THIS FUNCTION MUST BE IN VANILLA postxload.js to work in Web Tools!
+//THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMWTHelper = function () {
     try {
         //prevent double loading
@@ -3753,8 +3834,15 @@ BCRMWTHelper = function () {
                     BCRMEnhanceScreenViewListApplet();
                 }
 
+                //Workflow Preview
+                if (BCRMSiebelVersionCheck(23, 7, "ge")) {
+                    if (vn == "WT Repository Workflow Process List View") {
+                        BCRMEnhanceWorkflowListApplet();
+                    }
+                }
+
                 //ERD Viewer
-                if (vn == "WT Repository View List View"){
+                if (vn == "WT Repository View List View") {
                     BCRMAddERDViewer(vn);
                 }
                 //add screen menu
@@ -6516,7 +6604,7 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
     SiebelAppFacade.ERDViewer = (function () {
         function ERDViewer(options) { }
 
-        ERDViewer.prototype.businessObjectERD = async function(type, viewName, autoview) {
+        ERDViewer.prototype.businessObjectERD = async function (type, viewName, autoview) {
             let output;
 
             async function lookupAppletBrowserScript(applet) {
@@ -6541,9 +6629,9 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
 
             async function lookupApplet(applet) {
                 let appletObject;
-                applet = applet.replaceAll("&","%26");
-                applet = applet.replaceAll("(","%28");
-                applet = applet.replaceAll(")","%29");
+                applet = applet.replaceAll("&", "%26");
+                applet = applet.replaceAll("(", "%28");
+                applet = applet.replaceAll(")", "%29");
                 let appletQuery = `Applet?searchspec=[Name]='${applet}'&fields=Business Component,Search Specification,No Delete,No Insert,No Update`;
                 const appletOutput = await RESTWorkspaceAsync(appletQuery);
                 if (appletOutput.length == 1) {
@@ -6554,9 +6642,9 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
 
             async function lookupView(view) {
                 let viewObject;
-                view = view.replaceAll("&","%26");
-                view = view.replaceAll("(","%28");
-                view = view.replaceAll(")","%29");
+                view = view.replaceAll("&", "%26");
+                view = view.replaceAll("(", "%28");
+                view = view.replaceAll(")", "%29");
                 let viewQuery = `View?searchspec=[Name]='${view}'&fields=Business Object,Visibility Applet Type,Admin Mode Flag`;
                 const viewOutput = await RESTWorkspaceAsync(viewQuery);
                 if (viewOutput.length == 1) {
@@ -6658,12 +6746,12 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
             let boName, viewObject, appletObject, linkObject, bcObject, bcFieldObject, bcUserPropObject, appletBrowserScriptObject, appletServerScriptObject, bcServerScriptObject;
 
             let viewWTI = await lookupViewWTI(viewName);
-            for (let i = 0; i < viewWTI.length; i++){
+            for (let i = 0; i < viewWTI.length; i++) {
                 appletArray.push(viewWTI[i]["Applet"]);
             }
             viewObject = await lookupView(viewName);
             // get BO name from any applet and bo bc links
-            for (let i=0; i < appletArray.length; i++) {
+            for (let i = 0; i < appletArray.length; i++) {
                 let appletName = appletArray[i];
                 //let pm = applets[appletName].GetPModel();
                 //let appletId = pm.Get("GetId");
@@ -6709,11 +6797,11 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
                 };
 
                 //erdObject.rowId = applets[appletName].GetBusComp().GetFieldValue("Id");
-                if (!autoview){
+                if (!autoview) {
                     erdObject.rowId = SiebelApp.S_App.GetActiveView().GetApplet(appletName).GetBusComp().GetFieldValue("Id");
                 }
                 //viewObject = await lookupView(viewName);
-                
+
                 erdObject.visibility = viewObject['Visibility Applet Type'];
                 erdObject.adminMode = viewObject['Admin Mode Flag'];
 
@@ -7153,14 +7241,14 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
             return output;
         };
 
-        ERDViewer.prototype.getERD = async function(CMContainer, mermaidContainer, mermaid, viewName, autoview){
+        ERDViewer.prototype.getERD = async function (CMContainer, mermaidContainer, mermaid, viewName, autoview) {
             document.querySelector('.mermaid').innerHTML = '';
             document.querySelector('.mermaid').removeAttribute("data-processed");
-            if (typeof(viewName) === "undefined"){
+            if (typeof (viewName) === "undefined") {
                 viewName = SiebelApp.S_App.GetActiveView().GetName();
             }
             let erd = new SiebelAppFacade.ERDViewer();
-            const output = await erd.businessObjectERD("ERD",viewName, autoview);
+            const output = await erd.businessObjectERD("ERD", viewName, autoview);
             CMContainer.style.display = 'none';
             mermaidContainer.style.display = 'flex';
 
@@ -7177,18 +7265,18 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
 
         ERDViewer.prototype.viewERD = async function (viewName, autoview) {
             //that.activeStep = 'viewERD';
-            if (typeof(viewName) === "undefined"){
+            if (typeof (viewName) === "undefined") {
                 viewName = SiebelApp.S_App.GetActiveView().GetName();
             }
-            BCRMInjectCSS("mermaid1","#erdviewer .mermaid{width:100%;height:100%;cursor:grabbing;}");
-            BCRMInjectCSS("mermaid2","#erdviewer .mermaid svg{width:100%;height:100%;max-width:100%!important;}");
-            BCRMInjectCSS("mermaid3",".developer-tools__mermaid{width:88vw;height:75vh;overflow:hidden;background:#29313f!important;}");
-            BCRMInjectCSS("mermaid4",".mermaid div {background:transparent!important;}");
-            BCRMInjectCSS("mermaid5",".developer-tools__button-group button {margin-right: 10px;float: right;}");
-            BCRMInjectCSS("mermaid6",".mermaid strong {position: relative;top: -4px;}");
+            BCRMInjectCSS("mermaid1", "#erdviewer .mermaid{width:100%;height:100%;cursor:grabbing;}");
+            BCRMInjectCSS("mermaid2", "#erdviewer .mermaid svg{width:100%;height:100%;max-width:100%!important;}");
+            BCRMInjectCSS("mermaid3", ".developer-tools__mermaid{width:88vw;height:75vh;overflow:hidden;background:#29313f!important;}");
+            BCRMInjectCSS("mermaid4", ".mermaid div {background:transparent!important;}");
+            BCRMInjectCSS("mermaid5", ".developer-tools__button-group button {margin-right: 10px;float: right;}");
+            BCRMInjectCSS("mermaid6", ".mermaid strong {position: relative;top: -4px;}");
             let container = $("<div id='erdviewer'>");
-            container.css("width","90vw");
-            container.css("height","90vh");
+            container.css("width", "90vw");
+            container.css("height", "90vh");
             //$("#_sweview").after(container);
 
             container.innerHTML = '';
@@ -7216,7 +7304,7 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
             `
                 document.head.append(script);
             } else {
-                window.mermaid.initialize({ startOnLoad: true,securityLevel: 'loose' });
+                window.mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
             }
 
             let mermaidContainer = document.createElement('div');
@@ -7252,12 +7340,12 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
 
             container.dialog({
                 title: "ERD Viewer: " + viewName,
-                width: window.innerWidth*0.9,
-                height: window.innerHeight*0.9,
+                width: window.innerWidth * 0.9,
+                height: window.innerHeight * 0.9,
                 classes: {
                     "ui-dialog": "bcrm-dialog"
                 },
-                close: function(){
+                close: function () {
                     $(this).dialog("destroy");
                 }
             });
@@ -7284,14 +7372,14 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
             let cmdGenerateERDButton = document.createElement('button');
             cmdGenerateERDButton.innerText = 'Generate ERD';
             cmdGenerateERDButton.addEventListener('click', async () => {
-               let erd = new SiebelAppFacade.ERDViewer();
-               erd.getERD(CMContainer, mermaidContainer, mermaid, viewName, autoview);
+                let erd = new SiebelAppFacade.ERDViewer();
+                erd.getERD(CMContainer, mermaidContainer, mermaid, viewName, autoview);
             });
 
             buttonContainer.append(cmdClearButton, cmdCopyButton, cmdGenerateSQLButton, cmdGenerateERDButton); // cmdHelpButton, 
             container.append(buttonContainer);
 
-            if (autoview){
+            if (autoview) {
                 let erd = new SiebelAppFacade.ERDViewer();
                 erd.getERD(CMContainer, mermaidContainer, mermaid, viewName, autoview);
             }
@@ -7300,7 +7388,7 @@ if (typeof (SiebelAppFacade.ERDViewer) === "undefined") {
     }());
 };
 
-BCRMERDClickHandler = function (ot, rn){
+BCRMERDClickHandler = function (ot, rn) {
     BCRMDisplayWSHistory(rn, ot);
 };
 
@@ -7418,13 +7506,13 @@ GetAuthHeader = function (auth) {
 }
 
 //Add ERD Viewer button for selected view
-BCRMAddERDViewer = function(vn){
+BCRMAddERDViewer = function (vn) {
     let an, fn;
-    if (vn == "View Administration View"){
+    if (vn == "View Administration View") {
         an = "View List Administration Applet";
         fn = "Name";
     }
-    if (vn == "WT Repository View List View"){
+    if (vn == "WT Repository View List View") {
         an = "WT Repository View List Applet";
         fn = "Name";
     }
@@ -7432,7 +7520,7 @@ BCRMAddERDViewer = function(vn){
     let fi = pm.Get("GetFullId");
     let ae = $("#" + fi);
     let bg = ae.find(".siebui-btn-grp-applet");
-    
+
     let btn;
     if (ae.find("#bcrm_view_erd").length == 0) {
         btn = $("<button id='bcrm_view_erd' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='View ERD'>View ERD</button>");
@@ -7441,12 +7529,720 @@ BCRMAddERDViewer = function(vn){
             let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
             let erdview = r[fn];
             let erd = new SiebelAppFacade.ERDViewer();
-            erd.viewERD(erdview,true);
+            erd.viewERD(erdview, true);
         })
     }
 }
 //END ERDViewer*******************************************************
 
+//mermaid visualizer for workflows, with a little help from a(i) friend
+function BCRMDisplayBSScript(jsonData, targetText = '') {
+    // Create minimize container if it doesn't exist
+    if (!$('#minimizeContainer').length) {
+        $('body').append('<div id="minimizeContainer"></div>');
+    }
+
+    // Generate unique ID for this instance
+    const dialogId = 'scriptDialog_' + Date.now();
+    const tabsId = 'scriptTabs_' + Date.now();
+    const minimizeBarId = 'minimizeBar_' + Date.now();
+
+    // Create dialog and tab containers
+    $('body').append(`
+        <div id="${dialogId}" class="script-dialog" title="${jsonData.Name || 'Siebel Scripts'}">
+            <div class="search-box">
+                <input  style="display:none;" type="text" id="searchText_${dialogId}" class="search-input" placeholder="Enter text to highlight">
+                <button style="display:none;" id="highlightButton_${dialogId}" class="search-button">Highlight</button>
+            </div>
+            <div id="${tabsId}" class="script-tabs">
+                <ul class="ui-tabs-nav"></ul>
+                <div class="tab-content"></div>
+            </div>
+        </div>
+    `);
+
+    // Add minimize bar to container
+    $('#minimizeContainer').append(`<div id="${minimizeBarId}" class="minimize-bar"></div>`);
+
+    // Add required styles if not already present
+    if (!$('#scriptViewerStyles').length) {
+        const styles = `
+            .script-dialog { font-family: Arial, sans-serif; }
+            .script-tabs { margin: 10px; }
+            .CodeMirror { height: 500px; border: 1px solid #ddd; }
+            .CodeMirror-searching { background: yellow !important; color: black !important; }
+            .ui-tabs { 
+                padding: 0;
+                border: 1px solid #ddd;
+                background: #fff;
+            }
+            .ui-tabs .ui-tabs-nav { 
+                padding: .5em .5em 0;
+                background: #f5f5f5;
+                border-bottom: 1px solid #ddd;
+                border-radius: 0;
+            }
+            .ui-tabs .ui-tabs-nav li {
+                list-style: none;
+                float: left;
+                position: relative;
+                margin: 0 .2em 1px 0;
+                padding: 0;
+                white-space: nowrap;
+            }
+            .ui-tabs .ui-tabs-nav li a {
+                float: left;
+                padding: .5em 1em;
+                text-decoration: none;
+                outline: none;
+            }
+            .ui-tabs .ui-tabs-nav li.ui-tabs-active {
+                margin-bottom: -1px;
+                padding-bottom: 1px;
+                background: #fff;
+                border: 1px solid #ddd;
+                border-bottom: 1px solid #fff;
+            }
+            .ui-tabs .ui-tabs-nav li.ui-tabs-active a {
+                cursor: text;
+            }
+            .ui-tabs .ui-tabs-panel {
+                display: block;
+                padding: 1em;
+                background: none;
+            }
+            .search-box { margin: 10px; padding: 5px; }
+            .search-input { 
+                padding: 5px; 
+                width: 200px;
+                border: 1px solid #ddd;
+            }
+            .search-button { 
+                margin-left: 5px;
+                padding: 5px 10px;
+                background: #f5f5f5;
+                border: 1px solid #ddd;
+                cursor: pointer;
+            }
+            .search-button:hover {
+                background: #e9e9e9;
+            }
+            #minimizeContainer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+                padding: 0 10px;
+                z-index: 9999;
+            }
+            .minimize-bar {
+                display: none;
+                background: #f3f3f3;
+                border: 1px solid #ccc;
+                border-bottom: none;
+                padding: 5px 20px;
+                cursor: pointer;
+                border-radius: 5px 5px 0 0;
+                box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+                min-width: 150px;
+                text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .minimize-bar:hover {
+                background: #e9e9e9;
+            }
+        `;
+        $('<style id="scriptViewerStyles">').text(styles).appendTo('head');
+    }
+
+    const scripts = [];
+    const editors = [];
+
+    // Extract active scripts from JSON
+    jsonData.RepositoryBusinessServiceServerScript.forEach(script => {
+        if (script.Inactive === "N") {
+            scripts.push({
+                name: script.Name,
+                content: script.Script
+            });
+        }
+    });
+
+    const $tabs = $(`#${tabsId}`);
+
+    // Create tabs and panels
+    scripts.forEach((script, index) => {
+        // Add tab
+        $tabs.find('.ui-tabs-nav').append(
+            `<li><a href="#tab-${dialogId}-${index}">${script.name}</a></li>`
+        );
+
+        // Add content panel
+        $tabs.append(
+            `<div id="tab-${dialogId}-${index}" class="tab-panel">
+                <textarea id="editor-${dialogId}-${index}"></textarea>
+            </div>`
+        );
+    });
+
+    // Initialize jQuery UI tabs
+    $tabs.tabs({
+        activate: function (event, ui) {
+            // Refresh CodeMirror when switching tabs
+            const index = ui.newTab.index();
+            if (editors[index]) {
+                editors[index].refresh();
+            }
+        }
+    });
+
+    // Initialize jQuery UI dialog
+    const $dialog = $(`#${dialogId}`);
+    $dialog.dialog({
+        width: 800,
+        height: 700,
+        modal: false,
+        autoOpen: true,
+        buttons: {
+            Minimize: function () {
+                $(this).dialog('close');
+                $(`#${minimizeBarId}`).show();
+            }
+        }
+    });
+
+    // Set up the minimize bar
+    const $minimizeBar = $(`#${minimizeBarId}`);
+    $minimizeBar.text(jsonData.Name || 'Siebel Scripts');
+    $minimizeBar.click(function () {
+        $(this).hide();
+        $dialog.dialog('open');
+    });
+
+    // Helper function to highlight text in an editor
+    function highlightText(editor, searchText) {
+        if (!searchText) return;
+
+        // Clear previous highlights
+        editor.operation(() => {
+            const marks = editor.getAllMarks();
+            for (let i = 0; i < marks.length; i++) {
+                marks[i].clear();
+            }
+
+            const cursor = editor.getSearchCursor(searchText, null, { caseFold: true });
+            let found = false;
+            let firstPos = null;
+
+            while (cursor.findNext()) {
+                found = true;
+                const from = cursor.from();
+                const to = cursor.to();
+
+                if (!firstPos) {
+                    firstPos = from;
+                }
+
+                editor.markText(from, to, {
+                    className: 'CodeMirror-searching'
+                });
+            }
+
+            if (found && firstPos) {
+                editor.scrollIntoView({ line: firstPos.line, ch: firstPos.ch }, 50);
+            }
+        });
+    }
+
+    // Initialize CodeMirror for each script
+    scripts.forEach((script, index) => {
+        const editor = CodeMirror.fromTextArea(document.getElementById(`editor-${dialogId}-${index}`), {
+            mode: 'javascript',
+            lineNumbers: true,
+            readOnly: true,
+            theme: 'default',
+            matchBrackets: true,
+            styleSelectedText: true
+        });
+
+        editor.setValue(script.content);
+        editors.push(editor);
+
+        // If this script contains the target text, switch to its tab and highlight it
+        if (targetText && script.content.includes(targetText)) {
+            $tabs.tabs('option', 'active', index);
+            setTimeout(() => {
+                highlightText(editor, targetText);
+                editor.refresh();
+            }, 200);
+        }
+    });
+
+    // Highlight button click handler
+    $(`#highlightButton_${dialogId}`).click(function () {
+        const searchText = $(`#searchText_${dialogId}`).val().trim();
+        if (!searchText) return;
+
+        const activeTab = $tabs.tabs('option', 'active');
+        if (editors[activeTab]) {
+            highlightText(editors[activeTab], searchText);
+        }
+    });
+
+    // Handle Enter key in search box
+    $(`#searchText_${dialogId}`).keypress(function (e) {
+        if (e.which === 13) {
+            $(`#highlightButton_${dialogId}`).click();
+        }
+    });
+
+    // Set initial search text if provided
+    if (targetText) {
+        $(`#searchText_${dialogId}`).val(targetText);
+    }
+
+    // Return cleanup function
+    return function cleanup() {
+        editors.forEach(editor => {
+            editor.toTextArea();
+        });
+        $dialog.dialog('destroy').remove();
+        $minimizeBar.remove();
+
+        // Remove minimize container if it's empty
+        if ($('#minimizeContainer').children().length === 0) {
+            $('#minimizeContainer').remove();
+        }
+    };
+}
+
+window.handleStepClick = function (type, on, bsm) {
+    if (type == "Business Service") {
+        if (on != "") {
+            const bs = BCRM_BUS_SERV[on].items;
+            if (typeof (bs.RepositoryBusinessServiceServerScript) !== "undefined") {
+                for (b in bs.RepositoryBusinessServiceServerScript) {
+                    let script = bs.RepositoryBusinessServiceServerScript[b];
+                    if (script.Inactive === "N") {
+                        BCRMDisplayBSScript(bs, bsm);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (type == "Sub Process") {
+        BCRMMetadataCollector("Workflow Process", on, "detail");
+    }
+};
+
+class WorkflowDiagramGenerator {
+    constructor(workflowJson) {
+        this.workflow = workflowJson.items;
+        this.steps = this.workflow.RepositoryWfStep;
+        this.errorConnections = [];
+        this.connectionCount = 0;
+    }
+
+    getStepStyle(step) {
+        if (['Stop', 'Start', 'End'].includes(step.Type)) {
+            return '((';  // Circle shape for special steps
+        }
+        if (step.Type === 'Decision Point') {
+            return '{';   // Diamond shape for decision points
+        }
+        return '[';      // Default rectangle shape
+    }
+
+    getStepStyleEnd(step) {
+        if (['Stop', 'Start', 'End'].includes(step.Type)) {
+            return '))';  // Circle shape closing for special steps
+        }
+        if (step.Type === 'Decision Point') {
+            return '}';   // Diamond shape closing for decision points
+        }
+        return ']';      // Default rectangle closing
+    }
+
+    getStepColor(step) {
+        if (step.Type === 'Stop') {
+            return ':::stopStyle';
+        } else if (step.Type === 'Start' || step.Type === 'End') {
+            return ':::terminalStyle';
+        } else if (step.Type === 'Decision Point') {
+            return ':::decisionStyle';
+        } else if (step.Type === 'Business Service') {
+            return ':::businessServiceStyle';
+        } else if (step.Type === 'Sub Process') {
+            return ':::subProcessStyle';
+        } else if (step.Type === 'Siebel Operation') {
+            return ':::siebelOperationStyle';
+        } else if (step.Type === 'Task') {
+            return ':::taskStyle';
+        } else if (step.Type === 'User Interact') {
+            return ':::userInteractStyle';
+        } else if (step.Type === 'Wait') {
+            return ':::waitStyle';
+        }
+        return '';
+    }
+
+    formatArguments(step) {
+        let argText = [];
+
+        if (step.RepositoryWfStepIOArgument) {
+            const args = Array.isArray(step.RepositoryWfStepIOArgument)
+                ? step.RepositoryWfStepIOArgument
+                : [step.RepositoryWfStepIOArgument];
+
+
+            const inputArgs = args.filter(arg => arg["Input Flag"] === "I");
+            const outputArgs = args.filter(arg => arg["Input Flag"] === "O");
+
+            if (inputArgs.length > 0) {
+                argText.push("------------------- Inputs -------------------");
+                inputArgs.forEach(arg => {
+                    if (arg.Inactive != "Y") {
+                        const name = this.escapeValue(arg.Name);
+
+                        if (arg.Type === "Process Property" && arg["Property Name"]) {
+                            const propName = this.escapeValue(arg["Property Name"]);
+                            argText.push(`${name} = 📦 ${propName}`);
+                        }
+                        else if (arg.Type === "Literal" && arg["Value/Search Specification"]) {
+                            let value = this.escapeValue(arg["Value/Search Specification"]);
+                            value = (value.length > 50 ? this.escapeValue(value.substring(0, 47)) + "..." : this.escapeValue(value));
+                            argText.push(`${name} = 💬 '${value}'`);
+                        }
+                        else if (arg.Type === "Expression" && arg["Value/Search Specification"]) {
+                            let value = this.escapeValue(arg["Value/Search Specification"]);
+                            value = (value.length > 50 ? this.escapeValue(value.substring(0, 47)) + "..." : this.escapeValue(value));
+                            argText.push(`${name} = ➗ ${value}`);
+                        }
+                        else if (arg.Type) {
+                            argText.push(`${name} = (${this.escapeValue(arg.Type)})`);
+                        }
+                    }
+                });
+
+            }
+
+            if (outputArgs.length > 0) {
+                if (inputArgs.length > 0) argText.push("");  // Add blank line between sections
+                argText.push("------------------ Outputs ------------------");
+                outputArgs.forEach(arg => {
+                    if (arg.Inactive != "Y") {
+                        let name = this.escapeValue(arg["Name"]);
+                        if (arg["Property Name"]) {
+                            let propName = this.escapeValue(arg["Property Name"]);
+                            if (arg["Output Arg"]) {
+                                name = this.escapeValue(arg["Output Arg"]);
+                            }
+                            if (arg.Type == "Expression") {
+                                name = "➗ " + this.escapeValue(arg["Value/Search Specification"]);
+                            }
+                            if (arg["Business Component Field"]) {
+                                name = arg["Business Component"] + "." + arg["Business Component Field"];
+                            }
+                            argText.push(`${name} --> 📦 ${propName}`);
+                        } else {
+                            argText.push(`${name} -->`);
+                        }
+                    }
+                });
+
+            }
+        }
+
+        return argText.length > 0 ? "\n" + argText.join("\n") : "";
+    }
+
+    escapeValue(value) {
+        if (!value) return '';
+
+        return value
+            .replace(/[{]/g, '&lcub;')  // Replace curly braces
+            .replace(/[}]/g, '&rcub;')  // Replace curly braces
+            .replace(/[<]/g, '&lsqb;')  // Replace angle brackets
+            .replace(/[>]/g, '&rsqb;')
+            .replace(/"/g, "'")    // Replace double quotes
+            .replace(/\|/g, '&#124;')   // Replace pipes 
+            .replace(/[\[]/g, '&lsqb;') // replace square brackets
+            .replace(/[\]]/g, '&rsqb;') // replace square brackets
+            .trim();
+    }
+
+    formatStepName(step, mode) {
+        let baseText;
+        if (step.Type === 'Decision Point') {
+            const words = step.Name.split(' ');
+            baseText = words.join('\n');
+        } else if (step.Type === 'Sub Process') {
+            baseText = "🥪 " + step.Name + "\n\n" + step["Subprocess Name"];
+        } else if (step.Type === 'Siebel Operation') {
+            baseText = "📄 " + step.Name + "\n\n" + step["Business Component"] + ":" + step["operation"];
+        } else if (step.Type === 'User Interact') {
+            baseText = "👤 " + step.Name + "\n\n" + step["User Interact View"];
+        } else if (step.Type === 'Business Service') {
+            baseText = "🏬 " + step.Name + "\n\n" + step["Business Service Name"] + ":" + step["Business Service Method"];
+        } else if (step.Type === 'Wait') {
+            baseText = "⏲ " + step.Name;
+        } else if (step.Type === 'Task') {
+            baseText = "🈸 " + step.Name;
+        } else {
+            baseText = step.Name;
+        }
+
+        // detail mode: Add arguments for all step types
+        if (mode == "detail") {
+            return baseText + this.formatArguments(step);
+        }
+        else {
+            return baseText;
+        }
+    }
+
+    getConnectionLabel(branch) {
+        const name = branch.Name || '';
+        const type = branch.Type || '';
+
+        if (!name || name === 'Default.CONNECTOR' || name.indexOf("Connector") == 0 || name.indexOf("NewConn") == 0) {
+            this.connectionCount++;
+            return '';
+        }
+
+        if (type === 'Error Exception') {
+            this.errorConnections.push(this.connectionCount);
+            this.connectionCount++;
+            return '|Error|';
+        }
+
+        if (name.includes('.Decision')) {
+            this.connectionCount++;
+            return `|${name.split('.')[0]}|`;
+        }
+
+        this.connectionCount++;
+        return `|${name}|`;
+    }
+
+    generateLinkStyles() {
+        return this.errorConnections.map(index =>
+            `linkStyle ${index} stroke:#ff0000,color:#ff0000`
+        ).join('\n');
+    }
+
+    generateDiagram(mode = "simple") {
+        this.errorConnections = [];
+        this.connectionCount = 0;
+
+        const lines = [
+            'graph TD',
+            'classDef stopStyle fill:#ff0000,stroke:#ff0000,color:white',
+            'classDef terminalStyle fill:#4CAF50,stroke:#4CAF50,color:white',
+            'classDef decisionStyle fill:#FFFBE6,stroke:#FFD700',
+            'classDef businessServiceStyle fill:#C0FFFF,stroke:#A0A0A0',
+            'classDef subProcessStyle fill:#FFE4C4,stroke:#A0A0A0',
+            'classDef siebelOperationStyle fill:#FFE4E1,stroke:#A0A0A0',
+            'classDef taskStyle fill:#FFFACD,stroke:#A0A0A0',
+            'classDef userInteractStyle fill:#ADD8E6,stroke:#A0A0A0',
+            'classDef waitStyle fill:#90EE90,stroke:#A0A0A0'
+        ];
+
+        this.steps.forEach(step => {
+            if (step.Inactive != "Y") {
+                const id = step.Name.replace(/[^a-zA-Z0-9]/g, '_');
+                let bsn = step["Business Service Name"];
+                const bsm = step["Business Service Method"];
+                const stype = step.Type;
+                if (stype == "Sub Process") {
+                    bsn = step["Subprocess Name"];
+                }
+                const styleStart = this.getStepStyle(step);
+                const styleEnd = this.getStepStyleEnd(step);
+                const color = this.getStepColor(step);
+                const name = this.formatStepName(step, mode);
+                lines.push(`    ${id}${styleStart}"${name}"${styleEnd}${color}`);
+                lines.push(`    click ${id} "javascript:handleStepClick('${stype}', '${bsn}', '${bsm}')"`);
+            }
+        });
+
+        this.steps.filter(step => step.RepositoryWfStepBranch).forEach(step => {
+            if (step.Inactive != "Y") {
+                const fromId = step.Name.replace(/[^a-zA-Z0-9]/g, '_');
+                const branches = Array.isArray(step.RepositoryWfStepBranch)
+                    ? step.RepositoryWfStepBranch
+                    : [step.RepositoryWfStepBranch];
+
+                branches.forEach(branch => {
+                    if (branch.Inactive != "Y") {
+                        if (branch["To Step Name"]) {
+                            const toId = branch["To Step Name"].replace(/[^a-zA-Z0-9]/g, '_');
+                            const label = this.getConnectionLabel(branch);
+                            lines.push(`    ${fromId} -->${label} ${toId}`);
+                        }
+                    }
+                });
+            }
+        });
+
+        lines.push(this.generateLinkStyles());
+
+        return lines.join('\n');
+    }
+}
+
+//MetadataCollector: Get all the metadata in Web Tools
+var BCRM_BUS_SERV = {};
+const BCRMMetadataCollector = function (ot, on, mode = "simple", ws = sessionStorage.BCRMCurrentWorkspace) {
+    //const on_uri = encodeURIComponent(on);
+    const myHeaders = new Headers();
+    //myHeaders.append("Authorization", "Basic U0FETUlOOldlbGNvbWUx");
+    const ln = `${ot}_${on}_${ws}`;
+    const requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+
+    fetch(`${location.origin}/siebel/v1.0/workspace/${ws}/${ot}/${on}?getChildren=ALL`, requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            if (ot === "Workflow Process") {
+                const wf = JSON.parse(result).items;
+                const steps = wf.RepositoryWfStep;
+
+                for (const s in steps) {
+                    const step = steps[s];
+                    if (step.Type === "Business Service" && step.Inactive !== "Y") {
+                        const bsn = step["Business Service Name"];
+                        if (typeof BCRM_BUS_SERV[bsn] === "undefined") {
+                            //const bsn_uri = encodeURIComponent(bsn);
+                            fetch(`${location.origin}/siebel/v1.0/workspace/${ws}/Business Service/${bsn}?getChildren=ALL`, requestOptions)
+                                .then(response => response.text())
+                                .then(result => {
+                                    BCRM_BUS_SERV[bsn] = JSON.parse(result);
+                                })
+                                .catch(error => console.log('error', error));
+                        }
+                    }
+                }
+
+                mermaid.initialize({
+                    securityLevel: 'loose',
+                    startOnLoad: true,
+                    flowchart: {
+                        htmlLabels: true,
+                        curve: 'basis'
+                    }
+                });
+                /* highlight text TBD
+                const nodes = document.querySelectorAll('.nodeLabel');
+                nodes.forEach(node => {
+                    node.innerHTML = node.innerHTML.replace(/Exception Flag/g,'<span class="highlight-asset">Exception Flag</span>');
+                });
+                */
+                if ($(`[bcrm-id='${ln}']`).length === 0) {
+                    const dg = $('<div id="wfdiagram" bcrm-id="' + ln + '" style="overflow:auto;"></div>');
+                    dg.dialog({
+                        title: `devpops Workflow Visualizer: ${on}`,
+                        width: window.innerWidth * 0.6,
+                        height: window.innerHeight * 0.9,
+                        close: function () {
+                            $(this).dialog('destroy').remove();
+                        },
+                        open: function () {
+                            setTimeout(() => {
+                                //let svg_id = $($(".mermaid svg")[0]).attr("id");
+                                let svgs = $(".mermaid svg").length;
+                                const svg = $(".mermaid svg")[svgs - 1];
+                                svgPanZoom(svg, {
+                                    zoomEnabled: true
+                                    //controlIconsEnabled: true
+                                    //fit: true,
+                                    //center: true,
+                                    //minZoom: 0.1,
+                                    //maxZoom: 10,
+                                    //zoomScaleSensitivity: 0.3
+                                });
+                                $(".mermaid").css("height", "95%");
+                                $(svg).css("min-height", "100%");
+                                $(svg).css("min-width", "100%");
+                            }, 1000);
+                            setTimeout(function () {
+                                for (b in BCRM_BUS_SERV) {
+                                    let bs = BCRM_BUS_SERV[b].items;
+                                    if (typeof (bs.RepositoryBusinessServiceServerScript) !== "undefined") {
+                                        for (b in bs.RepositoryBusinessServiceServerScript) {
+                                            let script = bs.RepositoryBusinessServiceServerScript[b];
+                                            if (script.Inactive === "N") {
+                                                let bsn = bs.Name;
+                                                $("#wfdiagram").find("a").each(function (x) {
+                                                    if (this.innerHTML.indexOf(bsn) > -1) {
+                                                        if ($(this).attr("bcrm-script") != "true") {
+                                                            let lbl = $(this).find("span.nodeLabel");
+                                                            lbl.html("👨‍💻" + lbl.html());
+                                                            $(this).attr("bcrm-script", "true");
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            }, 500);
+                        },
+                        buttons: {
+                            "New Window/Print": function () {
+                                const printWindow = window.open('', '', 'height=800,width=800');
+                                printWindow.document.write(`
+                                    <html>
+                                        <head>
+                                            <title>${ln}</title>
+                                            <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+                                            <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+                                        </head>
+                                        <body>
+                                            ${this.innerHTML}
+                                        </body>
+                                    </html>
+                                `);
+                                printWindow.focus();
+                                setTimeout(() => {
+                                    /*
+                                    printWindow.svgPanZoom('.mermaid svg', {
+                                        zoomEnabled: true,
+                                        controlIconsEnabled: false,
+                                        fit: false
+                                    });
+                                    */
+                                    printWindow.document.querySelector(".mermaid").removeAttribute('style');
+                                    printWindow.document.querySelector(".mermaid svg").style.minHeight = '6000px';
+                                    //printWindow.document.querySelector(".mermaid svg").style.minWidth = '';
+                                }, 1000);
+                            },
+                            "Close": function () {
+                                $(this).dialog("destroy");
+                            }
+                        }
+                    });
+
+                    const generator = new WorkflowDiagramGenerator(JSON.parse(result));
+                    const mermaidDiagram = generator.generateDiagram(mode);
+                    const diagramDiv = $(`[bcrm-id='${ln}']`)[0];
+                    diagramDiv.innerHTML = '<pre class="mermaid">\n' + mermaidDiagram + '\n</pre>';
+
+                    mermaid.init(undefined, '.mermaid');
+                }
+            }
+        })
+        .catch(error => console.log('error', error));
+};
 //listeners
 try {
     SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);
