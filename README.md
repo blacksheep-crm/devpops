@@ -12,11 +12,11 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
 
-# What's New in 24.5
+# What's New in 24.12
 
-ERD Viewer (Courtesy of James MacDonald)
+Workflow Visualizer (requires Siebel 23.6 or higher)
 
-# Update to 24.5 (if you do a new installation, keep scrolling)
+# Update to 24.12 (if you do a new installation, keep scrolling)
 
 Import IO_Base BCRM Modified Object.sif and DependencyFinder.sif
 
@@ -42,7 +42,7 @@ Follow these steps to enable the logviewer demo:
 
    Create symlink from applicationcontainer_external/logs to applicationcontainer_external/siebelwebroot/smc/logs
 
-# Features (23.9 and earlier)
+# Features (24.5 and earlier)
 
 See who else is working on an object definition in Web Tools (DR environments only)
 
@@ -141,6 +141,8 @@ Dependency Finder: Uses REST API to find dependencies for various object types (
 AI Logging Central: shoelace UI to view and modify AI Profile log levels via CGW REST API
 
 Poor man's log viewer for AI logs
+
+ERD Viewer (Courtesy of James MacDonald)
 
 # New Installation
 
