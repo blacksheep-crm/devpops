@@ -7968,6 +7968,8 @@ class WorkflowDiagramGenerator {
         return value
             .replace(/[{]/g, '&lcub;')  // Replace curly braces
             .replace(/[}]/g, '&rcub;')  // Replace curly braces
+            .replace(/[(]/g, '&lpar;')  // Replace parentheses
+            .replace(/[)]/g, '&rpar;')  // Replace parentheses
             .replace(/[<]/g, '&lsqb;')  // Replace angle brackets
             .replace(/[>]/g, '&rsqb;')
             .replace(/"/g, "'")    // Replace double quotes
