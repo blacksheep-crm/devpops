@@ -8011,8 +8011,8 @@ class WorkflowDiagramGenerator {
         return value
             .replace(/[{]/g, '&lcub;')  // Replace curly braces
             .replace(/[}]/g, '&rcub;')  // Replace curly braces
-            .replace(/[(]/g, '&lpar;')  // Replace parentheses
-            .replace(/[)]/g, '&rpar;')  // Replace parentheses
+            .replace(/[(]/g, ' ')  // Replace parentheses
+            .replace(/[)]/g, ' ')  // Replace parentheses
             .replace(/[<]/g, '&lsqb;')  // Replace angle brackets
             .replace(/[>]/g, '&rsqb;')
             .replace(/"/g, "'")    // Replace double quotes
@@ -8055,7 +8055,7 @@ class WorkflowDiagramGenerator {
     getConnectionLabel(branch) {
         const name = branch.Name || '';
         const type = branch.Type || '';
-
+        let nesc = this.escapeValue(name);
         if (!name || name === 'Default.CONNECTOR' || name.indexOf("Connector") == 0 || name.indexOf("NewConn") == 0) {
             this.connectionCount++;
             return '';
@@ -8069,11 +8069,11 @@ class WorkflowDiagramGenerator {
 
         if (name.includes('.Decision')) {
             this.connectionCount++;
-            return `|${name.split('.')[0]}|`;
+            return `|${nesc.split('.')[0]}|`;
         }
 
         this.connectionCount++;
-        return `|${name}|`;
+        return `|${nesc}|`;
     }
 
     generateLinkStyles() {
