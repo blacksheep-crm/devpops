@@ -280,6 +280,7 @@ BCRMWebToolsHighlight = function (pm) {
             cell = row.find("td[id='" + rown + "_" + ph + "_Writable']");
             cell.off("click");
             cell.attr(od);
+            row.off("click");
             row.on("click", function () {
                 var rown = $(this).attr("id");
                 var ph = $(this).parent().parent().attr("id");
@@ -533,6 +534,7 @@ BCRMUpsertResp = function (rn, vn) {
 //Helper for Screen View List Applet
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMPostInvokeHandler = function (m, i, c, r) {
+    console.log("BCRMPostInvokeHandler: " + m);
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
     if (typeof (m) !== "undefined") {
         var vn = SiebelApp.S_App.GetActiveView().GetName();
@@ -544,7 +546,7 @@ BCRMPostInvokeHandler = function (m, i, c, r) {
                 if (vn == "WT Repository Workflow Process List View") {
                     BCRMEnhanceWorkflowListApplet();
                 }
-            }, 200);
+            }, 100);
         }
     }
 };
@@ -627,92 +629,115 @@ BCRMUpsertRespDialog = function () {
 //THIS FUNCTION MUST BE IN VANILLA postload.js to work in Web Tools!
 BCRMEnhanceScreenViewListApplet = function () {
     devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
-    var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Screen View List Applet").GetPModel();
-    if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
-        pm.AttachPMBinding("ShowSelection", BCRMEnhanceScreenViewListApplet, { scope: pm, sequence: true });
-        pm.AddMethod("InvokeMethod", BCRMPostInvokeHandler, { sequence: true });
-        pm.SetProperty("BCRM_HANDLERS_ATTACHED", "true");
+    try {
+        var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Screen View List Applet").GetPModel();
+        if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
+            pm.AttachPMBinding("ShowSelection", BCRMEnhanceScreenViewListApplet, { scope: pm, sequence: true });
+            pm.AddMethod("InvokeMethod", BCRMPostInvokeHandler, { sequence: true });
+            pm.SetProperty("BCRM_HANDLERS_ATTACHED", "true");
+        }
+        var fi = pm.Get("GetFullId");
+        var ae = $("#" + fi);
+        var bg = ae.find(".siebui-btn-grp-applet");
+        var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+        var is_active = r["Inactive"] == "N" ? true : false;
+        var vn = r["View"];
+        if (vn == "") {
+            is_active = false;
+        }
+        var btn;
+        if (ae.find("#bcrm_reg_view").length == 0) {
+            btn = $("<button id='bcrm_reg_view' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='The needs of the many outweigh the needs of the View\nAdd current View to Responsibility'>Register View</button>");
+            bg.prepend(btn);
+            btn.off("click");
+            btn.on("click", function () {
+                BCRMUpsertRespDialog();
+            })
+        }
+        else {
+            btn = ae.find("#bcrm_reg_view");
+        }
+        if (!is_active) {
+            btn.hide();
+        }
+        else {
+            btn.show();
+        }
     }
-    var fi = pm.Get("GetFullId");
-    var ae = $("#" + fi);
-    var bg = ae.find(".siebui-btn-grp-applet");
-    var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
-    var is_active = r["Inactive"] == "N" ? true : false;
-    var vn = r["View"];
-    if (vn == "") {
-        is_active = false;
-    }
-    var btn;
-    if (ae.find("#bcrm_reg_view").length == 0) {
-        btn = $("<button id='bcrm_reg_view' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='The needs of the many outweigh the needs of the View\nAdd current View to Responsibility'>Register View</button>");
-        bg.prepend(btn);
-        btn.on("click", function () {
-            BCRMUpsertRespDialog();
-        })
-    }
-    else {
-        btn = ae.find("#bcrm_reg_view");
-    }
-    if (!is_active) {
-        btn.hide();
-    }
-    else {
-        btn.show();
+    catch (e) {
+        console.error(e.toString());
     }
 };
 
 BCRMEnhanceWorkflowListApplet = function () {
-    devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
-    var pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
-    if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
-        pm.AttachPMBinding("ShowSelection", BCRMEnhanceWorkflowListApplet, { scope: pm, sequence: true });
-        pm.AddMethod("InvokeMethod", BCRMPostInvokeHandler, { sequence: true });
-        pm.SetProperty("BCRM_HANDLERS_ATTACHED", "true");
-    }
-    var fi = pm.Get("GetFullId");
-    var ae = $("#" + fi);
-    var bg = ae.find(".siebui-btn-grp-applet");
-    var r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
-    var is_active = r["Inactive"] == "N" ? true : false;
-    var wf = r["Process Name"];
-    var btn1, btn2;
+    try {
+        devpops_debug ? console.log(Date.now(), arguments.callee.name) : 0;
+        var ap = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet");
+        var pm = ap.GetPModel();
+        if (pm.Get("BCRM_HANDLERS_ATTACHED") != "true") {
+            pm.AttachPMBinding("ShowSelection", BCRMEnhanceWorkflowListApplet, { scope: pm, sequence: true });
+            pm.AddMethod("InvokeMethod", BCRMPostInvokeHandler, { sequence: true });
+            pm.SetProperty("BCRM_HANDLERS_ATTACHED", "true");
+        }
 
-    if (ae.find("#bcrm_wf_viz_detail").length == 0) {
-        btn2 = $("<button id='bcrm_wf_viz_detail' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Straighten up'>Preview 2</button>");
-        bg.prepend(btn2);
-    }
-    else {
-        btn2 = ae.find("#bcrm_wf_viz_detail");
-    }
-    btn2.on("click", function () {
-        let pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
-        let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
-        BCRMMetadataCollector("Workflow Process", r["Process Name"], "detail");
-    });
+        var fi = pm.Get("GetFullId");
+        var is_active = true;
+        var ae = $("#" + fi);
+        var bg = ae.find(".siebui-btn-grp-applet");
+        var r;
 
-    if (ae.find("#bcrm_wf_viz_simple").length == 0) {
-        btn1 = $("<button id='bcrm_wf_viz_simple' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Straighten up'>Preview 1</button>");
-        bg.prepend(btn1);
-    }
-    else {
-        btn1 = ae.find("#bcrm_wf_viz_simple");
-    }
-    btn1.on("click", function () {
-        let pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
-        let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
-        BCRMMetadataCollector("Workflow Process", r["Process Name"], "simple");
-    });
+        r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+        if (!ap.IsInQueryMode()) {
+            is_active = r["Inactive"] == "N" ? true : false;
+        }
+        var wf = r["Process Name"];
+        var btn1, btn2;
 
-    /*
-    if (!is_active) {
-        btn1.hide();
-        btn2.hide();
+        if (ae.find("#bcrm_wf_viz_detail").length == 0) {
+            btn2 = $("<button id='bcrm_wf_viz_detail' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Straighten up'>Preview 2</button>");
+            bg.prepend(btn2);
+        }
+        else {
+            btn2 = ae.find("#bcrm_wf_viz_detail");
+        }
+        btn2.off("click");
+        btn2.on("click", function () {
+            let pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
+            let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+            BCRMMetadataCollector("Workflow Process", r["Process Name"], "detail");
+            return false;
+        });
+
+        if (ae.find("#bcrm_wf_viz_simple").length == 0) {
+            btn1 = $("<button id='bcrm_wf_viz_simple' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='Straighten up'>Preview 1</button>");
+            bg.prepend(btn1);
+        }
+        else {
+            btn1 = ae.find("#bcrm_wf_viz_simple");
+        }
+        btn1.off("click");
+        btn1.on("click", function () {
+            let pm = SiebelApp.S_App.GetActiveView().GetApplet("WT Repository Workflow Process List Applet").GetPModel();
+            let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
+            BCRMMetadataCollector("Workflow Process", r["Process Name"], "simple");
+            return false;
+        });
+
+        /*
+        if (!is_active) {
+            btn1.hide();
+            btn2.hide();
+        }
+        else {
+            btn1.show();
+            btn2.show();
+        }
+        */
+
     }
-    else {
-        btn1.show();
-        btn2.show();
+    catch (e) {
+        console.error(e.toString());
     }
-    */
 };
 
 //I hear the Screen Menu comes back in style
@@ -1268,6 +1293,7 @@ BCRMAddAutoResizeButton = function (pm) {
         if ($("#" + bid).length == 0) {
             var btn = $("<span><button id='" + bid + "' title='Auto-resize columns' style='font-size:1.3em;cursor:pointer;border:none;background:transparent;'>" + btntext + "</button></span>");
             bg.append(btn);
+            btn.off("click");
             btn.on("click", function () {
                 SiebelApp.S_App.uiStatus.Busy({
                     target: SiebelApp.S_App.GetTargetViewContainer(),
@@ -1655,6 +1681,7 @@ BCRMAddLizardButton = function () {
     var btn = $('<div id="devpops_lizard" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops Lizard: Auto-resize List Columns"><li id="devpops_1" class="siebui-toolbar-enable" role="menuitem" title="devpops Lizard: Auto-resize List Columns" aria-label="devpops Lizard: Auto-resize List Columns" name="devpops Lizard: Auto-resize List Columns">🦎</li></ul></div>');
     if ($("#devpops_lizard").length == 0) {
         $("div#siebui-toolbar-settings").after(btn);
+        btn.off("click");
         btn.on("click", function () {
             let pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
             BCRMAutoResizeColumns(pm);
@@ -1675,6 +1702,7 @@ BCRMAddFavoritesButton = function () {
             SiebelApp.S_App.GotoView("WT Favourites List Applet View");
             return false;
         });
+        btn.off("click");
         btn.on("click", function () {
             BCRMPopFavorites();
         })
@@ -1733,6 +1761,7 @@ BCRMEnhanceFavsView = function () {
             ot = ot.replaceAll("WT Repository", "");
             ot = ot.replaceAll("List Applet", "");
             $(this).text(ot);
+            $(this).off("click");
             $(this).on("click", function () {
                 BCRMEnhanceFavsView();
             })
@@ -1824,6 +1853,7 @@ BCRMAddHistoryButton = function () {
     var btn = $('<div id="devpops_hist" class="siebui-banner-btn"><ul class="siebui-toolbar" aria-label="devpops: View Workspace History for active record"><li id="devpops_2" class="siebui-toolbar-enable" role="menuitem" title="devpops: View Workspace History for active record" aria-label="devpops: View Workspace History for active record" name="devpops: View Workspace History for active record">⏰</li></ul></div>');
     if ($("#devpops_hist").length == 0) {
         $("div#siebui-toolbar-settings").after(btn);
+        btn.off("click");
         btn.on("click", function () {
             let pm = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetPModel();
             let ot = $(".siebui-wt-objexp-tree").find(".fancytree-active").text();
@@ -1911,6 +1941,7 @@ BCRMAddFormNavigation = function () {
             nce = pr.GetUIWrapper(cs["Name"]).GetEl();
             if (ae.find(".bcrm-prev").length == 0) {
                 prev = $("<div title='devpops: Go to previous record' class='bcrm-prev' style='position:relative;bottom:6px;cursor:pointer;font-size:1.2em;'>👈</div>");
+                prev.off("click");
                 prev.on("click", function () {
                     pm.ExecuteMethod("InvokeMethod", "GotoPrevious");
                 });
@@ -1920,6 +1951,7 @@ BCRMAddFormNavigation = function () {
             }
             if (ae.find(".bcrm-next").length == 0) {
                 next = $("<div title='devpops: Go to next record' class='bcrm-next' style='position:relative;bottom:6px;cursor:pointer;font-size:1.2em;'>👉</div>");
+                next.off("click");
                 next.on("click", function () {
                     pm.ExecuteMethod("InvokeMethod", "GotoNext");
                 })
@@ -2854,6 +2886,7 @@ BCRMAddDrilldown = function () {
                             cell.attr("title", "Drilldown sponsored by devpops");
                             cell.attr("bcrm-ot", fn);
                             cell.attr("bcrm-rn", rs[r][fn]);
+                            cell.off("click");
                             cell.on("click", function () {
                                 let ot = $(this).attr("bcrm-ot");
                                 let rn = $(this).attr("bcrm-rn");
@@ -2880,6 +2913,7 @@ BCRMEnhanceWFEditor = function () {
             //enhance Business Service steps
             canvas.find("div[data-type='TASK']").each(function (x) {
                 //first click reads props and enhances the step div
+                $(this).off("click");
                 $(this).on("click", function (e, ui) {
                     var that = $(this);
                     setTimeout(function () {
@@ -3006,6 +3040,7 @@ BCRMMoarButtons = function () {
             var ae = $("#" + fi);
             var btns = ae.find(".siebui-btn-grp-applet");
             var btn = $('<div id="devpops_openscripteditor" class="siebui-ctrl-btn"><ul><li id="devpops_se_1" title="devpops: Open Server Script Editor" aria-label="devpops: Open Server Script Editor">📓</li></ul></div>');
+            btn.off("click");
             btn.on("click", function () {
                 var svc = SiebelApp.S_App.GetService("Script Editor UI Service");
                 var ips = SiebelApp.S_App.NewPropertySet();
@@ -3030,6 +3065,7 @@ BCRMEnhanceServerScriptEditor = function () {
         var ae = $("#" + fi);
         var btns = ae.find("#scriptEditorActivateScript").parent();
         var btn = $('<div id="devpops_dbg" class="siebui-ctrl-btn"><ul><li id="devpops_dbg_1" title="devpops: Open Script Debugger" aria-label="devpops: Open Script Debugger">🐞</li></ul></div>');
+        btn.off("click");
         btn.on("click", function () {
             var tt = ae.find(".siebui-applet-title").text();
             var ot = tt.split(" [")[0];
@@ -4221,6 +4257,7 @@ BCRMAddListRecordHover = function (pm) {
                                 box.css("left", e.clientX + 4 + "px");
 
                                 //select record on click
+                                box.off("click");
                                 box.on("click", function () {
                                     $(this).attr("bcrm-active", "true");
                                     pm.ExecuteMethod("HandleRowSelect", i - 1);
@@ -4235,6 +4272,7 @@ BCRMAddListRecordHover = function (pm) {
                                 //Dependency Finder (Web Tools only)
                                 if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
                                     let dfbtn = $("<button title='Find Dependencies' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>🏬</button>");
+                                    dfbtn.off("click");
                                     dfbtn.on("click", function () {
                                         pm.ExecuteMethod("HandleRowSelect", i - 1);
                                         BCRMRepoScanFromList(pm);
@@ -4253,6 +4291,7 @@ BCRMAddListRecordHover = function (pm) {
                                 //Script Editor (Web Tools only)
                                 if (SiebelApp.S_App.GetAppName() == "Siebel Web Tools") {
                                     let scbtn = $("<button title='Server Script Editor' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>📓</button>");
+                                    scbtn.off("click");
                                     scbtn.on("click", function () {
                                         pm.ExecuteMethod("HandleRowSelect", i - 1);
                                         var svc = SiebelApp.S_App.GetService("Script Editor UI Service");
@@ -4273,6 +4312,7 @@ BCRMAddListRecordHover = function (pm) {
                                         fbtn.text("🌟");
                                         fbtn.attr("title", "Already a fave");
                                     }
+                                    fbtn.off("click");
                                     fbtn.on("click", function () {
                                         pm.ExecuteMethod("HandleRowSelect", i - 1);
                                         if (!tr.hasClass("bcrm-fav")) {
@@ -4288,6 +4328,7 @@ BCRMAddListRecordHover = function (pm) {
 
                                 //About Record
                                 let abrbtn = $("<button title='About Record' style='cursor:pointer;margin:4px;width:26px;height:26px;background:transparent;border:0px;line-height:0'>🆎</button>");
+                                abrbtn.off("click");
                                 abrbtn.on("click", function () {
                                     pm.ExecuteMethod("HandleRowSelect", i - 1);
                                     let ps = SiebelApp.S_App.NewPropertySet();
@@ -5631,6 +5672,7 @@ BCRMRepoScanPopInfo = function (label, ot, on) {
         cont.append("<p>Record Count: " + info.count + "</p>");
         cont.append("<hr>");
         let url = $("<p style='cursor:pointer;'>REST URL: " + info.url + "</p>");
+        url.off("click");
         url.on("click", function () {
             window.open(info.url);
         })
@@ -7525,6 +7567,7 @@ BCRMAddERDViewer = function (vn) {
     if (ae.find("#bcrm_view_erd").length == 0) {
         btn = $("<button id='bcrm_view_erd' style='cursor:pointer;border: 2px solid; padding: 4px; border-radius: 8px;  background: #d2e9f5;' title='View ERD'>View ERD</button>");
         bg.prepend(btn);
+        btn.off("click");
         btn.on("click", function () {
             let r = pm.Get("GetRecordSet")[pm.Get("GetSelection")];
             let erdview = r[fn];
@@ -8240,7 +8283,7 @@ const BCRMMetadataCollector = function (ot, on, mode = "simple", ws = sessionSto
                     diagramDiv.innerHTML = '<pre class="mermaid">\n' + mermaidDiagram + '\n</pre>';
 
                     mermaid.init(undefined, '.mermaid');
-                }
+                }//end if dialog is open
             }
         })
         .catch(error => console.log('error', error));
