@@ -8,6 +8,8 @@ Developer Guide: https://github.com/blacksheep-crm/devpops/blob/main/dg.pdf
 
 # Videos
 
+24.12 Workflow Visualizer: https://youtu.be/KoSjpS9s918
+
 23.6 Dependency Finder: https://youtu.be/ahXJishtDr4
 
 YouTube Playlist (incl. older videos): https://www.youtube.com/playlist?list=PL8ytufPqZPFGF5FQ2iTgX5PcfQOuPUtux
