@@ -4006,28 +4006,33 @@ BCRMGetAppInfo = function () {
     devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
     try {
         let v = $("script[src*='scb']")[0].outerHTML.split("scb=")[1].split(".0")[0];
-        BCRM_SYS["Application Version"] = v;
-        BCRM_SIEBEL_V = {
-            y: v.split(".")[0],
-            m: v.split(".")[1]
-        }
-        localStorage.BCRM_SIEBEL_VERSION = v;
+		//it lasted until 24.12: cache buster is now encrypted, let's do REST
+		if (v.indexOf("script") > -1){
+			BCRMGetAppInfoREST();
+		}
+		else{
+			BCRM_SYS["Application Version"] = v;
+			BCRM_SIEBEL_V = {
+				y: v.split(".")[0],
+				m: v.split(".")[1]
+			}
+			localStorage.BCRM_SIEBEL_VERSION = v;
+		}
     }
     catch (e) {
         BCRM_SYS = "NA";
     }
 };
 
-/*RIP Restful way
-BCRMGetAppInfo = function () {
-    devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
+/*Restful way*/
+BCRMGetAppInfoREST = function () {
+    devpops_debug ? console.log(Date.now(), "BCRMGetAppInfoREST") : 0;
     var requestOptions = {
         method: 'GET',
         redirect: 'follow'
     };
     //Requires BO "BCRM Repository Details" and Base IO
-    //fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*
-    /Database Version?childlinks=None", requestOptions)
+    fetch(location.origin + "/siebel/v1.0/data/BCRM Repository Details/Repository Repository/*/Database Version?childlinks=None", requestOptions)
         .then(response => response.text())
         .then(result => {
             BCRM_SYS = JSON.parse(result);
@@ -4039,10 +4044,15 @@ BCRMGetAppInfo = function () {
             localStorage.BCRM_SIEBEL_VERSION = v;
         })
         .catch(error => {
+            console.error("BCRMGetAppInfoREST: Could not retrieve Application Version");
+            BCRM_SIEBEL_V = {
+				y: "24",
+				m: "12"
+			}
+            localStorage.BCRM_SIEBEL_VERSION = "24.12";
             BCRM_SYS = "NA";
         });
 };
-*/
 
 //history tracker
 //TODO: fix bug with CheckAppletReady function (random error)
