@@ -3951,7 +3951,8 @@ BCRMWTHelper = function () {
 
                 //Enhance WF Editor
                 if (vn == "WT Repository Edit Workflow Process") {
-                    BCRMEnhanceWFEditor();
+                    //deprecated AH 02-JAN-2025
+                    //BCRMEnhanceWFEditor();
                 }
 
                 //Enhance Server Script Views
@@ -3980,6 +3981,9 @@ BCRMWTHelper = function () {
                 //for future use
                 //comment this part to disable hover boxes in Web Tools
                 //clean up hover boxes
+
+                //deprecated AH 02-JAN-2025
+                /*
                 $("[id^='bcrm_box']").each(function () {
                     $(this).remove();
                 });
@@ -3988,7 +3992,7 @@ BCRMWTHelper = function () {
                         BCRMAddListRecordHover(am[a].GetPModel());
                     }
                 }
-
+                */
                 console.log("BCRM devpops extension for Siebel Web Tools loaded");
 
                 //prevent double-loading
@@ -4006,18 +4010,18 @@ BCRMGetAppInfo = function () {
     devpops_debug ? console.log(Date.now(), "BCRMGetAppInfo") : 0;
     try {
         let v = $("script[src*='scb']")[0].outerHTML.split("scb=")[1].split(".0")[0];
-		//it lasted until 24.12: cache buster is now encrypted, let's do REST
-		if (v.indexOf("script") > -1){
-			BCRMGetAppInfoREST();
-		}
-		else{
-			BCRM_SYS["Application Version"] = v;
-			BCRM_SIEBEL_V = {
-				y: v.split(".")[0],
-				m: v.split(".")[1]
-			}
-			localStorage.BCRM_SIEBEL_VERSION = v;
-		}
+        //it lasted until 24.12: cache buster is now encrypted, let's do REST
+        if (v.indexOf("script") > -1) {
+            BCRMGetAppInfoREST();
+        }
+        else {
+            BCRM_SYS["Application Version"] = v;
+            BCRM_SIEBEL_V = {
+                y: v.split(".")[0],
+                m: v.split(".")[1]
+            }
+            localStorage.BCRM_SIEBEL_VERSION = v;
+        }
     }
     catch (e) {
         BCRM_SYS = "NA";
@@ -4046,9 +4050,9 @@ BCRMGetAppInfoREST = function () {
         .catch(error => {
             console.error("BCRMGetAppInfoREST: Could not retrieve Application Version");
             BCRM_SIEBEL_V = {
-				y: "24",
-				m: "12"
-			}
+                y: "24",
+                m: "12"
+            }
             localStorage.BCRM_SIEBEL_VERSION = "24.12";
             BCRM_SYS = "NA";
         });
@@ -8154,6 +8158,7 @@ class WorkflowDiagramGenerator {
 
 //MetadataCollector: Get all the metadata in Web Tools
 var BCRM_BUS_SERV = {};
+var BCRM_BO = {};
 const BCRMMetadataCollector = function (ot, on, mode = "simple", ws = sessionStorage.BCRMCurrentWorkspace) {
     //const on_uri = encodeURIComponent(on);
     const myHeaders = new Headers();
@@ -8295,9 +8300,194 @@ const BCRMMetadataCollector = function (ot, on, mode = "simple", ws = sessionSto
                     mermaid.init(undefined, '.mermaid');
                 }//end if dialog is open
             }
+            if (ot === "Business Object") {
+                BCRM_BO[on] = {};
+                const bo = JSON.parse(result).items;
+                const bcs = bo.RepositoryBusinessObjectComponent;
+                const primarybc = bo["Primary Business Component"];
+                if (primarybc != "") {
+                    for (const b in bcs) {
+                        const bc = bcs[b];
+                        if (bc.BusComp != primarybc && bc.Link != "" && bc.Inactive != "Y") {
+                            const link = bc.Link;
+                            if (typeof (link) !== "undefined") {
+                                fetch(`${location.origin}/siebel/v1.0/workspace/${ws}/Link?fields=Cascade Delete,Child Business Component,Destination Field,Inter Child Column,Inter Child Delete,Inter Parent Column,Inter Table,Name,Parent Business Component,Source Field,Search Specification&searchspec=[Name]='${link}'`, requestOptions)
+                                    .then(response => response.text())
+                                    .then(result => {
+                                        const link = JSON.parse(result);
+                                        link.Link = "";
+                                        if (link["Inter Table"] == ""){
+                                            link.RelationshipType = "one-to-many"
+                                        }
+                                        else if (link["Inter Table"] != ""){
+                                            link.RelationshipType = "many-to-many"
+                                        }
+                                        BCRM_BO[on][bc.Name] = {
+                                            isPrimary: false,
+                                            Link: link,
+                                            Name: bc.Name,
+                                            BusComp: bc.BusComp
+                                        };
+                                    })
+                                    .catch(error => console.log('error', error));
+                            }
+                        }
+                        else if (bc.BusComp == primarybc) {
+                            BCRM_BO[on][bc.Name] = {
+                                isPrimary: true,
+                                Link: "",
+                                Name: bc.Name,
+                                BusComp: bc.BusComp
+                            }
+                        }
+                    }
+                }
+            }
         })
         .catch(error => console.log('error', error));
 };
+
+function generateASCIITree(businessObjectJson) {
+    const data = typeof businessObjectJson === 'string' 
+        ? JSON.parse(businessObjectJson) 
+        : businessObjectJson;
+
+    let treeLines = [];
+    const processedRelationships = new Set();
+
+    // ASCII characters for tree structure
+    const PIPE = "│";
+    const TEE = "├";
+    const LAST_TEE = "└";
+    const HORIZONTAL = "──";
+    const SPACE = "  ";
+
+    function addRelationshipInfo(relationship) {
+        if (!relationship) return "";
+        
+        let info = [];
+        if (relationship.RelationshipType === "many-to-many") {
+            info.push(`[M:M via ${relationship["Inter Table"]}]`);
+            info.push(`(${relationship["Inter Parent Column"]}, ${relationship["Inter Child Column"]})`);
+        } else if (relationship.RelationshipType === "one-to-many") {
+            info.push("[1:M]");
+            if (relationship["Source Field"] && relationship["Destination Field"]) {
+                info.push(`(${relationship["Source Field"]} -> ${relationship["Destination Field"]})`);
+            }
+        }
+        return info.length > 0 ? ` ${info.join(" ")}` : "";
+    }
+
+    function buildTreeLines(prefix, relationships, parentName) {
+        const entries = Object.entries(relationships);
+        
+        entries.forEach(([key, component], index) => {
+            const isLast = index === entries.length - 1;
+            const teeSymbol = isLast ? LAST_TEE : TEE;
+            const childPrefix = prefix + (isLast ? SPACE : PIPE + " ");
+
+            if (component.Link && typeof component.Link === 'object') {
+                const parent = component.Link["Parent Business Component"];
+                const child = component.Link["Child Business Component"];
+                const relationshipKey = `${parent}-${child}`;
+
+                if (!processedRelationships.has(relationshipKey) && 
+                    parent === parentName) {
+                    processedRelationships.add(relationshipKey);
+                    
+                    // Add the node with relationship info
+                    treeLines.push(prefix + teeSymbol + HORIZONTAL + child + 
+                        addRelationshipInfo(component.Link));
+
+                    // Recursively process children
+                    buildTreeLines(childPrefix, relationships, child);
+                }
+            }
+        });
+    }
+
+    // Find the primary business component to use as root
+    const primaryComponent = Object.entries(data).find(([key, value]) => {
+        return Object.values(value).some(comp => comp.isPrimary);
+    });
+
+    if (!primaryComponent) {
+        throw new Error("No primary business component found in the business object");
+    }
+
+    const [rootName, rootComponents] = primaryComponent;
+    const primaryBusComp = Object.entries(rootComponents).find(([key, comp]) => comp.isPrimary)[1];
+
+    // Start with root node
+    treeLines.push(`${rootName} (${primaryBusComp.BusComp})`);
+    buildTreeLines("", rootComponents, primaryBusComp.Name);
+
+    return treeLines.join("\n");
+}
+
+// Function to display the ASCII tree in a monospace font dialog
+function showASCIITreeDialog(businessObjectData) {
+    // Create dialog container if it doesn't exist
+    let dialogContainer = document.getElementById('ascii-tree-dialog');
+    if (!dialogContainer) {
+        dialogContainer = document.createElement('div');
+        dialogContainer.id = 'ascii-tree-dialog';
+        dialogContainer.title = 'Siebel Business Object Structure';
+        
+        // Create pre element for the ASCII tree
+        const preElement = document.createElement('pre');
+        preElement.style.margin = '0';
+        preElement.style.fontFamily = 'Consolas, monospace';
+        preElement.style.fontSize = '14px';
+        preElement.style.whiteSpace = 'pre';
+        dialogContainer.appendChild(preElement);
+        
+        document.body.appendChild(dialogContainer);
+    }
+
+    // Generate the ASCII tree
+    const asciiTree = generateASCIITree(businessObjectData);
+    
+    // Update the pre element content
+    dialogContainer.querySelector('pre').textContent = asciiTree;
+
+    // Initialize jQuery dialog
+    $(dialogContainer).dialog({
+        width: 800,
+        height: 600,
+        modal: true,
+        closeOnEscape: true,
+        resizable: true,
+        buttons: {
+            "Copy to Clipboard": function() {
+                const textArea = document.createElement("textarea");
+                textArea.value = asciiTree;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show feedback
+                const feedback = document.createElement("div");
+                feedback.textContent = "Copied!";
+                feedback.style.position = "absolute";
+                feedback.style.bottom = "10px";
+                feedback.style.right = "10px";
+                feedback.style.padding = "5px 10px";
+                feedback.style.background = "#4CAF50";
+                feedback.style.color = "white";
+                feedback.style.borderRadius = "3px";
+                dialogContainer.appendChild(feedback);
+                
+                setTimeout(() => feedback.remove(), 2000);
+            },
+            Close: function() {
+                $(this).dialog("close");
+            }
+        }
+    });
+}
+
 //listeners
 try {
     SiebelApp.EventManager.addListner("AppInit", BCRMGetAppInfo, this);
