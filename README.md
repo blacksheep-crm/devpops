@@ -208,4 +208,7 @@ Server Manager features require Siebel Administrator responsibility
 Fast Inspect can cause instability depending on degree of customization.
 Workaround: Use vanilla Workspace Inspect feature
 
+# Disclaimer
+
+blacksheep IT consulting GmbH, last update Nov 2025
 
